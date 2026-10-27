@@ -74,7 +74,19 @@ namespace SignBuilder.Rendering
             }
         }
 
-        private static Material CreateMaterial(string name, Texture baseMap, Color tint, float smoothness)
+        /// <summary>A sign-face material for immediate drawing (placement preview).</summary>
+        public static Material CreateFaceMaterial(Texture face, float glow)
+        {
+            var material = CreateMaterial("SignBuilder.Face", face, Color.white, 0.35f);
+            material.SetFloat("_AlphaCutoffEnable", 1f);
+            material.SetFloat("_AlphaCutoff", 0.5f);
+            material.SetTexture("_EmissiveColorMap", face);
+            material.SetColor(s_EmissiveColor, Color.white * glow);
+            HDMaterial.ValidateMaterial(material);
+            return material;
+        }
+
+        public static Material CreateMaterial(string name, Texture baseMap, Color tint, float smoothness)
         {
             var material = new Material(Shader.Find(kShaderName)) { name = name, enableInstancing = true };
             material.SetTexture("_BaseColorMap", baseMap);

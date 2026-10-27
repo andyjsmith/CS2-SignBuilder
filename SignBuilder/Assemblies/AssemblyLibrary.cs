@@ -18,7 +18,19 @@ namespace SignBuilder.Assemblies
         public string Id;
         public string PrefabName => "SignBuilder_A_" + Id;
         public string Support;
-        public JObject Design;
+        public bool Reverse;
+        /// <summary>The signs on this structure, left to right as seen by approaching traffic.</summary>
+        public List<JObject> Designs = new();
+
+        /// <summary>Records written before multi-sign support stored a single design.</summary>
+        [JsonProperty("Design")]
+        private JObject LegacyDesign
+        {
+            set
+            {
+                if (value != null && Designs.Count == 0) Designs.Add(value);
+            }
+        }
         public string GeometryId;
         public List<string> SurfaceIds = new();
         public float[] Bounds; // min xyz, max xyz in assembly-local space

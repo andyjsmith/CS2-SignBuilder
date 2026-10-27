@@ -87,17 +87,25 @@ export const SignEditor = () => {
     try { return JSON.parse(templatesJson); } catch { return []; }
   }, [templatesJson]);
 
-  const [design, setDesign] = useState<Design>(BLANK);
+  // One structure can carry several signs (left to right as seen by drivers); the editor works on one at a time.
+  const [signs, setSigns] = useState<Design[]>([BLANK]);
+  const [active, setActive] = useState(0);
+  const current = Math.min(active, signs.length - 1);
+  const design = signs[current];
+  const setDesign = (d: Design) => setSigns(signs.map((s, i) => (i === current ? d : s)));
   const [selected, setSelected] = useState<string | null>(null);
   const [support, setSupport] = useState("truss");
+  const [reverse, setReverse] = useState(false);
 
   // Re-editing a placed sign: the C# side pushes { design, support } when it opens the editor.
   useEffect(() => {
     if (!editing) return;
     try {
       const payload = JSON.parse(editing);
-      setDesign(payload.design ?? payload);
+      setSigns(payload.designs ?? [payload.design ?? payload]);
+      setActive(0);
       if (payload.support) setSupport(payload.support);
+      setReverse(!!payload.reverse);
       setSelected(null);
     } catch { /* ignore malformed payloads */ }
   }, [editing]);
@@ -143,6 +151,17 @@ export const SignEditor = () => {
         </div>
 
         <div className={styles.centre}>
+          <div className={styles.choices}>
+            {signs.map((s, i) => (
+              <div key={i} className={i === current ? styles.choiceOn : styles.choice} onClick={() => { setActive(i); setSelected(null); }}>{`Sign ${i + 1}`}</div>
+            ))}
+            {signs.length < 4 && (
+              <div className={styles.chip} onClick={() => { setSigns([...signs, clone(BLANK)]); setActive(signs.length); setSelected(null); }}>+ Add sign</div>
+            )}
+            {signs.length > 1 && (
+              <div className={styles.chip} onClick={() => { setSigns(signs.filter((_, i) => i !== current)); setActive(Math.max(0, current - 1)); setSelected(null); }}>Remove sign</div>
+            )}
+          </div>
           <div className={styles.preview}>
             <SignPreview design={design} selected={selected} onSelect={setSelected} maxWidth={560} maxHeight={330} />
           </div>
@@ -150,8 +169,11 @@ export const SignEditor = () => {
           <div className={styles.heading}>Mounting</div>
           <Choice options={SUPPORTS.map((s) => s.label)} value={supportLabel}
             onChange={(label) => setSupport(SUPPORTS.find((s) => s.label === label)!.id)} />
+          <div className={styles.heading}>Facing</div>
+          <Choice options={["Clicked road's traffic", "Opposite direction"]} value={reverse ? "Opposite direction" : "Clicked road's traffic"}
+            onChange={(v) => setReverse(v === "Opposite direction")} />
           <div className={styles.actions}>
-            <Button variant="primary" onSelect={() => startPlacement(JSON.stringify({ design, support }))}>Place on road</Button>
+            <Button variant="primary" onSelect={() => startPlacement(JSON.stringify({ designs: signs, support, reverse }))}>Place on road</Button>
           </div>
           {status && <div className={styles.status}>{status}</div>}
         </div>

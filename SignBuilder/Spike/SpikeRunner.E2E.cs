@@ -51,6 +51,7 @@ namespace SignBuilder.Spike
             yield return Test("e2e.editor", TestEditorOpens(ui));
             yield return Test("e2e.place", TestPlaceAll(tool));
             yield return Test("e2e.shots", TestAssemblyShots());
+            yield return Test("e2e.preview", TestPreviewAndReverse(tool));
             yield return Test("e2e.reedit", TestReedit(ui, tool));
             yield return Test("e2e.save", TestSaveForReload());
             ui.SetEditorOpen(false);
@@ -84,7 +85,11 @@ namespace SignBuilder.Spike
                 var design = JObject.Parse(File.ReadAllText(Path.Combine(templates, template + ".json")));
                 var before = SignPlacementToolSystem.LastPlaced;
                 var start = Time.realtimeSinceStartup;
-                tool.PlaceForTest(spots[i].edge, spots[i].t, design, support);
+                // The truss carries two signs side by side to exercise multi-sign layout.
+                var designs = support == "truss"
+                    ? new List<JObject> { design, JObject.Parse(File.ReadAllText(Path.Combine(templates, "guide-exit-only.json"))) }
+                    : new List<JObject> { design };
+                tool.PlaceForTest(spots[i].edge, spots[i].t, designs, support);
                 while ((tool.Busy || SignPlacementToolSystem.LastPlaced == before) && Time.realtimeSinceStartup - start < 20f) yield return null;
                 var record = SignPlacementToolSystem.LastPlaced;
                 if (record == before)
@@ -122,6 +127,43 @@ namespace SignBuilder.Spike
             }
         }
 
+        /// <summary>
+        /// Hover preview (drawn for a road position like the mouse would), then a reversed truss on the
+        /// same spot facing the opposite carriageway.
+        /// </summary>
+        private IEnumerator TestPreviewAndReverse(SignPlacementToolSystem tool)
+        {
+            if (m_Placed.Count == 0) yield break;
+            var spot = m_Placed[0];
+            var design = JObject.Parse(File.ReadAllText(Path.Combine(SignBuilderRuntime.ResourcesDir, "Templates", "guide-long.json")));
+            tool.BeginPlace(new List<JObject> { design }, "curvedSpan", reverse: true);
+            var t = math.clamp(spot.t + 0.25f, 0.05f, 0.95f);
+            var start = Time.realtimeSinceStartup;
+            while (!tool.PreviewReady && Time.realtimeSinceStartup - start < 10f) yield return null;
+            SpikeReport.Set("e2e.preview.ready", tool.PreviewReady);
+            var snap = new RoadProbe(World.DefaultGameObjectInjectionWorld.EntityManager, m_Runtime.PrefabSystem).SnapAt(spot.edge, t);
+            var fwd = -snap.Tangent * snap.MainDirection;
+            SetCamera(snap.Point + new float3(0, 6f, 0), math.degrees(math.atan2(fwd.x, fwd.z)) + 15f, 8f, 55f);
+            var end = Time.realtimeSinceStartup + 3f;
+            while (Time.realtimeSinceStartup < end)
+            {
+                tool.PreviewForTest(spot.edge, t);
+                yield return null;
+            }
+            SpikeReport.Screenshot("e2e_preview.png");
+            for (var i = 0; i < 10; i++) { tool.PreviewForTest(spot.edge, t); yield return null; }
+
+            var before = SignPlacementToolSystem.LastPlaced;
+            start = Time.realtimeSinceStartup;
+            tool.PlaceForTest(spot.edge, t, new List<JObject> { design }, "curvedSpan", reverse: true);
+            while ((tool.Busy || SignPlacementToolSystem.LastPlaced == before) && Time.realtimeSinceStartup - start < 20f) yield return null;
+            SpikeReport.Set("e2e.reverse.placed", SignPlacementToolSystem.LastPlaced == before ? "FAILED" : SignPlacementToolSystem.LastPlaced.PrefabName);
+            yield return new WaitForSecondsRealtime(3f);
+            SpikeReport.Screenshot("e2e_reverse.png");
+            yield return new WaitForSecondsRealtime(0.5f);
+            World.DefaultGameObjectInjectionWorld.GetOrCreateSystemManaged<SignBuilderUISystem>().SetEditorOpen(false);
+        }
+
         /// <summary>Pick the first assembly, change its text, place again: the original must be replaced.</summary>
         private IEnumerator TestReedit(SignBuilderUISystem ui, SignPlacementToolSystem tool)
         {
@@ -134,12 +176,12 @@ namespace SignBuilder.Spike
             SpikeReport.Screenshot("e2e_reedit_editor.png");
             yield return new WaitForSecondsRealtime(0.5f);
 
-            var design = (JObject)first.record.Design.DeepClone();
-            var items = (JArray)design["items"];
+            var designs = first.record.Designs.Select(d => (JObject)d.DeepClone()).ToList();
+            var items = (JArray)designs[0]["items"];
             items[1]["text"] = "Edited City";
             var before = SignPlacementToolSystem.LastPlaced;
             var start = Time.realtimeSinceStartup;
-            tool.PlaceForTest(first.edge, first.t, design, first.support);
+            tool.PlaceForTest(first.edge, first.t, designs, first.support);
             while ((tool.Busy || SignPlacementToolSystem.LastPlaced == before) && Time.realtimeSinceStartup - start < 20f) yield return null;
             yield return new WaitForSecondsRealtime(4f);
             ui.SetEditorOpen(false);

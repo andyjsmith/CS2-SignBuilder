@@ -70,10 +70,11 @@ namespace SignBuilder.Systems
             try
             {
                 var obj = JObject.Parse(payload);
-                var design = (JObject)obj["design"];
+                // { designs: [...] } (several signs on one structure) or the older { design }.
+                var designs = obj["designs"] is JArray list ? list.OfType<JObject>().ToList() : new System.Collections.Generic.List<JObject> { (JObject)obj["design"] };
                 var support = (string)obj["support"] ?? "truss";
                 if (!AssemblyBuilder.Supports.Contains(support)) support = "truss";
-                m_Tool.BeginPlace(design, support);
+                m_Tool.BeginPlace(designs, support, (bool?)obj["reverse"] ?? false);
             }
             catch (Exception e)
             {
@@ -86,7 +87,7 @@ namespace SignBuilder.Systems
         {
             m_EditorOpen.Update(true);
             // A fresh object each time so the React effect fires even for the same assembly.
-            m_EditingDesign.Update(new JObject { ["design"] = record.Design, ["support"] = record.Support, ["nonce"] = Guid.NewGuid().ToString("N") }.ToString(Formatting.None));
+            m_EditingDesign.Update(new JObject { ["designs"] = new JArray(record.Designs), ["support"] = record.Support, ["reverse"] = record.Reverse, ["nonce"] = Guid.NewGuid().ToString("N") }.ToString(Formatting.None));
         }
 
         public void SetStatus(string status) => m_ToolStatus.Update(status ?? "");
