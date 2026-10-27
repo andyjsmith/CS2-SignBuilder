@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace HighwaySigns.Spike
+namespace SignBuilder.Spike
 {
     /// <summary>
     /// Minimal mesh builder for boxes and tubes. Every face gets flat/smooth normals and UVs

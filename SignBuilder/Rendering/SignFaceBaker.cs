@@ -13,7 +13,7 @@ using UnityEngine;
 using UnityEngine.Rendering;
 using Object = UnityEngine.Object;
 
-namespace HighwaySigns.Rendering
+namespace SignBuilder.Rendering
 {
     /// <summary>A sign face baked to a texture, with its physical size.</summary>
     public sealed class BakedFace
@@ -41,7 +41,7 @@ namespace HighwaySigns.Rendering
     /// </summary>
     public sealed class SignFaceBaker : IDisposable
     {
-        private const string kHost = "highwaysigns";
+        private const string kHost = "signbuilder";
         private const int kViewWidth = 2048;
         private const int kViewHeight = 1024;
         private const float kMetersPerInch = 0.0254f;
@@ -170,7 +170,7 @@ namespace HighwaySigns.Rendering
             m_UISystem = GameManager.instance.userInterface.view.uiSystem;
             m_UISystem.AddHostLocation(kHost, m_ResourcesDir, shouldWatch: false);
 
-            var go = new GameObject("HighwaySigns.SignFaceBakerCamera");
+            var go = new GameObject("SignBuilder.SignFaceBakerCamera");
             Object.DontDestroyOnLoad(go);
             m_DummyCamera = go.AddComponent<Camera>();
             m_DummyCamera.enabled = false;
@@ -275,7 +275,7 @@ namespace HighwaySigns.Rendering
             {
                 Buffer.BlockCopy(pixels, ((b.y + y) * width + b.x) * 4, cropped, y * b.width * 4, b.width * 4);
             }
-            var tex = new Texture2D(b.width, b.height, TextureFormat.RGBA32, mipChain: true) { name = "HighwaySigns.Face", wrapMode = TextureWrapMode.Clamp };
+            var tex = new Texture2D(b.width, b.height, TextureFormat.RGBA32, mipChain: true) { name = "SignBuilder.Face", wrapMode = TextureWrapMode.Clamp };
             tex.SetPixelData(cropped, 0);
             tex.Apply(updateMipmaps: true);
             return tex;
@@ -291,7 +291,7 @@ namespace HighwaySigns.Rendering
             try
             {
                 var info = JObject.Parse(File.ReadAllText(meta));
-                var tex = new Texture2D(2, 2, TextureFormat.RGBA32, mipChain: true) { name = "HighwaySigns.Face", wrapMode = TextureWrapMode.Clamp };
+                var tex = new Texture2D(2, 2, TextureFormat.RGBA32, mipChain: true) { name = "SignBuilder.Face", wrapMode = TextureWrapMode.Clamp };
                 if (!tex.LoadImage(File.ReadAllBytes(png))) return null;
                 return new BakedFace
                 {

@@ -4,7 +4,7 @@ using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.HighDefinition;
 
-namespace HighwaySigns.Spike
+namespace SignBuilder.Spike
 {
     /// <summary>
     /// Draws baked sign faces as thin panels with the game's default lit shader (proven in runs 2-6).
@@ -30,7 +30,7 @@ namespace HighwaySigns.Spike
             }
             if (!m_Materials.TryGetValue(face, out var material))
             {
-                material = new Material(Shader.Find(kShaderName)) { name = "HighwaySigns.Panel." + face.name, enableInstancing = true };
+                material = new Material(Shader.Find(kShaderName)) { name = "SignBuilder.Panel." + face.name, enableInstancing = true };
                 material.SetTexture("_BaseColorMap", face);
                 material.SetColor("_BaseColor", Color.white);
                 material.SetFloat("_Metallic", 0f);

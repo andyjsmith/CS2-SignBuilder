@@ -8,7 +8,7 @@ using UnityEngine;
 using UnityEngine.Rendering;
 using Object = UnityEngine.Object;
 
-namespace HighwaySigns.Spike
+namespace SignBuilder.Spike
 {
     /// <summary>
     /// Renders HTML pages with the game's Gameface (cohtml) engine into off-screen textures.
@@ -19,7 +19,7 @@ namespace HighwaySigns.Spike
     /// </summary>
     internal sealed class OffscreenUISpike : IDisposable
     {
-        private const string kHost = "highwaysigns";
+        private const string kHost = "signbuilder";
 
         private readonly UISystem m_UISystem;
         private readonly UIView m_View;
@@ -36,7 +36,7 @@ namespace HighwaySigns.Spike
             m_UISystem = GameManager.instance.userInterface.view.uiSystem;
             m_UISystem.AddHostLocation(kHost, resourcesDir, shouldWatch: false);
 
-            var go = new GameObject("HighwaySigns.OffscreenUICamera");
+            var go = new GameObject("SignBuilder.OffscreenUICamera");
             Object.DontDestroyOnLoad(go);
             m_DummyCamera = go.AddComponent<Camera>();
             m_DummyCamera.enabled = false;
@@ -117,7 +117,7 @@ namespace HighwaySigns.Spike
                 NativeArray<byte>.Copy(data, y * rowBytes, flipped, (rt.height - 1 - y) * rowBytes, rowBytes);
             }
 
-            var tex = new Texture2D(rt.width, rt.height, TextureFormat.RGBA32, mipChain: true) { name = "HighwaySigns.SignFace" };
+            var tex = new Texture2D(rt.width, rt.height, TextureFormat.RGBA32, mipChain: true) { name = "SignBuilder.SignFace" };
             tex.SetPixelData(flipped, 0);
             tex.Apply(updateMipmaps: true);
 

@@ -4,20 +4,20 @@ using Colossal.IO.AssetDatabase;
 using Colossal.PSI.Common;
 using UnityEngine;
 
-namespace HighwaySigns.Spike
+namespace SignBuilder.Spike
 {
     /// <summary>
-    /// A mod-owned asset database rooted at ModsData/HighwaySigns/Cache, so generated meshes and
+    /// A mod-owned asset database rooted at ModsData/SignBuilder/Cache, so generated meshes and
     /// materials never land in the player's ImportedData folder. Mirrors how the game defines its
     /// own "User" database (a FileSystemDataSource behind an IAssetDatabaseDescriptor).
     /// </summary>
-    public readonly struct HighwaySignsCache : IAssetDatabaseDescriptor<HighwaySignsCache>, IEquatable<HighwaySignsCache>
+    public readonly struct SignBuilderCache : IAssetDatabaseDescriptor<SignBuilderCache>, IEquatable<SignBuilderCache>
     {
-        public static string RootPath => Path.Combine(Application.persistentDataPath, "ModsData", "HighwaySigns", "Cache");
+        public static string RootPath => Path.Combine(Application.persistentDataPath, "ModsData", "SignBuilder", "Cache");
 
         public DlcId dlcId => DlcId.Invalid;
         public bool canWriteSettings => false;
-        public string name => "HighwaySignsCache";
+        public string name => "SignBuilderCache";
         public IAssetFactory assetFactory => DefaultAssetFactory.instance;
 
         public IDataSourceProvider dataSourceProvider
@@ -29,8 +29,8 @@ namespace HighwaySigns.Spike
             }
         }
 
-        public bool Equals(HighwaySignsCache other) => true;
-        public override bool Equals(object obj) => obj is HighwaySignsCache;
+        public bool Equals(SignBuilderCache other) => true;
+        public override bool Equals(object obj) => obj is SignBuilderCache;
         public override int GetHashCode() => GetType().GetHashCode();
     }
 }

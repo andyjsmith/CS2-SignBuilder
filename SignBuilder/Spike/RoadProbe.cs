@@ -10,7 +10,7 @@ using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;
 
-namespace HighwaySigns.Spike
+namespace SignBuilder.Spike
 {
     /// <summary>
     /// Finds a road edge near a point, reads its geometry and car lanes, and pairs it with a parallel

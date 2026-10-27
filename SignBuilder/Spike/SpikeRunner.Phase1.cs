@@ -9,14 +9,14 @@ using Game.Common;
 using Game.Prefabs;
 using Game.SceneFlow;
 using Game.Simulation;
-using HighwaySigns.Rendering;
+using SignBuilder.Rendering;
 using Newtonsoft.Json.Linq;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;
 using UnityEngine;
 
-namespace HighwaySigns.Spike
+namespace SignBuilder.Spike
 {
     /// <summary>
     /// Phase 1 batched run: booted straight into the spike save (-startGame) to test reloading our
@@ -47,9 +47,9 @@ namespace HighwaySigns.Spike
             yield return WaitForGame();
             m_Runtime = new RuntimePrefabs();
             m_Probe = new RoadProbe(World.DefaultGameObjectInjectionWorld.EntityManager, m_Runtime.PrefabSystem);
-            m_Db = AssetDatabase<HighwaySignsCache>.instance;
+            m_Db = AssetDatabase<SignBuilderCache>.instance;
             m_DbFolder = "Meshes";
-            m_Baker = new SignFaceBaker(m_ResourcesDir, Path.Combine(HighwaySignsCache.RootPath, "Faces"));
+            m_Baker = new SignFaceBaker(m_ResourcesDir, Path.Combine(SignBuilderCache.RootPath, "Faces"));
 
             yield return Test("bootReload", TestBootReload());
             yield return Test("bake", TestBake("bake"));
@@ -75,7 +75,7 @@ namespace HighwaySigns.Spike
         private IEnumerator RunBakerDebug(float seconds)
         {
             yield return WaitForGame();
-            m_Baker = new SignFaceBaker(m_ResourcesDir, Path.Combine(HighwaySignsCache.RootPath, "Faces"));
+            m_Baker = new SignFaceBaker(m_ResourcesDir, Path.Combine(SignBuilderCache.RootPath, "Faces"));
             var design = JObject.Parse(File.ReadAllText(Path.Combine(m_ResourcesDir, "Templates", "services-blue.json")));
             BakedFace face = null;
             yield return m_Baker.Bake(design, 3f, f => face = f);
@@ -146,8 +146,8 @@ namespace HighwaySigns.Spike
             var snap = m_Snap ?? FallbackSnap();
 
             // Main truss over both carriageways: exit-tab sign for our direction, long sign facing the other way.
-            yield return PlaceTruss(snap, 0f, "HighwaySigns_p1_truss", "guide-exit-tab", "guide-long", true);
-            yield return PlaceTruss(snap, 60f, "HighwaySigns_p1_truss2", "guide-exit-only", null, false);
+            yield return PlaceTruss(snap, 0f, "SignBuilder_p1_truss", "guide-exit-tab", "guide-long", true);
+            yield return PlaceTruss(snap, 60f, "SignBuilder_p1_truss2", "guide-exit-only", null, false);
             yield return PlaceMonotube(snap, -60f, "services-blue");
             yield return PlaceCantilever(snap, 120f, "attraction-brown");
             yield return PlaceCurved(snap, 180f, false, new[] { "guide-exit-only", "services-blue" });
@@ -172,7 +172,7 @@ namespace HighwaySigns.Spike
             var extent = s.Extent;
             var origin = s.Point + s.Right * ((extent.x + extent.y) * 0.5f);
             var span = extent.y - extent.x + 5f;
-            var prefab = m_Runtime.Create("HighwaySigns_p1_glowTruss", GantryFactory.Truss(span), GantrySurface, m_Db, m_DbFolder);
+            var prefab = m_Runtime.Create("SignBuilder_p1_glowTruss", GantryFactory.Truss(span), GantrySurface, m_Db, m_DbFolder);
             m_Prefabs.Add(prefab);
             for (var i = 0; i < 20; i++) yield return null;
             m_Runtime.ClearOverridable(prefab);
@@ -249,7 +249,7 @@ namespace HighwaySigns.Spike
             var dir = s.MainDirection;
             var fwd = s.Tangent * dir;
             var rotation = quaternion.LookRotationSafe(fwd, new float3(0, 1, 0));
-            var prefab = m_Runtime.Create("HighwaySigns_p1_monotube", GantryFactory.Monotube(s.EdgeWidth + 5f), GantrySurface, m_Db, m_DbFolder);
+            var prefab = m_Runtime.Create("SignBuilder_p1_monotube", GantryFactory.Monotube(s.EdgeWidth + 5f), GantrySurface, m_Db, m_DbFolder);
             m_Prefabs.Add(prefab);
             for (var i = 0; i < 20; i++) yield return null;
             m_Runtime.ClearOverridable(prefab);
@@ -268,7 +268,7 @@ namespace HighwaySigns.Spike
             var rotation = quaternion.LookRotationSafe(fwd, new float3(0, 1, 0));
             var postOffset = dir * (s.EdgeWidth * 0.5f + 1.5f);
             var arm = s.EdgeWidth * 0.55f + 1.5f;
-            var prefab = m_Runtime.Create("HighwaySigns_p1_cantilever", GantryFactory.Cantilever(-arm), GantrySurface, m_Db, m_DbFolder);
+            var prefab = m_Runtime.Create("SignBuilder_p1_cantilever", GantryFactory.Cantilever(-arm), GantrySurface, m_Db, m_DbFolder);
             m_Prefabs.Add(prefab);
             for (var i = 0; i < 20; i++) yield return null;
             m_Runtime.ClearOverridable(prefab);
@@ -295,7 +295,7 @@ namespace HighwaySigns.Spike
 
             Mesh mesh;
             float3 origin;
-            var name = cantilever ? "HighwaySigns_p1_curvedCantilever" : "HighwaySigns_p1_curvedSpan";
+            var name = cantilever ? "SignBuilder_p1_curvedCantilever" : "SignBuilder_p1_curvedSpan";
             if (cantilever)
             {
                 // Post just off the right-hand edge, arm reaching back over the lanes.
@@ -345,7 +345,7 @@ namespace HighwaySigns.Spike
             var lateral = dir * (s.EdgeWidth * 0.5f + 2.5f + face.WidthMeters * 0.5f);
             var origin = s.Point + s.Right * lateral;
             var mesh = GantryFactory.GroundPosts(face.WidthMeters, face.HeightMeters, out var posts);
-            var prefab = m_Runtime.Create($"HighwaySigns_p1_ground_{sign}", mesh, GantrySurface, m_Db, m_DbFolder);
+            var prefab = m_Runtime.Create($"SignBuilder_p1_ground_{sign}", mesh, GantrySurface, m_Db, m_DbFolder);
             m_Prefabs.Add(prefab);
             for (var i = 0; i < 20; i++) yield return null;
             m_Runtime.ClearOverridable(prefab);

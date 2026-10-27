@@ -1,7 +1,7 @@
-// HighwaySigns sign renderer.
+// SignBuilder sign renderer.
 //
 // Builds a sign face from a JSON design. All dimensions in a design are inches (as in the MUTCD
-// and the FHWA Standard Highway Signs book); they are converted to pixels at render time. The same
+// and the FHWA Standard Sign Builder book); they are converted to pixels at render time. The same
 // file is meant to back the in-game editor preview, so the editor and the baked in-world texture
 // always agree.
 //

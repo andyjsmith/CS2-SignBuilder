@@ -6,9 +6,9 @@ using Game.UI;
 using Game.UI.Widgets;
 using System.Collections.Generic;
 
-namespace HighwaySigns
+namespace SignBuilder
 {
-    [FileLocation(nameof(HighwaySigns))]
+    [FileLocation(nameof(SignBuilder))]
     [SettingsUIGroupOrder(kButtonGroup, kToggleGroup, kSliderGroup, kDropdownGroup)]
     [SettingsUIShowGroupName(kButtonGroup, kToggleGroup, kSliderGroup, kDropdownGroup)]
     public class Setting : ModSetting
@@ -89,7 +89,7 @@ namespace HighwaySigns
         {
             return new Dictionary<string, string>
             {
-                { m_Setting.GetSettingsLocaleID(), "HighwaySigns" },
+                { m_Setting.GetSettingsLocaleID(), "Sign Builder" },
                 { m_Setting.GetOptionTabLocaleID(Setting.kSection), "Main" },
 
                 { m_Setting.GetOptionGroupLocaleID(Setting.kButtonGroup), "Buttons" },

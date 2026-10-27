@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Launches Cities: Skylines II through Steam straight into a save, with the HighwaySigns spike
+# Launches Cities: Skylines II through Steam straight into a save, with the SignBuilder spike
 # harness armed, and waits for the game to quit on its own.
 #
 #   scripts/run-spike.sh [mode] [save-guid]
@@ -21,8 +21,8 @@ if tasklist | grep -qi cities2.exe; then
   exit 1
 fi
 
-mkdir -p "$user_dir/ModsData/HighwaySigns"
-printf '%s' "$mode" > "$user_dir/ModsData/HighwaySigns/spike.flag"
+mkdir -p "$user_dir/ModsData/SignBuilder"
+printf '%s' "$mode" > "$user_dir/ModsData/SignBuilder/spike.flag"
 extra=""
 [[ "$mode" == "debug" ]] && extra=" -uiDeveloperMode"
 if [[ -n "$save" ]]; then
@@ -39,4 +39,4 @@ for _ in $(seq 1 200); do
   tasklist | grep -qi cities2.exe || break
   sleep 5
 done
-echo "Game exited. Results: $user_dir/ModsData/HighwaySigns/spike"
+echo "Game exited. Results: $user_dir/ModsData/SignBuilder/spike"

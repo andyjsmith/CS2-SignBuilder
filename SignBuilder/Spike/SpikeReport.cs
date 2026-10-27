@@ -4,18 +4,18 @@ using System.IO;
 using System.Text;
 using UnityEngine;
 
-namespace HighwaySigns.Spike
+namespace SignBuilder.Spike
 {
     /// <summary>
     /// Collects spike findings as ordered key/value pairs, mirrors them to the mod log and
-    /// rewrites ModsData/HighwaySigns/spike/results.json after every test, so a crash late in
+    /// rewrites ModsData/SignBuilder/spike/results.json after every test, so a crash late in
     /// the run never loses earlier results.
     /// </summary>
     internal static class SpikeReport
     {
         private static readonly List<KeyValuePair<string, string>> s_Entries = new();
 
-        public static string OutputDir => Path.Combine(Application.persistentDataPath, "ModsData", "HighwaySigns", "spike");
+        public static string OutputDir => Path.Combine(Application.persistentDataPath, "ModsData", "SignBuilder", "spike");
 
         public static void Set(string key, object value)
         {

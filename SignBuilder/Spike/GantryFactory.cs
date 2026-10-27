@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace HighwaySigns.Spike
+namespace SignBuilder.Spike
 {
     /// <summary>
     /// Parametric gantry meshes. Local space: X runs across the road, Z along it (traffic faces -Z),
@@ -62,7 +62,7 @@ namespace HighwaySigns.Spike
                     b.AddTube(new Vector3(x, y, z0), new Vector3(x, Mathf.Min(y + 1.6f, y0), z1), 0.04f, 8);
                 }
             }
-            return b.Build("HighwaySigns.Truss");
+            return b.Build("SignBuilder.Truss");
         }
 
         public static Mesh Monotube(float span)
@@ -76,7 +76,7 @@ namespace HighwaySigns.Spike
                 b.AddTube(new Vector3(x, 0, 0), new Vector3(x, y + 0.5f, 0), 0.36f, 20);
                 b.AddBox(new Vector3(x, 0.03f, 0), new Vector3(1.0f, 0.06f, 1.0f), Quaternion.identity);
             }
-            return b.Build("HighwaySigns.Monotube");
+            return b.Build("SignBuilder.Monotube");
         }
 
         public static Mesh Cantilever(float armLength)
@@ -88,7 +88,7 @@ namespace HighwaySigns.Spike
             // Upper tie back to the post.
             b.AddTube(new Vector3(0, y + 0.55f, 0), new Vector3(armLength * 0.45f, y + 0.05f, 0), 0.08f, 10);
             b.AddBox(new Vector3(0, 0.03f, 0), new Vector3(1.1f, 0.06f, 1.1f), Quaternion.identity);
-            return b.Build("HighwaySigns.Cantilever");
+            return b.Build("SignBuilder.Cantilever");
         }
 
         public const float kCurvedPipeRadius = 0.3f;
@@ -187,7 +187,7 @@ namespace HighwaySigns.Spike
         {
             var b = new MeshBuilder();
             b.AddBox(Vector3.zero, new Vector3(width, height, 0.08f), Quaternion.identity, new Rect(0, 0, 1, 1), otherSubmesh: 1);
-            return b.Build("HighwaySigns.Panel");
+            return b.Build("SignBuilder.Panel");
         }
     }
 }

@@ -1,11 +1,11 @@
 using System.Collections.Generic;
-using HighwaySigns.Spike;
+using SignBuilder.Spike;
 using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.HighDefinition;
 
-namespace HighwaySigns.Rendering
+namespace SignBuilder.Rendering
 {
     /// <summary>
     /// Draws baked sign faces as thin panels with the game's default lit shader: the face on the front,
@@ -53,7 +53,7 @@ namespace HighwaySigns.Rendering
             var key = (face.Texture as Texture, fixedGlow);
             if (!m_FaceMaterials.TryGetValue(key, out var material))
             {
-                material = CreateMaterial("HighwaySigns.Face." + face.Key, face.Texture, Color.white, 0.35f);
+                material = CreateMaterial("SignBuilder.Face." + face.Key, face.Texture, Color.white, 0.35f);
                 material.SetFloat("_AlphaCutoffEnable", 1f);
                 material.SetFloat("_AlphaCutoff", 0.5f);
                 material.SetTexture("_EmissiveColorMap", face.Texture);
@@ -66,7 +66,7 @@ namespace HighwaySigns.Rendering
 
         public void Draw()
         {
-            m_BackMaterial ??= CreateMaterial("HighwaySigns.PanelBack", Texture2D.whiteTexture, new Color(0.62f, 0.63f, 0.64f), 0.45f);
+            m_BackMaterial ??= CreateMaterial("SignBuilder.PanelBack", Texture2D.whiteTexture, new Color(0.62f, 0.63f, 0.64f), 0.45f);
             foreach (var (mesh, face, matrix) in m_Panels)
             {
                 Graphics.DrawMesh(mesh, matrix, face, 0, null, 0, null, ShadowCastingMode.On, true, null, LightProbeUsage.BlendProbes);

@@ -4,7 +4,7 @@
     {
       "name": "sign-renderer",
       "runtimeExecutable": "python",
-      "runtimeArgs": ["-m", "http.server", "8765", "--directory", "HighwaySigns/Resources"],
+      "runtimeArgs": ["-m", "http.server", "8765", "--directory", "SignBuilder/Resources"],
       "port": 8765
     }
   ]

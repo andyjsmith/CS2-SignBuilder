@@ -4,11 +4,11 @@ using Game.Modding;
 using Game.SceneFlow;
 using Colossal.IO.AssetDatabase;
 
-namespace HighwaySigns
+namespace SignBuilder
 {
     public class Mod : IMod
     {
-        public static ILog log = LogManager.GetLogger($"{nameof(HighwaySigns)}.{nameof(Mod)}").SetShowsErrorsInUI(false);
+        public static ILog log = LogManager.GetLogger($"{nameof(SignBuilder)}.{nameof(Mod)}").SetShowsErrorsInUI(false);
         private Setting m_Setting;
 
         public void OnLoad(UpdateSystem updateSystem)
@@ -17,9 +17,9 @@ namespace HighwaySigns
 
             // Generated meshes and materials live in a mod-owned database; it must be registered
             // before any save that uses them is loaded.
-            AssetDatabase.global.RegisterDatabase(AssetDatabase<Spike.HighwaySignsCache>.instance).ContinueWith(t =>
+            AssetDatabase.global.RegisterDatabase(AssetDatabase<Spike.SignBuilderCache>.instance).ContinueWith(t =>
             {
-                if (t.IsFaulted) log.Error(t.Exception, "Registering the HighwaySigns cache database failed");
+                if (t.IsFaulted) log.Error(t.Exception, "Registering the SignBuilder cache database failed");
             });
             updateSystem.UpdateAt<Spike.SpikeBootstrapSystem>(SystemUpdatePhase.MainLoop);
 
@@ -34,7 +34,7 @@ namespace HighwaySigns
             GameManager.instance.localizationManager.AddSource("en-US", new LocaleEN(m_Setting));
 
 
-            AssetDatabase.global.LoadSettings(nameof(HighwaySigns), m_Setting, new Setting(this));
+            AssetDatabase.global.LoadSettings(nameof(SignBuilder), m_Setting, new Setting(this));
         }
 
         public void OnDispose()

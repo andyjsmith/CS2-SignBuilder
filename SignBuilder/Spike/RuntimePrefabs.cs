@@ -11,7 +11,7 @@ using Unity.Entities;
 using Unity.Mathematics;
 using UnityEngine;
 
-namespace HighwaySigns.Spike
+namespace SignBuilder.Spike
 {
     /// <summary>
     /// Turns generated meshes into real game props (GeometryAsset -> RenderPrefab -> StaticObjectPrefab)

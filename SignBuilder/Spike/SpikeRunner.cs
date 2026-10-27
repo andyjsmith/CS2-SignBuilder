@@ -20,10 +20,10 @@ using Unity.Entities;
 using Unity.Mathematics;
 using UnityEngine;
 
-namespace HighwaySigns.Spike
+namespace SignBuilder.Spike
 {
     /// <summary>
-    /// Automated spike harness, run 7 ("batched"). Only runs when ModsData/HighwaySigns/spike.flag
+    /// Automated spike harness, run 7 ("batched"). Only runs when ModsData/SignBuilder/spike.flag
     /// exists, and deletes that flag immediately so a normal launch afterwards is unaffected.
     ///
     /// Every feature is its own test: a failure or exception is recorded and the run moves on.
@@ -33,7 +33,7 @@ namespace HighwaySigns.Spike
     internal sealed partial class SpikeRunner : MonoBehaviour
     {
         private const float kWatchdogSeconds = 900f;
-        private const string kSaveName = "HighwaySigns_SpikeSave";
+        private const string kSaveName = "SignBuilder_SpikeSave";
 
         private string m_ResourcesDir;
         private float m_StartTime;
@@ -54,7 +54,7 @@ namespace HighwaySigns.Spike
         private float3 m_FocusPoint;
         private float m_FocusYaw;
 
-        public static string FlagPath => Path.Combine(Application.persistentDataPath, "ModsData", "HighwaySigns", "spike.flag");
+        public static string FlagPath => Path.Combine(Application.persistentDataPath, "ModsData", "SignBuilder", "spike.flag");
 
         public static void StartIfFlagged(string modDir)
         {
@@ -62,7 +62,7 @@ namespace HighwaySigns.Spike
             var mode = File.ReadAllText(FlagPath).Trim();
             File.Delete(FlagPath);
 
-            var go = new GameObject("HighwaySigns.SpikeRunner");
+            var go = new GameObject("SignBuilder.SpikeRunner");
             DontDestroyOnLoad(go);
             var runner = go.AddComponent<SpikeRunner>();
             runner.m_ResourcesDir = Path.Combine(modDir, "Resources");
@@ -200,7 +200,7 @@ namespace HighwaySigns.Spike
                 yield return renderer.Render($"Spike/{page}.html", 1024, 512, (t, o) => { face = t; opaque = o; });
                 SpikeReport.Set($"faces.{page}", face == null ? "FAILED to load" : $"opaque={opaque} ms={(Time.realtimeSinceStartup - start) * 1000:F0}");
                 if (face == null) continue;
-                face.name = "HighwaySigns.Face." + page;
+                face.name = "SignBuilder.Face." + page;
                 m_Faces[page] = face;
                 SpikeReport.SavePng(face, $"face_{page}.png");
             }
@@ -210,9 +210,9 @@ namespace HighwaySigns.Spike
         private IEnumerator TestCacheDb()
         {
             // Registered with the global database by Mod.OnLoad.
-            m_Db = AssetDatabase<HighwaySignsCache>.instance;
+            m_Db = AssetDatabase<SignBuilderCache>.instance;
             m_DbFolder = "Meshes";
-            SpikeReport.Set("cacheDb.using", HighwaySignsCache.RootPath);
+            SpikeReport.Set("cacheDb.using", SignBuilderCache.RootPath);
             yield break;
         }
 
@@ -300,7 +300,7 @@ namespace HighwaySigns.Spike
                 }
 
                 var surface = variant == "trussAlt" ? m_AltSurface : m_LightpoleSurface;
-                var prefab = m_Runtime.Create($"HighwaySigns_{variant}", mesh, surface, m_Db, m_DbFolder);
+                var prefab = m_Runtime.Create($"SignBuilder_{variant}", mesh, surface, m_Db, m_DbFolder);
                 m_Prefabs.Add(prefab);
                 SpikeReport.Set($"gantries.{variant}.mesh", $"verts={mesh.vertexCount} bounds={mesh.bounds.size}");
                 for (var i = 0; i < 20; i++) yield return null;
@@ -375,7 +375,7 @@ namespace HighwaySigns.Spike
             var before = SampleFrames(3f);
             yield return before;
 
-            var prefab = m_Runtime.Create("HighwaySigns_perfTruss", GantryFactory.Truss(22f), m_LightpoleSurface, m_Db, m_DbFolder);
+            var prefab = m_Runtime.Create("SignBuilder_perfTruss", GantryFactory.Truss(22f), m_LightpoleSurface, m_Db, m_DbFolder);
             m_Prefabs.Add(prefab);
             for (var i = 0; i < 20; i++) yield return null;
             m_Runtime.ClearOverridable(prefab);
@@ -412,7 +412,7 @@ namespace HighwaySigns.Spike
             var s = SnapAlong(snap, -90f);
             var extent = s.Extent;
             var fwd = s.Tangent * s.MainDirection;
-            var prefab = m_Runtime.Create("HighwaySigns_trussSteel", GantryFactory.Truss(extent.y - extent.x + 5f), surface, m_Db, m_DbFolder);
+            var prefab = m_Runtime.Create("SignBuilder_trussSteel", GantryFactory.Truss(extent.y - extent.x + 5f), surface, m_Db, m_DbFolder);
             m_Prefabs.Add(prefab);
             for (var i = 0; i < 20; i++) yield return null;
             m_Runtime.ClearOverridable(prefab);
@@ -439,7 +439,7 @@ namespace HighwaySigns.Spike
             var originalLast = userState.lastSaveGameMetadata;
 
             var menu = World.DefaultGameObjectInjectionWorld.GetExistingSystemManaged<MenuUISystem>();
-            var preview = ScreenCaptureHelper.CreateRenderTarget("HighwaySigns-Spike", 680, 383);
+            var preview = ScreenCaptureHelper.CreateRenderTarget("SignBuilder-Spike", 680, 383);
             ScreenCaptureHelper.CaptureScreenshot(Camera.main, preview, new MenuHelpers.SaveGamePreviewSettings());
             var saveTask = GameManager.instance.Save(kSaveName, menu.GetSaveInfo(autoSave: false), AssetDatabase.user, preview);
             while (!saveTask.IsCompleted) yield return null;

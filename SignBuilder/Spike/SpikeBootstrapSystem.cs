@@ -4,7 +4,7 @@ using Colossal.Serialization.Entities;
 using Game;
 using Game.Prefabs;
 
-namespace HighwaySigns.Spike
+namespace SignBuilder.Spike
 {
     /// <summary>
     /// Fresh-boot reload test: a save holding our gantries references prefabs that only exist once
@@ -19,7 +19,7 @@ namespace HighwaySigns.Spike
         public static readonly List<StaticObjectPrefab> Created = new();
         public static string Log = "";
 
-        private static readonly string[] kSpikePrefabs = { "HighwaySigns_truss", "HighwaySigns_trussAlt", "HighwaySigns_monotube", "HighwaySigns_cantilever", "HighwaySigns_perfTruss" };
+        private static readonly string[] kSpikePrefabs = { "SignBuilder_truss", "SignBuilder_trussAlt", "SignBuilder_monotube", "SignBuilder_cantilever", "SignBuilder_perfTruss" };
 
         protected override void OnUpdate()
         {
@@ -36,10 +36,10 @@ namespace HighwaySigns.Spike
                 Log += $"preload: donor={pole?.name}; ";
                 if (pole == null) return;
                 ILocalAssetDatabase db = AssetDatabase.user;
-                var folder = "ImportedData/HighwaySigns";
+                var folder = "ImportedData/SignBuilder";
                 try
                 {
-                    db = AssetDatabase<HighwaySignsCache>.instance;
+                    db = AssetDatabase<SignBuilderCache>.instance;
                     folder = "Meshes";
                 }
                 catch (System.Exception e)
