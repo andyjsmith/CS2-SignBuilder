@@ -7,7 +7,7 @@ namespace SignBuilder.Spike
     /// Y up from road level. Span gantries are centred on X = 0; the cantilever's post is at X = 0
     /// and its arm reaches +X.
     /// </summary>
-    internal static class GantryFactory
+    public static class GantryFactory
     {
         public const float kClearance = 6.4f;      // underside of the structure (~21 ft)
         public const float kTrussDepth = 1.5f;
@@ -142,7 +142,7 @@ namespace SignBuilder.Spike
         /// Steel W-beam posts (two flanges and a web), with concrete footings. Local space: X across the
         /// sign, posts behind it (+Z), origin at ground level under the sign's centre.
         /// </summary>
-        public static Mesh GroundPosts(float signWidth, float signHeight, out int postCount)
+        public static Mesh GroundPosts(float signWidth, float signHeight, out int postCount, float extraDepth = 0f)
         {
             var b = new MeshBuilder();
             postCount = signWidth < 2.5f ? 1 : 2;
@@ -154,12 +154,14 @@ namespace SignBuilder.Spike
             const float z = 0.2f; // behind the sign face
             foreach (var x in xs)
             {
-                var h = top + 0.4f;
-                var centre = new Vector3(x, h * 0.5f - 0.4f, z);
+                // Posts run from below ground (or down to the terrain when the road is raised) to the sign top.
+                var bottom = -0.4f - extraDepth;
+                var h = top - bottom;
+                var centre = new Vector3(x, bottom + h * 0.5f, z);
                 b.AddBox(centre + new Vector3(0, 0, -depth * 0.5f + t * 0.5f), new Vector3(flange, h, t), Quaternion.identity);
                 b.AddBox(centre + new Vector3(0, 0, depth * 0.5f - t * 0.5f), new Vector3(flange, h, t), Quaternion.identity);
                 b.AddBox(centre, new Vector3(t, h, depth - t * 2), Quaternion.identity);
-                b.AddBox(new Vector3(x, 0.05f, z), new Vector3(0.6f, 0.1f, 0.6f), Quaternion.identity);
+                b.AddBox(new Vector3(x, 0.05f - extraDepth, z), new Vector3(0.6f, 0.1f, 0.6f), Quaternion.identity);
             }
             return b.Build("SignBuilder.GroundPosts");
         }

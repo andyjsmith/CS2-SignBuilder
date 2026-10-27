@@ -91,6 +91,12 @@
 		<Copy SourceFiles="@(ResourceFilesToDeploy)" DestinationFiles="@(ResourceFilesToDeploy->'$(DeployDir)\Resources\%(RecursiveDir)%(Filename)%(Extension)')" />
 	</Target>
 
+	<!--The UI module (React) builds straight into the deploy folder, which DeployWIP wipes first-->
+	<Target Name="BuildUI" AfterTargets="DeployResources" Condition="'$(NeedBuild)'">
+		<Exec Command="npm install --no-audit --no-fund" WorkingDirectory="UI" Condition="!Exists('UI/node_modules')" />
+		<Exec Command="npm run build" WorkingDirectory="UI" />
+	</Target>
+
 	<ItemGroup>
 		<Reference Update="System">
 			<Private>false</Private>

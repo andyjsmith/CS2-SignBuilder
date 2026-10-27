@@ -8,7 +8,7 @@ namespace SignBuilder.Spike
     /// Builds a tileable galvanized-steel SurfaceAsset from procedural textures, using a vanilla
     /// surface's material template so the game's batch renderer recognises the shader.
     /// </summary>
-    internal static class SteelMaterial
+    public static class SteelMaterial
     {
         public static Texture2D BaseColor(int size = 512)
         {

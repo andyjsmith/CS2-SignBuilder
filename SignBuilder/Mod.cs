@@ -22,10 +22,14 @@ namespace SignBuilder
                 if (t.IsFaulted) log.Error(t.Exception, "Registering the SignBuilder cache database failed");
             });
             updateSystem.UpdateAt<Spike.SpikeBootstrapSystem>(SystemUpdatePhase.MainLoop);
+            updateSystem.UpdateAt<Assemblies.AssemblyBootstrapSystem>(SystemUpdatePhase.MainLoop);
+            updateSystem.UpdateAt<Tools.SignPlacementToolSystem>(SystemUpdatePhase.ToolUpdate);
+            updateSystem.UpdateAt<Systems.SignBuilderUISystem>(SystemUpdatePhase.UIUpdate);
 
             if (GameManager.instance.modManager.TryGetExecutableAsset(this, out var asset))
             {
                 log.Info($"Current mod asset at {asset.path}");
+                Core.SignBuilderRuntime.Initialise(System.IO.Path.GetDirectoryName(asset.path));
                 Spike.SpikeRunner.StartIfFlagged(System.IO.Path.GetDirectoryName(asset.path));
             }
 

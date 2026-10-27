@@ -109,6 +109,16 @@ namespace SignBuilder.Spike
             SpikeReport.Set("game.commandLine", string.Join(" ", Environment.GetCommandLineArgs().Skip(1)));
             yield return new WaitForSecondsRealtime(3f);
 
+            if (m_Mode == "e2e")
+            {
+                yield return RunE2E();
+                yield break;
+            }
+            if (m_Mode == "reload")
+            {
+                yield return RunReload();
+                yield break;
+            }
             if (m_Mode == "debug")
             {
                 yield return RunBakerDebug(300f);

@@ -2,13 +2,36 @@
   "id": "guide-exit-tab",
   "name": "Guide sign with exit tab",
   "scheme": "green",
-  "exitTab": { "text": "EXIT 42B", "align": "right" },
+  "exitTab": {
+    "text": "EXIT 42B",
+    "align": "right"
+  },
   "items": [
-    { "type": "row", "items": [
-      { "type": "shield", "network": "I", "number": "95", "height": 36 },
-      { "type": "text", "text": "NORTH", "height": 15, "font": "RG2014D" }
-    ] },
-    { "type": "text", "text": "Boston" },
-    { "type": "text", "text": "Portsmouth NH" }
-  ]
+    {
+      "type": "row",
+      "items": [
+        {
+          "type": "shield",
+          "network": "I",
+          "number": "95",
+          "height": 36
+        },
+        {
+          "type": "text",
+          "text": "NORTH",
+          "height": 15,
+          "font": "RG2014D"
+        }
+      ]
+    },
+    {
+      "type": "text",
+      "text": "Boston"
+    },
+    {
+      "type": "text",
+      "text": "Portsmouth NH"
+    }
+  ],
+  "support": "truss"
 }

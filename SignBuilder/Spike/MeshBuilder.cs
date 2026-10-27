@@ -8,7 +8,7 @@ namespace SignBuilder.Spike
     /// measured in metres (times <see cref="UvPerMetre"/>), so a tiling material keeps the same
     /// texel density on a 9 m post and a 0.1 m lacing bar instead of stretching.
     /// </summary>
-    internal sealed class MeshBuilder
+    public sealed class MeshBuilder
     {
         private readonly List<Vector3> m_Vertices = new();
         private readonly List<Vector3> m_Normals = new();

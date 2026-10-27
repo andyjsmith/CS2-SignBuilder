@@ -1,0 +1,23 @@
+// Gameface supports a subset of CSS: flexbox works but `gap` does not, so spacing uses margins.
+.panel { width: 1180rem; }
+.body { display: flex; flex-direction: row; align-items: stretch; padding: 8rem; }
+.column { width: 280rem; display: flex; flex-direction: column; }
+.centre { flex: 1; display: flex; flex-direction: column; align-items: center; margin: 0 12rem; }
+.heading { font-size: 14rem; font-weight: bold; color: rgba(255, 255, 255, 0.9); margin: 10rem 0 4rem 0; text-transform: uppercase; }
+.listItem, .listItemOn { padding: 4rem 8rem; margin-bottom: 2rem; font-size: 14rem; color: #fff; background-color: rgba(255, 255, 255, 0.06); border-radius: 3rem; }
+.listItem:hover { background-color: rgba(255, 255, 255, 0.15); }
+.listItemOn { background-color: rgba(255, 212, 0, 0.35); }
+.palette, .choices { display: flex; flex-direction: row; flex-wrap: wrap; }
+.chip, .choice, .choiceOn { padding: 3rem 8rem; margin: 0 4rem 4rem 0; font-size: 13rem; color: #fff; background-color: rgba(255, 255, 255, 0.1); border-radius: 3rem; }
+.chip:hover, .choice:hover { background-color: rgba(255, 255, 255, 0.22); }
+.choiceOn { background-color: rgba(80, 160, 255, 0.6); }
+.field { display: flex; flex-direction: column; margin-bottom: 6rem; }
+.label { font-size: 12rem; color: rgba(255, 255, 255, 0.7); margin-bottom: 2rem; }
+.input { font-size: 14rem; padding: 4rem 6rem; color: #fff; background-color: rgba(0, 0, 0, 0.35); border: 1rem solid rgba(255, 255, 255, 0.3); border-radius: 3rem; }
+.stepper { display: flex; flex-direction: row; align-items: center; }
+.step { width: 26rem; height: 22rem; line-height: 22rem; text-align: center; color: #fff; background-color: rgba(255, 255, 255, 0.12); border-radius: 3rem; }
+.stepValue { width: 56rem; text-align: center; color: #fff; font-size: 14rem; }
+.preview { width: 560rem; height: 330rem; background-color: rgba(120, 140, 110, 0.6); border-radius: 4rem; display: flex; align-items: center; justify-content: center; }
+.hint { font-size: 12rem; color: rgba(255, 255, 255, 0.7); margin: 4rem 0; }
+.status { font-size: 13rem; color: #ffd400; margin: 6rem 0; }
+.actions { margin-top: 10rem; display: flex; flex-direction: row; }

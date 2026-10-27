@@ -15,3 +15,5 @@ export const toolStatus$ = bindValue<string>(group, "toolStatus", "");
 export const setEditorOpen = (open: boolean) => trigger(group, "setEditorOpen", open);
 /** Starts the placement tool with { design, support }. */
 export const startPlacement = (payload: string) => trigger(group, "startPlacement", payload);
+/** Leaves the placement tool (back to the default tool). */
+export const cancelTool = () => trigger(group, "cancelTool");

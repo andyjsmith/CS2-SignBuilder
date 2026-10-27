@@ -3,16 +3,54 @@
   "name": "Auto-size check (long legend, TO route, 3-digit shield)",
   "scheme": "green",
   "items": [
-    { "type": "row", "items": [
-      { "type": "text", "text": "TO", "height": 12, "font": "RG2014D" },
-      { "type": "shield", "network": "I", "number": "495", "height": 36 },
-      { "type": "shield", "network": "STATE", "number": "128", "height": 36 }
-    ] },
-    { "type": "text", "text": "Downtown Springfield" },
-    { "type": "text", "text": "Convention Center" },
-    { "type": "row", "align": "center", "items": [
-      { "type": "arrow", "direction": "up", "height": 24 },
-      { "type": "text", "text": "1/2 MILE", "height": 13, "font": "RG2014D" }
-    ] }
-  ]
+    {
+      "type": "row",
+      "items": [
+        {
+          "type": "text",
+          "text": "TO",
+          "height": 12,
+          "font": "RG2014D"
+        },
+        {
+          "type": "shield",
+          "network": "I",
+          "number": "495",
+          "height": 36
+        },
+        {
+          "type": "shield",
+          "network": "STATE",
+          "number": "128",
+          "height": 36
+        }
+      ]
+    },
+    {
+      "type": "text",
+      "text": "Downtown Springfield"
+    },
+    {
+      "type": "text",
+      "text": "Convention Center"
+    },
+    {
+      "type": "row",
+      "align": "center",
+      "items": [
+        {
+          "type": "arrow",
+          "direction": "up",
+          "height": 24
+        },
+        {
+          "type": "text",
+          "text": "1/2 MILE",
+          "height": 13,
+          "font": "RG2014D"
+        }
+      ]
+    }
+  ],
+  "support": "truss"
 }

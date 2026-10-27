@@ -16,7 +16,7 @@ namespace SignBuilder.Spike
     /// Finds a road edge near a point, reads its geometry and car lanes, and pairs it with a parallel
     /// one-way edge when the highway is divided. Everything here is read-only.
     /// </summary>
-    internal sealed class RoadProbe
+    public sealed class RoadProbe
     {
         public struct LaneInfo
         {

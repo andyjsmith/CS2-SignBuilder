@@ -4,11 +4,30 @@
   "scheme": "brown",
   "align": "center",
   "items": [
-    { "type": "text", "text": "Walden Pond" },
-    { "type": "text", "text": "State Reservation" },
-    { "type": "row", "items": [
-      { "type": "text", "text": "EXIT 2", "height": 13, "font": "RG2014D" },
-      { "type": "arrow", "direction": "up-right", "height": 18 }
-    ] }
-  ]
+    {
+      "type": "text",
+      "text": "Walden Pond"
+    },
+    {
+      "type": "text",
+      "text": "State Reservation"
+    },
+    {
+      "type": "row",
+      "items": [
+        {
+          "type": "text",
+          "text": "EXIT 2",
+          "height": 13,
+          "font": "RG2014D"
+        },
+        {
+          "type": "arrow",
+          "direction": "up-right",
+          "height": 18
+        }
+      ]
+    }
+  ],
+  "support": "curvedCantilever"
 }

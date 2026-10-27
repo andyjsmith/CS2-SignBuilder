@@ -17,7 +17,7 @@ namespace SignBuilder.Spike
     /// Turns generated meshes into real game props (GeometryAsset -> RenderPrefab -> StaticObjectPrefab)
     /// and spawns them through the object definition pipeline. Proven in runs 2-6.
     /// </summary>
-    internal sealed class RuntimePrefabs
+    public sealed class RuntimePrefabs
     {
         private readonly World m_World;
         private readonly PrefabSystem m_PrefabSystem;
@@ -66,6 +66,57 @@ namespace SignBuilder.Spike
                 throw new InvalidOperationException($"PrefabSystem.AddPrefab failed for {name}");
             }
             return objectPrefab;
+        }
+
+        /// <summary>Saves <paramref name="mesh"/> (all submeshes) as a GeometryAsset and returns it, disposed and streamable.</summary>
+        public static GeometryAsset SaveGeometry(Mesh mesh, ILocalAssetDatabase database, string folder, string name)
+        {
+            var path = AssetDataPath.Create(folder, name);
+            // Write the file, then dispose so the in-memory data is dropped and the
+            // GeometryAssetLoadingSystem streams it back from disk (see spike run 2).
+            using var geometry = database.AddAsset<GeometryAsset, Mesh[]>(path, new[] { mesh });
+            geometry.Save();
+            return geometry;
+        }
+
+        /// <summary>
+        /// Registers a static object prefab named <paramref name="name"/> that renders an existing
+        /// geometry asset with one surface per submesh. Used both for new builds and to re-create
+        /// prefabs from stored asset ids before a save loads. Returns null if it already exists.
+        /// </summary>
+        public StaticObjectPrefab Register(string name, GeometryAsset geometry, SurfaceAsset[] surfaces, Bounds3 bounds, int indexCount, int vertexCount)
+        {
+            if (m_PrefabSystem.TryGetPrefab(new PrefabID(nameof(StaticObjectPrefab), name), out var existing)) return existing as StaticObjectPrefab;
+            var renderPrefab = ScriptableObject.CreateInstance<RenderPrefab>();
+            renderPrefab.name = name + "_Mesh";
+            renderPrefab.geometryAsset = geometry;
+            renderPrefab.surfaceAssets = surfaces;
+            renderPrefab.bounds = bounds;
+            renderPrefab.indexCount = indexCount;
+            renderPrefab.vertexCount = vertexCount;
+            renderPrefab.meshCount = surfaces.Length;
+            var size = bounds.max - bounds.min;
+            renderPrefab.surfaceArea = size.x * size.y;
+
+            var objectPrefab = ScriptableObject.CreateInstance<StaticObjectPrefab>();
+            objectPrefab.name = name;
+            objectPrefab.m_Meshes = new[] { new ObjectMeshInfo { m_Mesh = renderPrefab, m_Position = float3.zero, m_Rotation = quaternion.identity } };
+            if (!m_PrefabSystem.AddPrefab(renderPrefab) || !m_PrefabSystem.AddPrefab(objectPrefab))
+            {
+                throw new InvalidOperationException($"PrefabSystem.AddPrefab failed for {name}");
+            }
+            return objectPrefab;
+        }
+
+        /// <summary>
+        /// Deletes a placed object. Marking it Deleted (as bulldozer mods do) lets the game's own
+        /// cleanup remove it; a Delete definition instead re-created it (end-to-end run 1).
+        /// </summary>
+        public void Delete(Entity entity)
+        {
+            var em = m_World.EntityManager;
+            if (!em.Exists(entity) || em.HasComponent<Deleted>(entity)) return;
+            em.AddComponent<Deleted>(entity);
         }
 
         /// <summary>
