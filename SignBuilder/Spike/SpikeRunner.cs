@@ -114,6 +114,11 @@ namespace SignBuilder.Spike
                 yield return RunE2E();
                 yield break;
             }
+            if (m_Mode == "uitest")
+            {
+                yield return RunUITest();
+                yield break;
+            }
             if (m_Mode == "reload")
             {
                 yield return RunReload();

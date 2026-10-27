@@ -222,6 +222,31 @@ namespace SignBuilder.Spike
             File.WriteAllText(Path.Combine(SignBuilderRuntime.DataDir, "e2e_expected.txt"), string.Join("\n", m_Placed.Select(p => p.record.PrefabName)));
         }
 
+        /// <summary>
+        /// UI test mode: opens the editor and waits while an external DevTools script drives it.
+        /// Creating spike/shot-NAME.flag takes screenshot NAME.png; spike/done.flag ends the run.
+        /// </summary>
+        private IEnumerator RunUITest()
+        {
+            yield return WaitForGame();
+            yield return new WaitForSecondsRealtime(4f);
+            World.DefaultGameObjectInjectionWorld.GetOrCreateSystemManaged<SignBuilderUISystem>().SetEditorOpen(true);
+            SpikeReport.Set("ui.ready", true);
+            SpikeReport.Write();
+            var end = Time.realtimeSinceStartup + 300f;
+            while (Time.realtimeSinceStartup < end && !File.Exists(Path.Combine(SpikeReport.OutputDir, "done.flag")))
+            {
+                foreach (var flag in Directory.GetFiles(SpikeReport.OutputDir, "shot-*.flag"))
+                {
+                    var name = Path.GetFileNameWithoutExtension(flag).Substring(5);
+                    File.Delete(flag);
+                    SpikeReport.Screenshot($"ui_{name}.png");
+                }
+                yield return null;
+            }
+            Finish();
+        }
+
         /// <summary>Reload mode: booted into the E2E save; are the assemblies back and rendering?</summary>
         private IEnumerator RunReload()
         {

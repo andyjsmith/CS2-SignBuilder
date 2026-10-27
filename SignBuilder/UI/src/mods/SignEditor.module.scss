@@ -16,7 +16,7 @@
 .input { font-size: 14rem; padding: 4rem 6rem; color: #fff; background-color: rgba(0, 0, 0, 0.35); border: 1rem solid rgba(255, 255, 255, 0.3); border-radius: 3rem; }
 .stepper { display: flex; flex-direction: row; align-items: center; }
 .step { width: 26rem; height: 22rem; line-height: 22rem; text-align: center; color: #fff; background-color: rgba(255, 255, 255, 0.12); border-radius: 3rem; }
-.stepValue { width: 56rem; text-align: center; color: #fff; font-size: 14rem; }
+.stepValue { width: 72rem; text-align: center; color: #fff; font-size: 14rem; white-space: nowrap; }
 .preview { width: 560rem; height: 330rem; background-color: rgba(120, 140, 110, 0.6); border-radius: 4rem; display: flex; align-items: center; justify-content: center; }
 .hint { font-size: 12rem; color: rgba(255, 255, 255, 0.7); margin: 4rem 0; }
 .status { font-size: 13rem; color: #ffd400; margin: 6rem 0; }

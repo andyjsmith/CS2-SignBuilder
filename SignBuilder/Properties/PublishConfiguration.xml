@@ -8,7 +8,16 @@
 	<!--Long description of the mod. Single line or multi line. Supports minimal markdown subset-->
 	<!--LongDescription Value="This is a long description" /-->
 	<LongDescription>
-This is a long description
+Design road signs in game and place them on your roads.
+
+- Editor with templates: green guide signs, blue services and brown attraction signs
+- Interstate, US and state route shields, exit tabs, EXIT ONLY panels, arrows, distances
+- MUTCD-style automatic layout using the Roadgeek 2014 highway fonts
+- Up to four signs per structure
+- Mountings: overhead truss, curved or straight tube spans and cantilevers, roadside posts
+- Click a road to place: the structure is snapped across the road and sized to it
+- Click a placed sign to load it back into the editor and replace it
+- Placed signs are normal props that save with your city
 	</LongDescription>
 	<!--Thumbnail-->
 	<Thumbnail Value="Properties/Thumbnail.png" />

@@ -1,4 +1,5 @@
 import { useValue } from "cs2/api";
+import { getModule } from "cs2/modding";
 import { Button, Panel } from "cs2/ui";
 import { useEffect, useMemo, useState } from "react";
 import { cancelTool, editingDesign$, editorOpen$, setEditorOpen, startPlacement, templates$, toolStatus$ } from "./bindings";
@@ -31,10 +32,20 @@ const Field = (props: { label: string; children: any }) => (
   </div>
 );
 
-const TextBox = (props: { value: string; onChange: (v: string) => void }) => (
-  <input className={styles.input} type="text" value={props.value}
-    onChange={(e) => props.onChange((e.target as HTMLInputElement).value)} />
-);
+// The game's own text input takes keyboard focus properly (typing does not trigger game hotkeys);
+// fall back to a plain <input> if a game update moves the module.
+const VanillaTextInput: any = (() => {
+  try { return getModule("game-ui/common/input/text/text-input.tsx", "TextInput"); } catch { return null; }
+})();
+
+const TextBox = (props: { value: string; onChange: (v: string) => void }) =>
+  VanillaTextInput ? (
+    <VanillaTextInput className={styles.input} type="text" multiline={1} value={props.value}
+      onChange={(e: any) => props.onChange((e.target as HTMLInputElement).value)} />
+  ) : (
+    <input className={styles.input} type="text" value={props.value}
+      onChange={(e) => props.onChange((e.target as HTMLInputElement).value)} />
+  );
 
 const NumberBox = (props: { value: number; onChange: (v: number) => void; step?: number }) => (
   <div className={styles.stepper}>

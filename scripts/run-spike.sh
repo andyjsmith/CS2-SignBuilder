@@ -24,7 +24,7 @@ fi
 mkdir -p "$user_dir/ModsData/SignBuilder"
 printf '%s' "$mode" > "$user_dir/ModsData/SignBuilder/spike.flag"
 extra=""
-[[ "$mode" == "debug" ]] && extra=" -uiDeveloperMode"
+[[ "$mode" == "debug" || "$mode" == "uitest" ]] && extra=" -uiDeveloperMode"
 if [[ -n "$save" ]]; then
   printf -- '-startGame=%s -noSplash%s' "$save" "$extra" > "$user_dir/runOnce.txt"
 else
