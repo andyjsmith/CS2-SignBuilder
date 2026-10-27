@@ -60,6 +60,12 @@
 		<Reference Include="Colossal.PSI.Common">
 			<Private>false</Private>
 		</Reference>
+		<Reference Include="cohtml.Net">
+			<Private>false</Private>
+		</Reference>
+		<Reference Include="Newtonsoft.Json">
+			<Private>false</Private>
+		</Reference>
 		<Reference Include="Cohtml.Runtime">
 			<Private>false</Private>
 		</Reference>

@@ -1,0 +1,15 @@
+{
+  "id": "guide-exit-only",
+  "name": "Guide sign with EXIT ONLY panel",
+  "scheme": "green",
+  "exitTab": { "text": "EXIT 44", "align": "right" },
+  "bottomBar": { "type": "exitOnly", "arrows": 2, "height": 15 },
+  "align": "center",
+  "items": [
+    { "type": "row", "items": [
+      { "type": "shield", "network": "US", "number": "1", "height": 36 },
+      { "type": "text", "text": "SOUTH", "height": 15, "font": "RG2014D" }
+    ] },
+    { "type": "text", "text": "Saugus" }
+  ]
+}

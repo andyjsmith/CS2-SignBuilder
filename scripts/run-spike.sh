@@ -3,7 +3,9 @@
 # harness armed, and waits for the game to quit on its own.
 #
 #   scripts/run-spike.sh [mode] [save-guid]
-#     mode       "full" (default) runs every spike test; "smoke" only loads, screenshots and quits.
+#     mode       "full" (default) runs every spike test; "smoke" only loads, screenshots and quits;
+#                "phase1" runs the Phase 1 batch; "debug" bakes one sign and idles with the UI
+#                DevTools on localhost:9444 (create spike/done.flag to quit early).
 #     save-guid  SaveGameMetadata guid to load (-startGame=...); omit to continue the last save.
 #
 # Needs the Steam launch option `"<game dir>\Cities2.exe" %command%` so the Paradox launcher is
@@ -21,10 +23,12 @@ fi
 
 mkdir -p "$user_dir/ModsData/HighwaySigns"
 printf '%s' "$mode" > "$user_dir/ModsData/HighwaySigns/spike.flag"
+extra=""
+[[ "$mode" == "debug" ]] && extra=" -uiDeveloperMode"
 if [[ -n "$save" ]]; then
-  printf -- '-startGame=%s -noSplash' "$save" > "$user_dir/runOnce.txt"
+  printf -- '-startGame=%s -noSplash%s' "$save" "$extra" > "$user_dir/runOnce.txt"
 else
-  printf -- '-continuelastsave -noSplash' > "$user_dir/runOnce.txt"
+  printf -- '-continuelastsave -noSplash%s' "$extra" > "$user_dir/runOnce.txt"
 fi
 
 cmd.exe //c start "" "steam://rungameid/949230"

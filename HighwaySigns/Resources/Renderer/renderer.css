@@ -1,0 +1,24 @@
+@font-face { font-family: "RG2014B"; src: url("../Fonts/RG2014B.ttf"); }
+@font-face { font-family: "RG2014C"; src: url("../Fonts/RG2014C.ttf"); }
+@font-face { font-family: "RG2014D"; src: url("../Fonts/RG2014D.ttf"); }
+@font-face { font-family: "RG2014E"; src: url("../Fonts/RG2014E.ttf"); }
+@font-face { font-family: "RG2014EM"; src: url("../Fonts/RG2014EM.ttf"); }
+@font-face { font-family: "RG2014EEM"; src: url("../Fonts/RG2014EEM.ttf"); }
+@font-face { font-family: "RG2014F"; src: url("../Fonts/RG2014F.ttf"); }
+
+/* Gameface clips painting to the body box; with an absolutely positioned root the body would be
+   0px tall and nothing would draw, so give the page the full view size explicitly. */
+html, body { margin: 0; padding: 0; width: 100%; height: 100%; background: transparent; overflow: hidden; }
+#root { position: absolute; left: 0; top: 0; }
+
+.sign { display: flex; flex-direction: column; align-items: stretch; }
+.tab-row { display: flex; flex-direction: row; }
+.tab, .panel, .bar { position: relative; }
+.tab-inner, .panel-inner { display: flex; flex-direction: column; }
+.stack { display: flex; flex-direction: column; }
+.row { display: flex; flex-direction: row; align-items: center; }
+.text { position: relative; white-space: nowrap; }
+.shield { position: relative; }
+.shield img { position: absolute; left: 0; top: 0; }
+.shield .num { position: absolute; left: 0; text-align: center; white-space: nowrap; }
+.error { color: #f00; font-size: 24px; background: #000; }

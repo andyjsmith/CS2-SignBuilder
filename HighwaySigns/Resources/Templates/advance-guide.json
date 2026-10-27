@@ -1,0 +1,14 @@
+{
+  "id": "advance-guide",
+  "name": "Roadside advance guide sign (two posts)",
+  "scheme": "green",
+  "exitTab": { "text": "EXIT 43", "align": "right" },
+  "items": [
+    { "type": "row", "items": [
+      { "type": "shield", "network": "STATE", "number": "2", "height": 30 },
+      { "type": "text", "text": "WEST", "height": 13, "font": "RG2014D" }
+    ] },
+    { "type": "text", "text": "Concord", "height": 13 },
+    { "type": "text", "text": "1 MILE", "height": 12, "font": "RG2014D" }
+  ]
+}

@@ -30,7 +30,7 @@ namespace HighwaySigns.Spike
     /// Results are rewritten after each test. Safe tests (and their screenshots) run first; the risky
     /// ones (custom material asset, save + reload) run last so they cannot spoil earlier results.
     /// </summary>
-    internal sealed class SpikeRunner : MonoBehaviour
+    internal sealed partial class SpikeRunner : MonoBehaviour
     {
         private const float kWatchdogSeconds = 900f;
         private const string kSaveName = "HighwaySigns_SpikeSave";
@@ -39,6 +39,7 @@ namespace HighwaySigns.Spike
         private float m_StartTime;
         private bool m_Finished;
         private bool m_Smoke;
+        private string m_Mode;
 
         private readonly SignPanels m_Panels = new();
         private readonly Dictionary<string, Texture2D> m_Faces = new();
@@ -66,6 +67,8 @@ namespace HighwaySigns.Spike
             var runner = go.AddComponent<SpikeRunner>();
             runner.m_ResourcesDir = Path.Combine(modDir, "Resources");
             runner.m_Smoke = mode == "smoke";
+            runner.m_Mode = mode;
+            SpikeBootstrapSystem.Mode = mode;
             Mod.log.Info($"Spike runner started (mode '{mode}'), resources at {runner.m_ResourcesDir}");
         }
 
@@ -85,7 +88,13 @@ namespace HighwaySigns.Spike
             }
         }
 
-        private void LateUpdate() => m_Panels.Draw();
+        private void LateUpdate()
+        {
+            if (s_CameraLocked) ApplyCamera();
+            m_Panels.Draw();
+            UpdateNightGlow();
+            m_Signs.Draw();
+        }
 
         // ------------------------------------------------------------------ orchestration
 
@@ -99,6 +108,17 @@ namespace HighwaySigns.Spike
             SpikeReport.Set("game.startedFrom", GameManager.instance.gameMode);
             SpikeReport.Set("game.commandLine", string.Join(" ", Environment.GetCommandLineArgs().Skip(1)));
             yield return new WaitForSecondsRealtime(3f);
+
+            if (m_Mode == "debug")
+            {
+                yield return RunBakerDebug(300f);
+                yield break;
+            }
+            if (m_Mode == "phase1")
+            {
+                yield return RunPhase1();
+                yield break;
+            }
 
             // Smoke mode: only checks how the game booted (e.g. auto-resume via runOnce.txt), then quits.
             if (m_Smoke)
@@ -189,30 +209,11 @@ namespace HighwaySigns.Spike
         /// <summary>Registers the mod-owned asset database; falls back to the user database.</summary>
         private IEnumerator TestCacheDb()
         {
-            m_Db = AssetDatabase.user;
-            m_DbFolder = "ImportedData/HighwaySigns";
-            Task task = null;
-            ILocalAssetDatabase db = null;
-            try
-            {
-                db = AssetDatabase<HighwaySignsCache>.instance;
-                task = AssetDatabase.global.RegisterDatabase(db);
-            }
-            catch (Exception e)
-            {
-                SpikeReport.Set("cacheDb.registerException", e.Message);
-            }
-            if (task != null)
-            {
-                while (!task.IsCompleted) yield return null;
-                SpikeReport.Set("cacheDb.registered", task.Status);
-                if (task.Status == TaskStatus.RanToCompletion)
-                {
-                    m_Db = db;
-                    m_DbFolder = "Meshes";
-                }
-            }
-            SpikeReport.Set("cacheDb.using", m_Db == AssetDatabase.user ? "AssetDatabase.user (fallback)" : $"{HighwaySignsCache.RootPath}");
+            // Registered with the global database by Mod.OnLoad.
+            m_Db = AssetDatabase<HighwaySignsCache>.instance;
+            m_DbFolder = "Meshes";
+            SpikeReport.Set("cacheDb.using", HighwaySignsCache.RootPath);
+            yield break;
         }
 
         /// <summary>Snaps to the highway nearest the camera's pivot.</summary>
@@ -407,6 +408,7 @@ namespace HighwaySigns.Spike
         {
             var snap = m_Snap ?? FallbackSnap();
             var surface = SteelMaterial.Create(m_Db, m_DbFolder, m_LightpoleSurface, s => SpikeReport.Set("steel.log", s));
+            m_SteelSurface = surface;
             var s = SnapAlong(snap, -90f);
             var extent = s.Extent;
             var fwd = s.Tangent * s.MainDirection;
@@ -521,14 +523,30 @@ namespace HighwaySigns.Spike
         private static CameraController CameraController() =>
             World.DefaultGameObjectInjectionWorld.GetExistingSystemManaged<CameraUpdateSystem>()?.gamePlayController;
 
+        private static bool s_CameraLocked;
+        private static (float3 pivot, float yaw, float pitch, float zoom) s_CameraTarget;
+
+        /// <summary>
+        /// Points the gameplay camera and keeps it there (re-applied every frame, player input off) so
+        /// edge scrolling or a resting mouse cannot drift it between the request and the screenshot.
+        /// </summary>
         private static void SetCamera(float3 pivot, float yaw, float pitch, float zoom)
+        {
+            s_CameraTarget = (pivot, yaw, pitch, zoom);
+            s_CameraLocked = true;
+            ApplyCamera();
+            var controller = CameraController();
+            SpikeReport.Set("camera.set", $"pivot={pivot} yaw={yaw:F0} pitch={pitch:F0} zoom={zoom:F0} -> rotation={controller?.rotation} zoom={controller?.zoom}");
+        }
+
+        private static void ApplyCamera()
         {
             var controller = CameraController();
             if (controller == null) return;
-            controller.pivot = pivot;
-            controller.rotation = new Vector3(pitch, yaw, 0f);
-            controller.zoom = zoom;
-            SpikeReport.Set("camera.set", $"pivot={pivot} yaw={yaw:F0} pitch={pitch:F0} zoom={zoom:F0} -> rotation={controller.rotation} zoom={controller.zoom}");
+            controller.inputEnabled = false;
+            controller.pivot = s_CameraTarget.pivot;
+            controller.rotation = new Vector3(s_CameraTarget.pitch, s_CameraTarget.yaw, 0f);
+            controller.zoom = s_CameraTarget.zoom;
         }
 
         /// <summary>Samples frame times for <paramref name="seconds"/>; Current ends as "avg/p95/max ms over n frames".</summary>
@@ -560,6 +578,9 @@ namespace HighwaySigns.Spike
         private void Finish()
         {
             if (m_Finished) return;
+            s_CameraLocked = false;
+            var controller = CameraController();
+            if (controller != null) controller.inputEnabled = true;
             m_Finished = true;
             SpikeReport.Write();
             Mod.log.Info("Spike run finished, quitting");

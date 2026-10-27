@@ -1,0 +1,2 @@
+interstate.svg, us_route.svg: OpenStreetMap Americana shield icons (CC0 1.0)
+https://github.com/osm-americana/openstreetmap-americana/tree/main/icons

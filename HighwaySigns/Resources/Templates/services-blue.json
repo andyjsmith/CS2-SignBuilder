@@ -1,0 +1,10 @@
+{
+  "id": "services-blue",
+  "name": "Motorist services",
+  "scheme": "blue",
+  "align": "center",
+  "items": [
+    { "type": "text", "text": "GAS  FOOD  LODGING", "height": 13 },
+    { "type": "text", "text": "NEXT RIGHT", "height": 13, "font": "RG2014D" }
+  ]
+}

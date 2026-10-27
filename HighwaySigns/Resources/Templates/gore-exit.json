@@ -1,0 +1,14 @@
+{
+  "id": "gore-exit",
+  "name": "Gore exit sign (single post)",
+  "scheme": "green",
+  "cornerRadius": 6,
+  "border": 1.25,
+  "items": [
+    { "type": "text", "text": "EXIT", "height": 12, "font": "RG2014E" },
+    { "type": "row", "align": "center", "items": [
+      { "type": "text", "text": "42B", "height": 12, "font": "RG2014E" },
+      { "type": "arrow", "direction": "up-right", "height": 14 }
+    ] }
+  ]
+}
