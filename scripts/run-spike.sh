@@ -1,0 +1,38 @@
+#!/usr/bin/env bash
+# Launches Cities: Skylines II through Steam straight into a save, with the HighwaySigns spike
+# harness armed, and waits for the game to quit on its own.
+#
+#   scripts/run-spike.sh [mode] [save-guid]
+#     mode       "full" (default) runs every spike test; "smoke" only loads, screenshots and quits.
+#     save-guid  SaveGameMetadata guid to load (-startGame=...); omit to continue the last save.
+#
+# Needs the Steam launch option `"<game dir>\Cities2.exe" %command%` so the Paradox launcher is
+# skipped. runOnce.txt is read once by the game at boot, appended to its command line and deleted.
+set -euo pipefail
+
+mode="${1:-full}"
+save="${2:-}"
+user_dir="$LOCALAPPDATA/../LocalLow/Colossal Order/Cities Skylines II"
+
+if tasklist | grep -qi cities2.exe; then
+  echo "Cities2.exe is already running; close it first." >&2
+  exit 1
+fi
+
+mkdir -p "$user_dir/ModsData/HighwaySigns"
+printf '%s' "$mode" > "$user_dir/ModsData/HighwaySigns/spike.flag"
+if [[ -n "$save" ]]; then
+  printf -- '-startGame=%s -noSplash' "$save" > "$user_dir/runOnce.txt"
+else
+  printf -- '-continuelastsave -noSplash' > "$user_dir/runOnce.txt"
+fi
+
+cmd.exe //c start "" "steam://rungameid/949230"
+echo "Launched (mode=$mode, save=${save:-last}); waiting for the game to quit..."
+
+sleep 20
+for _ in $(seq 1 200); do
+  tasklist | grep -qi cities2.exe || break
+  sleep 5
+done
+echo "Game exited. Results: $user_dir/ModsData/HighwaySigns/spike"

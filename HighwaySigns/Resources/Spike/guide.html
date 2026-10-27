@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  @font-face { font-family: "RG2014D"; src: url("../Fonts/RG2014D.ttf"); }
+  @font-face { font-family: "RG2014EM"; src: url("../Fonts/RG2014EM.ttf"); }
+
+  html, body { margin: 0; padding: 0; width: 1024px; height: 512px; overflow: hidden; background: transparent; }
+
+  /* Exit tab sits above the main panel, flush with its right edge */
+  .tab {
+    position: absolute; right: 0; top: 0; width: 300px; height: 96px;
+    background: #006b45; border-radius: 18px 18px 0 0;
+  }
+  .tab-inner {
+    position: absolute; left: 8px; right: 8px; top: 8px; bottom: 0;
+    border: 6px solid #fff; border-bottom: none; border-radius: 12px 12px 0 0;
+    color: #fff; font-family: "RG2014EM"; font-size: 64px; line-height: 82px; text-align: center;
+  }
+
+  .panel {
+    position: absolute; left: 0; top: 96px; width: 1024px; height: 416px;
+    background: #006b45; border-radius: 22px 0 22px 22px;
+  }
+  .panel-inner {
+    position: absolute; left: 8px; right: 8px; top: 8px; bottom: 8px;
+    border: 6px solid #fff; border-radius: 16px;
+  }
+
+  .shield { position: absolute; left: 60px; top: 40px; width: 150px; height: 150px; }
+  .shield img { width: 150px; height: 150px; }
+  .shield .num {
+    position: absolute; left: 0; width: 150px; top: 48px;
+    font-family: "RG2014D"; font-size: 72px; color: #fff; text-align: center;
+  }
+  .dir { position: absolute; left: 240px; top: 92px; font-family: "RG2014D"; font-size: 64px; color: #fff; }
+  .city { position: absolute; left: 60px; top: 210px; font-family: "RG2014EM"; font-size: 96px; color: #fff; }
+
+  /* E11-1 style EXIT ONLY strip across the bottom */
+  .exitonly {
+    position: absolute; left: 14px; right: 14px; bottom: 14px; height: 84px;
+    background: #ffcc00; border-radius: 0 0 12px 12px;
+    display: flex; flex-direction: row; align-items: center; justify-content: center;
+    font-family: "RG2014EM"; font-size: 60px; color: #000;
+  }
+  .arrow { width: 44px; height: 64px; margin: 0 28px; }
+</style>
+</head>
+<body>
+  <div class="tab"><div class="tab-inner">EXIT 42B</div></div>
+  <div class="panel">
+    <div class="panel-inner">
+      <div class="shield"><img src="interstate.svg"><div class="num">95</div></div>
+      <div class="dir">NORTH</div>
+      <div class="city">Boston</div>
+    </div>
+    <div class="exitonly">
+      EXIT
+      <svg class="arrow" viewBox="0 0 44 64"><path d="M14 0 H30 V36 H44 L22 64 L0 36 H14 Z" fill="#000"/></svg>
+      ONLY
+    </div>
+  </div>
+</body>
+</html>
