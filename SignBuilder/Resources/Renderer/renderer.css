@@ -11,14 +11,14 @@
 html, body { margin: 0; padding: 0; width: 100%; height: 100%; background: transparent; overflow: hidden; }
 #root { position: absolute; left: 0; top: 0; }
 
-.sign { display: flex; flex-direction: column; align-items: stretch; }
-.tab-row { display: flex; flex-direction: row; }
-.tab, .panel, .bar { position: relative; }
-.tab-inner, .panel-inner { display: flex; flex-direction: column; }
-.stack { display: flex; flex-direction: column; }
-.row { display: flex; flex-direction: row; align-items: center; }
-.text { position: relative; white-space: nowrap; }
-.shield { position: relative; }
-.shield img { position: absolute; left: 0; top: 0; }
-.shield .num { position: absolute; left: 0; text-align: center; white-space: nowrap; }
-.error { color: #f00; font-size: 24px; background: #000; }
+.sb-sign { display: flex; flex-direction: column; align-items: stretch; }
+.sb-tab-row { display: flex; flex-direction: row; }
+.sb-tab, .sb-panel, .sb-bar { position: relative; }
+.sb-tab-inner, .sb-panel-inner { display: flex; flex-direction: column; }
+.sb-stack { display: flex; flex-direction: column; }
+.sb-row { display: flex; flex-direction: row; align-items: center; }
+.sb-text { position: relative; white-space: nowrap; }
+.sb-shield { position: relative; }
+.sb-shield img { position: absolute; left: 0; top: 0; }
+.sb-shield .sb-num { position: absolute; left: 0; text-align: center; white-space: nowrap; }
+.sb-error { color: #f00; font-size: 24px; background: #000; }

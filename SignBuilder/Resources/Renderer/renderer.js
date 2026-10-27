@@ -36,6 +36,16 @@
   };
 
   var ppi = 3;
+  // Assets resolve relative to this script so the renderer also works when loaded into the game's
+  // main UI page (the editor preview), not only from renderer.html.
+  var BASE = ((document.currentScript && document.currentScript.src) || "").replace(/[^\/]*$/, "");
+  var annotate = false;
+
+  // Tags an element with the design path of the item it renders, so the editor can map clicks back.
+  function tag(e, path) {
+    if (annotate && e && path != null) e.setAttribute("data-sb-path", path);
+    return e;
+  }
 
   function px(inches) {
     return (Math.round(inches * ppi * 100) / 100) + "px";
@@ -75,7 +85,7 @@
 
   function renderText(item, ctx) {
     var h = item.height || DEFAULTS.textHeight;
-    var e = el("div", "text", {
+    var e = el("div", "sb-text", {
       fontFamily: item.font || ctx.font,
       fontSize: px(h * 1.75),
       lineHeight: px(h),
@@ -99,7 +109,7 @@
     var h = item.height || 36;
     var number = String(item.number || "");
     var w = h * def.aspect * (number.length >= 3 ? 1.25 : 1);
-    var box = el("div", "shield", { width: px(w), height: px(h) });
+    var box = el("div", "sb-shield", { width: px(w), height: px(h) });
     if (def.circle) {
       box.appendChild(el("div", null, {
         position: "absolute", left: "0px", top: "0px", width: px(w), height: px(h),
@@ -111,11 +121,11 @@
       }));
     } else {
       var img = el("img", null, { width: px(w), height: px(h) });
-      img.src = def.img;
+      img.src = BASE + def.img;
       box.appendChild(img);
     }
     var nh = h * def.num * (number.length >= 3 ? 0.9 : 1);
-    var num = el("div", "num", {
+    var num = el("div", "sb-num", {
       width: px(w), top: px(h * def.top + nh * 0.125),
       fontFamily: number.length >= 3 ? "RG2014C" : def.font,
       fontSize: px(nh * 1.75), lineHeight: px(nh), height: px(nh), color: def.color,
@@ -165,14 +175,14 @@
     }
   }
 
-  function renderContainer(item, ctx, horizontal) {
-    var e = el("div", horizontal ? "row" : "stack");
+  function renderContainer(item, ctx, horizontal, path) {
+    var e = el("div", horizontal ? "sb-row" : "sb-stack");
     var align = { start: "flex-start", left: "flex-start", center: "center", end: "flex-end", right: "flex-end" }[item.align || (horizontal ? "center" : "start")];
     if (horizontal) e.style.justifyContent = item.justify === "between" ? "space-between" : "flex-start";
     e.style.alignItems = align;
     var items = item.items || [];
     items.forEach(function (child, i) {
-      var c = renderItem(child, ctx);
+      var c = renderItem(child, ctx, path == null ? null : (path === "" ? String(i) : path + "." + i));
       if (!c) return;
       if (i > 0) {
         // Gap between neighbours, scaled from the larger legend height of the pair.
@@ -187,17 +197,19 @@
     return e;
   }
 
-  function renderItem(item, ctx) {
+  function renderItem(item, ctx, path) {
+    var e;
     switch (item && item.type) {
-      case "text": return renderText(item, ctx);
-      case "shield": return renderShield(item, ctx);
-      case "arrow": return renderArrow(item, ctx);
-      case "row": return renderContainer(item, ctx, true);
-      case "stack": return renderContainer(item, ctx, false);
-      case "spacer": return el("div", null, { width: px(item.width || 0), height: px(item.height || 0) });
-      case "divider": return el("div", null, { alignSelf: "stretch", height: px(item.thickness || DEFAULTS.border), backgroundColor: item.color || ctx.fg });
+      case "text": e = renderText(item, ctx); break;
+      case "shield": e = renderShield(item, ctx); break;
+      case "arrow": e = renderArrow(item, ctx); break;
+      case "row": e = renderContainer(item, ctx, true, path); break;
+      case "stack": e = renderContainer(item, ctx, false, path); break;
+      case "spacer": e = el("div", null, { width: px(item.width || 0), height: px(item.height || 0) }); break;
+      case "divider": e = el("div", null, { alignSelf: "stretch", height: px(item.thickness || DEFAULTS.border), backgroundColor: item.color || ctx.fg }); break;
       default: return null;
     }
+    return tag(e, path);
   }
 
   // ---------------------------------------------------------------- sign-level parts
@@ -218,7 +230,7 @@
     var items = bar.type === "exitOnly" ? exitOnlyItems(bar) : (bar.items || []);
     var h = bar.type === "exitOnly" ? (bar.height || 15) * 1.5 : heightOf({ type: "row", items: items });
     var pad = (bar.padding != null ? bar.padding : h * 0.35);
-    var e = el("div", "bar", {
+    var e = el("div", "sb-bar", {
       backgroundColor: s.bg, padding: px(pad) + " " + px(pad * 2),
       borderBottomLeftRadius: px(innerRadius), borderBottomRightRadius: px(innerRadius),
       display: "flex", flexDirection: "row", justifyContent: "center",
@@ -237,28 +249,28 @@
     var tab = doc.exitTab;
     var tabSide = tab ? (tab.align || "right") : null;
 
-    var sign = el("div", "sign");
+    var sign = el("div", "sb-sign");
 
     if (tab) {
       var th = tab.height || 15;
-      var tabRow = el("div", "tab-row", { justifyContent: { left: "flex-start", center: "center", right: "flex-end" }[tabSide] });
-      var tabBox = el("div", "tab", {
+      var tabRow = el("div", "sb-tab-row", { justifyContent: { left: "flex-start", center: "center", right: "flex-end" }[tabSide] });
+      var tabBox = el("div", "sb-tab", {
         backgroundColor: s.bg, padding: px(border) + " " + px(border) + " 0px " + px(border),
         borderTopLeftRadius: px(radius), borderTopRightRadius: px(radius),
       });
-      var tabInner = el("div", "tab-inner", {
+      var tabInner = el("div", "sb-tab-inner", {
         borderStyle: "solid", borderColor: s.fg,
         borderTopWidth: px(border), borderLeftWidth: px(border), borderRightWidth: px(border), borderBottomWidth: "0px",
         borderTopLeftRadius: px(radius - border), borderTopRightRadius: px(radius - border),
         padding: px(th * 0.45) + " " + px(th * 0.7) + " " + px(th * 0.45) + " " + px(th * 0.7),
       });
-      tabInner.appendChild(renderText({ text: tab.text || "EXIT", height: th, font: tab.font || "RG2014E" }, ctx));
+      tabInner.appendChild(tag(renderText({ text: tab.text || "EXIT", height: th, font: tab.font || "RG2014E" }, ctx), "exitTab"));
       tabBox.appendChild(tabInner);
       tabRow.appendChild(tabBox);
       sign.appendChild(tabRow);
     }
 
-    var panel = el("div", "panel", {
+    var panel = el("div", "sb-panel", {
       backgroundColor: s.bg, padding: px(border),
       borderRadius: px(radius),
     });
@@ -269,21 +281,35 @@
     if (doc.minWidth) panel.style.minWidth = px(doc.minWidth - border * 2);
 
     var innerRadius = Math.max(radius - border, 0);
-    var inner = el("div", "panel-inner", {
+    var inner = el("div", "sb-panel-inner", {
       borderStyle: "solid", borderColor: s.fg, borderWidth: px(border), borderRadius: px(innerRadius),
     });
     if (tabSide === "right") inner.style.borderTopRightRadius = "0px";
     if (tabSide === "left") inner.style.borderTopLeftRadius = "0px";
 
-    var content = renderContainer({ type: "stack", items: doc.items || [], align: doc.align || "start" }, ctx, false);
+    var content = renderContainer({ type: "stack", items: doc.items || [], align: doc.align || "start" }, ctx, false, "");
     content.style.padding = px(margin);
     if (doc.height) content.style.minHeight = px(doc.height - border * 4 - margin * 2);
     inner.appendChild(content);
-    if (doc.bottomBar) inner.appendChild(renderBar(doc.bottomBar, ctx, innerRadius));
+    if (doc.bottomBar) inner.appendChild(tag(renderBar(doc.bottomBar, ctx, innerRadius), "bottomBar"));
     panel.appendChild(inner);
     sign.appendChild(panel);
     return sign;
   }
+
+  // Public API, shared by the bake page and the in-game editor preview.
+  window.SignRenderer = {
+    // Returns a detached element for the design. options.annotate tags elements with data-sb-path.
+    render: function (doc, pixelsPerInch, options) {
+      ppi = pixelsPerInch || 3;
+      annotate = !!(options && options.annotate);
+      try { return renderSign(doc || {}); } finally { annotate = false; }
+    },
+    schemes: SCHEMES,
+    shields: Object.keys(SHIELDS),
+    arrows: Object.keys(ARROWS),
+    fonts: ["RG2014B", "RG2014C", "RG2014D", "RG2014E", "RG2014EM", "RG2014EEM", "RG2014F"],
+  };
 
   window.hsRender = function (doc, pixelsPerInch) {
     ppi = pixelsPerInch || 3;
@@ -294,7 +320,7 @@
       window.hsLastError = null;
     } catch (e) {
       window.hsLastError = String(e && e.stack || e);
-      var err = el("div", "error");
+      var err = el("div", "sb-error");
       err.textContent = "Render error: " + window.hsLastError;
       root.appendChild(err);
     }
