@@ -318,7 +318,9 @@ namespace SignBuilder.Assemblies
             Append(support, Vector3.zero, 0, submeshes[0]);
             for (var i = 0; i < faces.Count; i++)
             {
-                var panel = GantryFactory.Panel(faces[i].WidthMeters, faces[i].HeightMeters);
+                var shape = PanelShape.Rects(faces[i].Texture);
+                if (shape.Count > 1) Mod.log.Debug($"Sign {i} panel shape: {string.Join(", ", shape.Select(r => $"[{r.xMin:F2}-{r.xMax:F2} x {r.yMin:F2}-{r.yMax:F2}]"))}");
+                var panel = GantryFactory.Panel(faces[i].WidthMeters, faces[i].HeightMeters, shape);
                 Append(panel, centres[i], 1, submeshes[0]);
                 var face = new List<int>();
                 Append(panel, centres[i], 0, face);

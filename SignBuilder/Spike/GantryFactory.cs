@@ -201,10 +201,20 @@ namespace SignBuilder.Spike
         /// A thin sign panel box: submesh 0 is the -Z face showing the whole sign texture, submesh 1
         /// the back and edges (plain aluminium).
         /// </summary>
-        public static Mesh Panel(float width, float height)
+        public static Mesh Panel(float width, float height) => Panel(width, height, new[] { new Rect(0, 0, 1, 1) });
+
+        /// <summary>
+        /// A sign panel made of one slab per rectangle of <paramref name="shape"/> (UV space of the face texture),
+        /// so non-rectangular signs (exit tabs) get edges and a back that follow their outline.
+        /// </summary>
+        public static Mesh Panel(float width, float height, System.Collections.Generic.IEnumerable<Rect> shape)
         {
             var b = new MeshBuilder();
-            b.AddBox(Vector3.zero, new Vector3(width, height, 0.08f), Quaternion.identity, new Rect(0, 0, 1, 1), otherSubmesh: 1);
+            foreach (var r in shape)
+            {
+                var centre = new Vector3((r.center.x - 0.5f) * width, (r.center.y - 0.5f) * height, 0);
+                b.AddBox(centre, new Vector3(r.width * width, r.height * height, 0.08f), Quaternion.identity, r, otherSubmesh: 1);
+            }
             return b.Build("SignBuilder.Panel");
         }
     }
