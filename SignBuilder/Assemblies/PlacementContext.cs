@@ -27,8 +27,10 @@ namespace SignBuilder.Assemblies
     {
         /// <summary>doubleTruss (box truss), singleTruss (planar), curved, straight, or ground (roadside posts).</summary>
         public string Type = "doubleTruss";
-        /// <summary>full (every carriageway), single (one carriageway) or cantilever.</summary>
-        public string Span = "full";
+        /// <summary>"span" (posts either side of its roads) or "cantilever" (one post, an arm over the lanes).</summary>
+        public string Span = "span";
+        /// <summary>Roads alongside (Snap.Carriageways indices) that a span also crosses, besides its own.</summary>
+        public List<int> ExtraRoads = new();
         /// <summary>Cantilever post on the drivers' left instead of the right (left-hand exits).</summary>
         public bool LeftSide;
         /// <summary>Signs face the opposite direction of the clicked road's traffic.</summary>
@@ -63,6 +65,7 @@ namespace SignBuilder.Assemblies
         {
             var copy = (LayoutOptions)MemberwiseClone();
             copy.Signs = Signs.Select(x => x.Clone()).ToList();
+            copy.ExtraRoads = ExtraRoads.ToList();
             return copy;
         }
     }

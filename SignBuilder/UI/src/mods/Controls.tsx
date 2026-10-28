@@ -1,6 +1,5 @@
 import { getModule } from "cs2/modding";
 import { useEffect, useRef } from "react";
-import { SCHEME_COLORS } from "./Icons";
 import styles from "./SignEditor.module.scss";
 
 export type Option = { value: string; label?: string; icon?: any; title?: string; style?: any };
@@ -90,12 +89,14 @@ export const ColorBox = (props: { value: string; onChange: (hex: string) => void
     <TextBox value={props.value} onChange={props.onChange} />
   );
 
-/** Standard sign colors as swatches, plus Custom (any background and legend color). */
-export const Swatches = (props: { scheme: string; custom: boolean; onScheme: (s: string) => void; onCustom: () => void }) => (
+/** The theme's sign colors as swatches (named on hover), plus Custom (any background and legend color). */
+export const Swatches = (props: {
+  schemes: Record<string, { bg: string; fg: string; label?: string }>; scheme: string; custom: boolean; onScheme: (s: string) => void; onCustom: () => void;
+}) => (
   <div className={styles.choices}>
-    {["green", "blue", "brown", "yellow", "white"].map((s) => (
-      <div key={s} title={s} className={!props.custom && s === props.scheme ? styles.swatchOn : styles.swatch}
-        style={{ backgroundColor: SCHEME_COLORS[s] }} onClick={() => props.onScheme(s)} />
+    {Object.entries(props.schemes).map(([id, s]) => (
+      <div key={id} title={s.label ?? id} className={!props.custom && id === props.scheme ? styles.swatchOn : styles.swatch}
+        style={{ backgroundColor: s.bg, borderColor: props.custom || id !== props.scheme ? s.fg : undefined }} onClick={() => props.onScheme(id)} />
     ))}
     <div title="Custom colors" className={props.custom ? styles.swatchOn : styles.swatch} onClick={props.onCustom}
       style={{ backgroundImage: "linear-gradient(90deg, #e53935, #fdd835, #43a047, #1e88e5, #8e24aa)" }} />

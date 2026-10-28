@@ -1,0 +1,33 @@
+{
+  "theme": "de",
+  "name": "Autobahn with local panel",
+  "scheme": "blue",
+  "items": [
+    {
+      "type": "row",
+      "align": "center",
+      "items": [
+        {
+          "type": "shield",
+          "network": "A",
+          "number": "3"
+        },
+        {
+          "type": "text",
+          "text": "Köln"
+        }
+      ]
+    },
+    {
+      "type": "panel",
+      "scheme": "white",
+      "items": [
+        {
+          "type": "text",
+          "text": "Messe",
+          "height": 220
+        }
+      ]
+    }
+  ]
+}

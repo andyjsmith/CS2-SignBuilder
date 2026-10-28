@@ -1,0 +1,37 @@
+{
+  "theme": "de",
+  "name": "Bundesstraße direction sign",
+  "scheme": "yellow",
+  "items": [
+    {
+      "type": "row",
+      "align": "center",
+      "items": [
+        {
+          "type": "shield",
+          "network": "B",
+          "number": "27"
+        },
+        {
+          "type": "text",
+          "text": "Stuttgart"
+        }
+      ]
+    },
+    {
+      "type": "text",
+      "text": "Esslingen"
+    },
+    {
+      "type": "row",
+      "align": "start",
+      "items": [
+        {
+          "type": "arrow",
+          "direction": "up-left",
+          "height": 360
+        }
+      ]
+    }
+  ]
+}

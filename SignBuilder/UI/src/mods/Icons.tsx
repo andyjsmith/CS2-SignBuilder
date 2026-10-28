@@ -1,7 +1,5 @@
 // Small inline icons for the editor's option buttons (Gameface renders inline SVG; no icon font needed).
 
-const RENDERER_BASE = "coui://signbuilder/Renderer/";
-
 const ARROW_ROTATION: Record<string, number> = {
   down: 0, up: 180, left: 90, right: -90, "down-left": 45, "down-right": -45, "up-left": 135, "up-right": -135,
 };
@@ -46,14 +44,15 @@ export const ExitOnlyIcon = (props: { arrows: number }) => (
   </svg>
 );
 
-/** Route shield thumbnails, matching the renderer's artwork. */
-export const ShieldIcon = (props: { network: string }) => {
-  if (props.network === "I") return <img src={RENDERER_BASE + "shields/interstate.svg"} style={{ width: "22rem", height: "22rem" }} />;
-  if (props.network === "US") return <img src={RENDERER_BASE + "shields/us_route.svg"} style={{ width: "22rem", height: "22rem" }} />;
-  return <div style={{ width: "24rem", height: "18rem", borderRadius: "50%", backgroundColor: "#ffffff", border: "2rem solid #000000" }} />;
-};
-
-/** Sign color swatch. */
-export const SCHEME_COLORS: Record<string, string> = {
-  green: "#006b45", blue: "#1f4ea1", brown: "#6b3f1d", yellow: "#ffcc00", white: "#ffffff", black: "#000000",
+/** A theme's route plate as a small icon: its artwork, or a colored plate with its prefix. */
+export const ThemeShieldIcon = (props: { theme?: { base: string; def: any }; network: string }) => {
+  const s = props.theme?.def?.shields?.[props.network];
+  if (!s) return <span>{props.network}</span>;
+  if (s.img) return <img src={props.theme!.base + s.img} style={{ width: "22rem", height: "22rem" }} />;
+  if (s.shape === "ellipse") return <div style={{ width: "24rem", height: "18rem", borderRadius: "50%", backgroundColor: s.bg ?? "#fff", border: `2rem solid ${s.border ?? "#000"}` }} />;
+  const label = ((s.prefix ?? "") + (s.default ?? "")).trim() || props.network;
+  return (
+    <div style={{ padding: "1rem 5rem", fontSize: "12rem", fontWeight: "bold", color: s.fg ?? "#000", backgroundColor: s.shape === "plain" ? "rgba(0,0,0,0.5)" : s.bg ?? "#fff",
+      border: s.border ? `2rem solid ${s.border}` : undefined, borderRadius: "3rem", whiteSpace: "nowrap" }}>{label}</div>
+  );
 };

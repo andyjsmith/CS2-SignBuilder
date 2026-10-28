@@ -7,6 +7,8 @@ const group = mod.id;
 export const editorOpen$ = bindValue<boolean>(group, "editorOpen", false);
 /** JSON array of { id, name, builtIn, design }: built-in templates, then the player's own. */
 export const templates$ = bindValue<string>(group, "templates", "[]");
+/** JSON array of { id, name, builtIn, base, def }: the sign themes (countries / styles). */
+export const themes$ = bindValue<string>(group, "themes", "[]");
 /** JSON { designs, kind: "posts" | "gantry" | "new", nonce } pushed when a placed structure is opened for editing. */
 export const editingDesign$ = bindValue<string>(group, "editingDesign", "");
 /** Status line from the tool. */

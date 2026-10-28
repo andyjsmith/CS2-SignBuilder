@@ -13,6 +13,7 @@ export const PartsList = (props: {
   selected: string | null;
   onSelect: (path: string | null) => void;
   onChange: (design: Design, selected: string) => void;
+  labels?: Record<string, string>;
 }) => {
   const listRef = useRef<HTMLDivElement>(null);
   const [dragging, setDragging] = useState<string | null>(null);
@@ -91,7 +92,7 @@ export const PartsList = (props: {
             <svg className={styles.grip} width="8rem" height="12rem" viewBox="0 0 8 12">
               {[0, 1, 2].map((r) => [0, 1].map((c) => <rect key={`${r}${c}`} x={c * 5} y={r * 5} width="3" height="2" fill="rgba(255,255,255,0.5)" />))}
             </svg>
-            {describe(item)}
+            {describe(item, props.labels)}
             {item.items && item.items.length === 0 && <span className={styles.hintInline}> drop parts here</span>}
           </div>
         );

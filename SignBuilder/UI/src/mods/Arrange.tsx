@@ -10,7 +10,7 @@ import styles from "./SignEditor.module.scss";
 
 type Sign = { index: number; x: number; w: number; h: number; ready: boolean; mode: string; lane: number; fromRight: boolean; offset: number; design: Design };
 type Info = {
-  lanes: number[]; deck: number[]; structure: number[]; posts: number[]; signs: Sign[];
+  lanes: number[]; deck: number[]; roads: [number, number, boolean][]; structure: number[]; posts: number[]; signs: Sign[];
   type: string; span: string; side: string; reverse: boolean; free: boolean; scale: number; lift: number;
   view: string; otherSide: number; total: number;
   angle: number; elevation: number; width: number; replacing: boolean; busy: boolean;
@@ -57,8 +57,8 @@ export const Arrange = (props: { onEditSign: (index: number, design: Design) => 
   const sel = Math.min(selPos, Math.max(0, signs.length - 1));
   const xOf = (i: number) => (drag && drag.index === i ? drag.x : signs[i].x);
   // Visible range: deck, structure and signs, with a margin.
-  const lefts = [info.deck[0], info.structure[0], ...signs.map((s, i) => xOf(i) - s.w / 2)];
-  const rights = [info.deck[1], info.structure[1], ...signs.map((s, i) => xOf(i) + s.w / 2)];
+  const lefts = [info.deck[0], info.structure[0], ...info.roads.map((r) => r[0]), ...signs.map((s, i) => xOf(i) - s.w / 2)];
+  const rights = [info.deck[1], info.structure[1], ...info.roads.map((r) => r[1]), ...signs.map((s, i) => xOf(i) + s.w / 2)];
   const min = Math.min(...lefts) - 1.5;
   const max = Math.max(...rights) + 1.5;
   const maxH = Math.max(2.5, ...signs.map((s) => s.h));
@@ -162,7 +162,10 @@ export const Arrange = (props: { onEditSign: (index: number, design: Design) => 
           <div className={styles.hintInline} style={{ marginLeft: "10rem" }}>{info.view === "back" ? "Seen by traffic going the other way." : "Seen by the traffic the structure faces."}</div>
         </div>
         <div ref={area} className={styles.diagram} style={{ height: height + "px" }}>
-          <div className={styles.deck} style={{ left: px(info.deck[0]) + "px", width: (info.deck[1] - info.deck[0]) * scale + "px", top: roadY + "px" }} />
+          {(info.roads.length ? info.roads : [[info.deck[0], info.deck[1], true] as [number, number, boolean]]).map((r, k) => (
+            <div key={`r${k}`} className={r[2] ? styles.deck : styles.deckOther}
+              style={{ left: px(r[0]) + "px", width: (r[1] - r[0]) * scale + "px", top: roadY + "px" }} />
+          ))}
           {info.lanes.map((l, k) => (
             <div key={k} className={k === dragLane && snapping ? styles.laneOn : styles.lane}
               style={{ left: px(l) - 18 + "px", top: roadY + 4 + "px" }}>{`L${k + 1}`}</div>
@@ -182,7 +185,10 @@ export const Arrange = (props: { onEditSign: (index: number, design: Design) => 
             </div>
           ))}
         </div>
-        <div className={styles.hint}>Drag signs sideways; they snap to the lane centers (remembered from the nearer edge).</div>
+        <div className={styles.hint}>
+          {"Drag signs sideways; they snap to the lane centers (remembered from the nearer edge)."}
+          {info.span !== "cantilever" && info.roads.length > 1 ? ` The span covers ${info.roads.filter((r) => r[2]).length} of ${info.roads.length} roads here: click a road alongside in the world to add or remove it (lighter = not spanned).` : ""}
+        </div>
 
         {signs.length > 0 && (
           <div className={styles.barRow}>

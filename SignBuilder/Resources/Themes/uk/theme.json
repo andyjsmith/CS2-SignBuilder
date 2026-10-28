@@ -1,0 +1,210 @@
+{
+  "id": "uk",
+  "name": "United Kingdom",
+  "description": "TSRGD direction signs (Transport and Motorway fonts)",
+  "units": "mm",
+  "defaults": {
+    "font": "TransportMedium",
+    "textHeight": 300,
+    "shieldHeight": 330,
+    "arrowHeight": 420,
+    "border": 30,
+    "cornerRadius": 70,
+    "lineGap": 0.6,
+    "margin": 0.6,
+    "itemGap": 0.45,
+    "scheme": "green"
+  },
+  "fonts": [
+    {
+      "family": "TransportMedium",
+      "file": "fonts/TransportMedium.ttf",
+      "label": "Transport Medium (light on dark)",
+      "scale": 1.3403,
+      "offset": 0.0622
+    },
+    {
+      "family": "TransportHeavy",
+      "file": "fonts/TransportHeavy.ttf",
+      "label": "Transport Heavy (dark on light)",
+      "scale": 1.3403,
+      "offset": 0.1751
+    },
+    {
+      "family": "Motorway",
+      "file": "fonts/MotorwayPermanent.ttf",
+      "label": "Motorway (route numbers)",
+      "scale": 0.9534,
+      "offset": 0.1732
+    }
+  ],
+  "schemes": {
+    "blue": {
+      "bg": "#0b5ca6",
+      "fg": "#ffffff",
+      "label": "Motorway"
+    },
+    "green": {
+      "bg": "#00703c",
+      "fg": "#ffffff",
+      "label": "Primary route"
+    },
+    "white": {
+      "bg": "#ffffff",
+      "fg": "#000000",
+      "label": "Non-primary / local"
+    },
+    "brown": {
+      "bg": "#6b3a1e",
+      "fg": "#ffffff",
+      "label": "Tourist"
+    },
+    "yellow": {
+      "bg": "#ffd400",
+      "fg": "#000000",
+      "label": "Temporary / diversion"
+    }
+  },
+  "shields": {
+    "M": {
+      "label": "Motorway number",
+      "shape": "plain",
+      "fg": "#ffffff",
+      "prefix": "M",
+      "font": "Motorway",
+      "num": 0.75,
+      "default": "1"
+    },
+    "MP": {
+      "label": "Motorway patch (on other signs)",
+      "shape": "rect",
+      "bg": "#0b5ca6",
+      "fg": "#ffffff",
+      "prefix": "M",
+      "font": "Motorway",
+      "num": 0.7,
+      "radius": 0.08,
+      "default": "1"
+    },
+    "AP": {
+      "label": "Primary route number",
+      "shape": "plain",
+      "fg": "#ffd400",
+      "prefix": "A",
+      "font": "TransportMedium",
+      "num": 0.7,
+      "default": "1"
+    },
+    "APP": {
+      "label": "Primary route patch",
+      "shape": "rect",
+      "bg": "#00703c",
+      "fg": "#ffd400",
+      "prefix": "A",
+      "font": "TransportMedium",
+      "num": 0.65,
+      "radius": 0.08,
+      "default": "1"
+    },
+    "A": {
+      "label": "Non-primary route patch",
+      "shape": "rect",
+      "bg": "#ffffff",
+      "fg": "#000000",
+      "border": "#000000",
+      "prefix": "A",
+      "font": "TransportHeavy",
+      "num": 0.6,
+      "radius": 0.08,
+      "default": "123"
+    },
+    "J": {
+      "label": "Junction number",
+      "shape": "rect",
+      "bg": "#000000",
+      "fg": "#ffffff",
+      "font": "TransportHeavy",
+      "num": 0.6,
+      "radius": 0.08,
+      "default": "12"
+    }
+  },
+  "arrow": "M42 0 H58 V100 H82 L50 150 L18 100 H42 Z",
+  "features": {
+    "exitTab": false,
+    "exitOnly": false
+  },
+  "laneWidth": 4000,
+  "parts": [
+    {
+      "label": "Text",
+      "item": {
+        "type": "text",
+        "text": "Destination",
+        "height": 300
+      }
+    },
+    {
+      "label": "Route number",
+      "item": {
+        "type": "shield",
+        "network": "AP",
+        "number": "1",
+        "height": 330
+      }
+    },
+    {
+      "label": "Junction number",
+      "item": {
+        "type": "shield",
+        "network": "J",
+        "number": "12",
+        "height": 330
+      }
+    },
+    {
+      "label": "Arrow",
+      "item": {
+        "type": "arrow",
+        "direction": "up",
+        "height": 420
+      }
+    },
+    {
+      "label": "Distance",
+      "item": {
+        "type": "text",
+        "text": "1 mile",
+        "height": 220
+      }
+    },
+    {
+      "label": "Patch",
+      "item": {
+        "type": "panel",
+        "scheme": "blue",
+        "items": [
+          {
+            "type": "text",
+            "text": "Destination",
+            "height": 240
+          }
+        ]
+      }
+    },
+    {
+      "label": "Divider",
+      "item": {
+        "type": "divider"
+      }
+    },
+    {
+      "label": "Row",
+      "item": {
+        "type": "row",
+        "align": "center",
+        "items": []
+      }
+    }
+  ]
+}

@@ -1,0 +1,177 @@
+{
+  "id": "de",
+  "name": "Germany",
+  "description": "Wegweiser (RWBA), DIN 1451 Mittelschrift",
+  "units": "mm",
+  "defaults": {
+    "font": "DIN1451",
+    "textHeight": 280,
+    "shieldHeight": 300,
+    "arrowHeight": 420,
+    "border": 22,
+    "cornerRadius": 60,
+    "lineGap": 0.55,
+    "margin": 0.6,
+    "itemGap": 0.45,
+    "scheme": "blue"
+  },
+  "fonts": [
+    {
+      "family": "DIN1451",
+      "file": "fonts/AlteDIN1451Mittelschrift.ttf",
+      "label": "DIN 1451 Mittelschrift",
+      "scale": 1.4066,
+      "offset": 0.0017
+    }
+  ],
+  "schemes": {
+    "blue": {
+      "bg": "#1b5ca8",
+      "fg": "#ffffff",
+      "label": "Autobahn"
+    },
+    "yellow": {
+      "bg": "#f7cd00",
+      "fg": "#000000",
+      "label": "Bundes- / Landstraße"
+    },
+    "white": {
+      "bg": "#ffffff",
+      "fg": "#000000",
+      "label": "Innerorts / local"
+    },
+    "brown": {
+      "bg": "#6d3b1f",
+      "fg": "#ffffff",
+      "label": "Touristisch"
+    },
+    "orange": {
+      "bg": "#f29200",
+      "fg": "#000000",
+      "label": "Umleitung / detour"
+    }
+  },
+  "shields": {
+    "A": {
+      "label": "Autobahn",
+      "shape": "rect",
+      "bg": "#1b5ca8",
+      "fg": "#ffffff",
+      "border": "#ffffff",
+      "prefix": "A ",
+      "num": 0.6,
+      "radius": 0.14,
+      "default": "7"
+    },
+    "B": {
+      "label": "Bundesstraße",
+      "shape": "rect",
+      "bg": "#f7cd00",
+      "fg": "#000000",
+      "border": "#000000",
+      "prefix": "B ",
+      "num": 0.6,
+      "radius": 0.14,
+      "default": "27"
+    },
+    "E": {
+      "label": "Europastraße",
+      "shape": "rect",
+      "bg": "#00843d",
+      "fg": "#ffffff",
+      "border": "#ffffff",
+      "prefix": "E ",
+      "num": 0.6,
+      "radius": 0.14,
+      "default": "45"
+    },
+    "AS": {
+      "label": "Anschlussstelle (exit number)",
+      "shape": "rect",
+      "bg": "#1b5ca8",
+      "fg": "#ffffff",
+      "border": "#ffffff",
+      "num": 0.6,
+      "radius": 0.3,
+      "default": "12"
+    }
+  },
+  "arrow": "M42 0 H58 V100 H82 L50 150 L18 100 H42 Z",
+  "features": {
+    "exitTab": false,
+    "exitOnly": false
+  },
+  "laneWidth": 4000,
+  "parts": [
+    {
+      "label": "Text",
+      "item": {
+        "type": "text",
+        "text": "Ziel",
+        "height": 280
+      }
+    },
+    {
+      "label": "Route number",
+      "item": {
+        "type": "shield",
+        "network": "A",
+        "number": "7",
+        "height": 300
+      }
+    },
+    {
+      "label": "Exit number",
+      "item": {
+        "type": "shield",
+        "network": "AS",
+        "number": "12",
+        "height": 300
+      }
+    },
+    {
+      "label": "Arrow",
+      "item": {
+        "type": "arrow",
+        "direction": "up",
+        "height": 420
+      }
+    },
+    {
+      "label": "Distance",
+      "item": {
+        "type": "text",
+        "text": "1000 m",
+        "height": 200
+      }
+    },
+    {
+      "label": "Panel",
+      "item": {
+        "type": "panel",
+        "scheme": "yellow",
+        "items": [
+          {
+            "type": "text",
+            "text": "Ziel",
+            "height": 200
+          }
+        ]
+      }
+    },
+    {
+      "label": "Divider",
+      "item": {
+        "type": "divider"
+      }
+    },
+    {
+      "label": "Row",
+      "item": {
+        "type": "row",
+        "align": "center",
+        "items": []
+      }
+    }
+  ]
+}

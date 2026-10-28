@@ -31,6 +31,9 @@ namespace SignBuilder.Assemblies
         public float[] BackLaneXs;
         /// <summary>Per sign: mounted on the back, facing the other way.</summary>
         public bool[] SignBack;
+        /// <summary>The carriageway the structure stands on, and every road alongside (x0, x1, included 0/1) in structure space.</summary>
+        public int BaseRoad;
+        public float3[] Roads;
         public float[] PostXs;
         public float2 StructureX;
         public float2 DeckX;
@@ -70,7 +73,7 @@ namespace SignBuilder.Assemblies
         private static AssemblyPlacement LayoutSpec(RoadProbe.Snap s, IReadOnlyList<Vector2> sizes, LayoutOptions o, IReadOnlyList<List<Rect>> shapes)
         {
             var type = o.Type;
-            var spanKind = type == "ground" ? "single" : o.Span;
+            var cantilever = type != "ground" && o.Span == "cantilever";
             var n = sizes.Count;
             // Signs face the traffic of the clicked carriageway; reverse aims them at the other direction.
             var dir = s.MainDirection * (o.Reverse ? -1 : 1);
@@ -87,8 +90,11 @@ namespace SignBuilder.Assemblies
             var basePoint = s.Point + s.Right * baseOffset;
             var baseWidth = baseCw.Width;
             // Lanes per side, left to right as each side's drivers see them. Full spans cover every carriageway.
+            // Spans cross their own carriageway plus the roads alongside that the player added.
+            var roads = new HashSet<int> { baseIndex };
+            if (!cantilever && type != "ground") foreach (var r in o.ExtraRoads) if (r >= 0 && r < s.Carriageways.Count) roads.Add(r);
             List<RoadProbe.LaneInfo> LanesFor(int d) => s.Lanes
-                .Where(l => l.Direction == d && (spanKind == "full" || l.Carriageway == baseIndex))
+                .Where(l => l.Direction == d && roads.Contains(l.Carriageway))
                 .OrderBy(l => l.Offset * d).ToList();
             var frontLanes = LanesFor(dir);
             var backLanes = LanesFor(-dir);
@@ -202,7 +208,7 @@ namespace SignBuilder.Assemblies
                     StructureX = new float2(-total * 0.5f, total * 0.5f),
                 };
             }
-            else if (spanKind == "cantilever")
+            else if (cantilever)
             {
                 // Post just off the carriageway edge on the drivers' right (or left), arm reaching over the lanes
                 // only as far as the signs need. Free placement puts the post at the cursor.
@@ -243,20 +249,11 @@ namespace SignBuilder.Assemblies
             }
             else
             {
-                // Full spans cross every carriageway (both sides of a divided highway, parallel roads); single spans
-                // only the carriageway the signs face.
-                float reference, deckWidth;
-                if (spanKind == "full")
-                {
-                    var extent = s.Extent;
-                    reference = (extent.x + extent.y) * 0.5f;
-                    deckWidth = extent.y - extent.x;
-                }
-                else
-                {
-                    reference = baseOffset;
-                    deckWidth = baseWidth;
-                }
+                // The span crosses the chosen roads, centered on them.
+                var lo = roads.Min(r => s.Carriageways.Count > 0 ? s.Carriageways[r].Offset - s.Carriageways[r].Width * 0.5f : -5f);
+                var hi = roads.Max(r => s.Carriageways.Count > 0 ? s.Carriageways[r].Offset + s.Carriageways[r].Width * 0.5f : 5f);
+                var reference = (lo + hi) * 0.5f;
+                var deckWidth = hi - lo;
                 var origin = s.Point + s.Right * reference;
                 var xs = SignXs(reference);
                 var needed = 2f * (Reach(xs) + postClear);
@@ -281,10 +278,18 @@ namespace SignBuilder.Assemblies
                     LaneXs = LaneXs(frontLanes, reference, dir), BackLaneXs = LaneXs(backLanes, reference, -dir),
                     PostXs = new[] { -span * 0.5f, span * 0.5f },
                     StructureX = new float2(-span * 0.5f, span * 0.5f),
-                    DeckX = spanKind == "full" ? Edges(reference, reference, deckWidth) : Edges(reference, baseOffset, baseWidth),
+                    DeckX = Edges(reference, reference, deckWidth),
                 };
             }
             result.SignBack = Enumerable.Range(0, n).Select(IsBack).ToArray();
+            result.BaseRoad = baseIndex;
+            // Every road alongside, in structure space, and whether the span includes it.
+            result.Roads = s.Carriageways.Select((c, i) =>
+            {
+                var originOffset = math.dot(result.Origin - s.Point, s.Right);
+                var e = Edges(originOffset, c.Offset, c.Width);
+                return new float3(e.x, e.y, roads.Contains(i) ? 1f : 0f);
+            }).ToArray();
             result.LaneCount = frontLanes.Count;
             return result;
         }

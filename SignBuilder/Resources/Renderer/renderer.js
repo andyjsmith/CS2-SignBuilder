@@ -15,26 +15,52 @@
 (function () {
   "use strict";
 
-  var SCHEMES = {
-    green: { bg: "#006b45", fg: "#ffffff" },
-    blue: { bg: "#1f4ea1", fg: "#ffffff" },
-    brown: { bg: "#6b3f1d", fg: "#ffffff" },
-    yellow: { bg: "#ffcc00", fg: "#000000" },
-    white: { bg: "#ffffff", fg: "#000000" },
-    black: { bg: "#000000", fg: "#ffffff" },
-  };
-
-  // Freeway guide sign defaults (inches), loosely after MUTCD Table 2E-2 / SHS.
-  var DEFAULTS = {
-    font: "RG2014EM",
-    border: 2,
-    cornerRadius: 12,
-    textHeight: 16,
+  // Everything country-specific (fonts, colors, route plates, arrows, defaults, units) comes from a theme
+  // (Themes/<id>/theme.json). Themes are registered by the editor, or travel inside the design as "_theme".
+  var THEMES = {};
+  var T = null; // theme of the sign being rendered
+  var DEFAULTS = null;
+  var BASE_DEFAULTS = {
+    font: "", border: 2, cornerRadius: 12, textHeight: 16, shieldHeight: 36, arrowHeight: 24,
     lineGap: 0.75, // x tallest legend in the block
     margin: 0.75, // x tallest legend on the sign
     itemGap: 0.6, // horizontal gap between row items, x row height
+    scheme: "green",
   };
+  var DEFAULT_ARROW = "M32 0 H68 V88 H100 L50 150 L0 88 H32 Z";
+  var fontStyle = null;
 
+  function registerTheme(def, base) {
+    if (!def || !def.id) return;
+    var known = THEMES[def.id];
+    if (known && known.json === JSON.stringify(def) && known.base === base) return;
+    var fonts = {};
+    (def.fonts || []).forEach(function (f) { fonts[f.family] = f; });
+    THEMES[def.id] = { def: def, base: base || "", fonts: fonts, json: JSON.stringify(def) };
+    // Font files load through @font-face rules added to the page.
+    if (!fontStyle) {
+      fontStyle = document.createElement("style");
+      document.head.appendChild(fontStyle);
+    }
+    var css = "";
+    (def.fonts || []).forEach(function (f) {
+      if (f.file) css += '@font-face { font-family: "' + f.family + '"; src: url("' + (base || "") + f.file + '"); }\n';
+    });
+    fontStyle.textContent += css;
+  }
+
+  function useTheme(doc) {
+    if (doc && doc._theme) registerTheme(doc._theme, doc._themeBase);
+    T = THEMES[(doc && doc.theme) || "us"] || THEMES.us || THEMES[Object.keys(THEMES)[0]] || { def: {}, base: "", fonts: {} };
+    DEFAULTS = {};
+    for (var k in BASE_DEFAULTS) DEFAULTS[k] = BASE_DEFAULTS[k];
+    var d = T.def.defaults || {};
+    for (var j in d) DEFAULTS[j] = d[j];
+    // Designs are measured in the theme's units: inches, or millimeters for metric countries.
+    ppu = ppi / (T.def.units === "mm" ? 25.4 : 1);
+  }
+
+  var ppu = 3;
   var ppi = 3;
   // Assets resolve relative to this script so the renderer also works when loaded into the game's
   // main UI page (the editor preview), not only from renderer.html.
@@ -47,8 +73,9 @@
     return e;
   }
 
-  function px(inches) {
-    return (Math.round(inches * ppi * 100) / 100) + "px";
+  // Theme units (inches or millimeters) to CSS pixels.
+  function px(v) {
+    return (Math.round(v * ppu * 100) / 100) + "px";
   }
 
   function el(tag, className, style) {
@@ -59,7 +86,8 @@
   }
 
   function scheme(name) {
-    return SCHEMES[name] || SCHEMES.green;
+    var schemes = T.def.schemes || {};
+    return schemes[name] || schemes[DEFAULTS.scheme] || schemes[Object.keys(schemes)[0]] || { bg: "#006b45", fg: "#ffffff" };
   }
 
   // ---------------------------------------------------------------- element heights
@@ -69,11 +97,12 @@
     if (!item) return 0;
     switch (item.type) {
       case "text": return item.height || DEFAULTS.textHeight;
-      case "shield": return item.height || 36;
-      case "arrow": return item.height || 24;
+      case "shield": return item.height || DEFAULTS.shieldHeight;
+      case "arrow": return item.height || DEFAULTS.arrowHeight;
       case "spacer": return item.height || 0;
       case "row":
       case "stack":
+      case "panel":
         var h = 0;
         (item.items || []).forEach(function (c) { h = Math.max(h, heightOf(c)); });
         return h;
@@ -83,52 +112,79 @@
 
   // ---------------------------------------------------------------- elements
 
-  function renderText(item, ctx) {
-    var h = item.height || DEFAULTS.textHeight;
+  // Font size and vertical offset per letter height: "scale" = em / cap height, "offset" puts the capitals'
+  // top at the top of the box (from the font's metrics; Roadgeek 2014 is 1.75 and 0.125).
+  function metrics(family) {
+    var f = T.fonts[family];
+    return { scale: (f && f.scale) || 1.75, offset: f && f.offset != null ? f.offset : 0.125 };
+  }
+
+  function textBox(text, h, family, color) {
+    var m = metrics(family);
     var e = el("div", "sb-text", {
-      fontFamily: item.font || ctx.font,
-      fontSize: px(h * 1.75),
-      lineHeight: px(h),
-      height: px(h),
-      top: px(h * 0.125),
-      color: item.color || ctx.fg,
+      fontFamily: family, fontSize: px(h * m.scale), lineHeight: px(h), height: px(h), top: px(h * m.offset), color: color,
     });
-    e.textContent = item.text || "";
+    e.textContent = text;
     return e;
   }
 
-  var SHIELDS = {
-    // network: image, aspect (w/h), number color, number height as fraction of shield height, number top
-    I: { img: "shields/interstate.svg", aspect: 1.0, color: "#ffffff", num: 0.40, top: 0.36, font: "RG2014D" },
-    US: { img: "shields/us_route.svg", aspect: 1.0, color: "#000000", num: 0.45, top: 0.27, font: "RG2014D" },
-    STATE: { circle: true, aspect: 1.0, color: "#000000", num: 0.45, top: 0.27, font: "RG2014D" },
-  };
+  function renderText(item, ctx) {
+    var h = item.height || DEFAULTS.textHeight;
+    var e = textBox(item.text || "", h, item.font || ctx.font, item.color || ctx.fg);
+    return e;
+  }
 
+  // Route plates come from the theme: "img" (artwork, number on top), "ellipse", "rect" (colored plate with an
+  // optional border) or "plain" (just colored text, e.g. UK primary route numbers).
   function renderShield(item, ctx) {
-    var def = SHIELDS[item.network] || SHIELDS.STATE;
-    var h = item.height || 36;
-    var number = String(item.number || "");
-    var w = h * def.aspect * (number.length >= 3 ? 1.25 : 1);
+    var shields = T.def.shields || {};
+    var def = shields[item.network] || shields[Object.keys(shields)[0]] || { shape: "rect", bg: "#ffffff", fg: "#000000" };
+    var h = item.height || DEFAULTS.shieldHeight;
+    var number = (def.prefix || "") + String(item.number != null ? item.number : "");
+    var wide = (String(item.number || "").length >= 3 && def.wide) || 1;
+    var font = (wide > 1 && def.wideFont) || def.font || ctx.font;
+    var shape = def.shape || (def.img ? "img" : "rect");
+    var nh = h * (def.num || 0.6) * (wide > 1 && def.img ? 0.9 : 1);
+    if (shape === "rect" || shape === "plain") {
+      // Plates size to their text: padding either side, like European route number plates.
+      var padX = h * (def.padX != null ? def.padX : 0.25);
+      var label = textBox(number, nh, font, def.fg || ctx.fg);
+      var plate = el("div", "sb-plate", {
+        display: "flex", flexDirection: "row", alignItems: "center", justifyContent: "center",
+        height: px(h), padding: "0px " + px(padX), minWidth: px(h * (def.minAspect || 0)),
+        backgroundColor: shape === "plain" ? "transparent" : (def.bg || "#ffffff"),
+        borderRadius: px(h * (def.radius != null ? def.radius : 0.12)),
+      });
+      if (def.border && shape !== "plain") {
+        plate.style.border = px(h * (def.borderWidth || 0.06)) + " solid " + def.border;
+      }
+      label.style.top = "0px";
+      label.style.marginTop = px(nh * metrics(font).offset);
+      plate.appendChild(label);
+      return plate;
+    }
+    var w = h * (def.aspect || 1) * wide;
     var box = el("div", "sb-shield", { width: px(w), height: px(h) });
-    if (def.circle) {
+    if (shape === "ellipse") {
       box.appendChild(el("div", null, {
         position: "absolute", left: "0px", top: "0px", width: px(w), height: px(h),
-        borderRadius: px(h / 2), backgroundColor: "#ffffff",
+        borderRadius: px(h / 2), backgroundColor: def.bg || "#ffffff",
       }));
-      box.appendChild(el("div", null, {
-        position: "absolute", left: px(h * 0.06), top: px(h * 0.06), width: px(w - h * 0.12 - h * 0.04), height: px(h * 0.84),
-        borderRadius: px(h / 2), border: px(h * 0.02) + " solid #000000",
-      }));
+      if (def.border) {
+        box.appendChild(el("div", null, {
+          position: "absolute", left: px(h * 0.06), top: px(h * 0.06), width: px(w - h * 0.12 - h * 0.04), height: px(h * 0.84),
+          borderRadius: px(h / 2), border: px(h * 0.02) + " solid " + def.border,
+        }));
+      }
     } else {
       var img = el("img", null, { width: px(w), height: px(h) });
-      img.src = BASE + def.img;
+      img.src = T.base + def.img;
       box.appendChild(img);
     }
-    var nh = h * def.num * (number.length >= 3 ? 0.9 : 1);
+    var m = metrics(font);
     var num = el("div", "sb-num", {
-      width: px(w), top: px(h * def.top + nh * 0.125),
-      fontFamily: number.length >= 3 ? "RG2014C" : def.font,
-      fontSize: px(nh * 1.75), lineHeight: px(nh), height: px(nh), color: def.color,
+      width: px(w), top: px(h * (def.top != null ? def.top : 0.3) + nh * m.offset),
+      fontFamily: font, fontSize: px(nh * m.scale), lineHeight: px(nh), height: px(nh), color: def.fg || def.color || "#000000",
     });
     num.textContent = number;
     box.appendChild(num);
@@ -141,16 +197,16 @@
   };
 
   function renderArrow(item, ctx) {
-    var h = item.height || 24;
+    var h = item.height || DEFAULTS.arrowHeight;
     var w = h * 0.67;
     var rot = ARROWS[item.direction || "down"] || 0;
     var ns = "http://www.w3.org/2000/svg";
     var svg = document.createElementNS(ns, "svg");
     svg.setAttribute("viewBox", "0 0 100 150");
-    svg.setAttribute("width", String(w * ppi));
-    svg.setAttribute("height", String(h * ppi));
+    svg.setAttribute("width", String(w * ppu));
+    svg.setAttribute("height", String(h * ppu));
     var path = document.createElementNS(ns, "path");
-    path.setAttribute("d", "M32 0 H68 V88 H100 L50 150 L0 88 H32 Z");
+    path.setAttribute("d", T.def.arrow || DEFAULT_ARROW);
     path.setAttribute("fill", item.color || ctx.fg);
     if (rot) path.setAttribute("transform", "rotate(" + rot + " 50 75)");
     svg.appendChild(path);
@@ -164,10 +220,11 @@
     if (!item) return 0;
     switch (item.type) {
       case "text": return item.height || DEFAULTS.textHeight;
-      case "shield": return Math.min((item.height || 36) * 0.45, DEFAULTS.textHeight);
-      case "arrow": return Math.min((item.height || 24) * 0.6, DEFAULTS.textHeight);
+      case "shield": return Math.min((item.height || DEFAULTS.shieldHeight) * 0.45, DEFAULTS.textHeight);
+      case "arrow": return Math.min((item.height || DEFAULTS.arrowHeight) * 0.6, DEFAULTS.textHeight);
       case "row":
       case "stack":
+      case "panel":
         var h = 0;
         (item.items || []).forEach(function (c) { h = Math.max(h, spacingHeight(c)); });
         return h;
@@ -207,11 +264,30 @@
       case "arrow": e = renderArrow(item, ctx); break;
       case "row": e = renderContainer(item, ctx, true, path); break;
       case "stack": e = renderContainer(item, ctx, false, path); break;
+      case "panel": e = renderPanel(item, ctx, path); break;
       case "spacer": e = el("div", null, { width: px(item.width || 0), height: px(item.height || 0) }); break;
       case "divider": e = el("div", null, { alignSelf: "stretch", height: px(item.thickness || DEFAULTS.border), backgroundColor: item.color || ctx.fg }); break;
       default: return null;
     }
     return tag(e, path);
+  }
+
+  // A colored box with its own parts inside (a patch or panel): its scheme (or custom colors) sets the background
+  // and the legend color of everything in it.
+  function renderPanel(item, ctx, path) {
+    var s = item.scheme ? scheme(item.scheme) : { bg: ctx.fg, fg: ctx.bg };
+    var bg = item.background || s.bg;
+    var fg = item.foreground || s.fg;
+    var h = spacingHeight(item) || DEFAULTS.textHeight;
+    var pad = item.padding != null ? item.padding : h * 0.3;
+    var inner = renderContainer({ type: item.vertical ? "stack" : "row", items: item.items || [], align: item.align }, { font: ctx.font, fg: fg, bg: bg }, !item.vertical, path);
+    var e = el("div", "sb-panel-part", {
+      display: "flex", flexDirection: "row", backgroundColor: bg, padding: px(pad * 0.7) + " " + px(pad),
+      borderRadius: px(item.radius != null ? item.radius : h * 0.15),
+    });
+    if (item.border) e.style.border = px(item.borderWidth || DEFAULTS.border) + " solid " + (item.border === true ? fg : item.border);
+    e.appendChild(inner);
+    return e;
   }
 
   // ---------------------------------------------------------------- sign-level parts
@@ -220,8 +296,9 @@
   function exitOnlyItems(bar) {
     var h = bar.height || 15;
     var arrow = { type: "arrow", direction: "down", height: h * 1.5 };
-    var exit = { type: "text", text: "EXIT", height: h, font: "RG2014E" };
-    var only = { type: "text", text: "ONLY", height: h, font: "RG2014E" };
+    var cfg = T.def.exitOnly || {};
+    var exit = { type: "text", text: (cfg.words || ["EXIT", "ONLY"])[0], height: h, font: cfg.font };
+    var only = { type: "text", text: (cfg.words || ["EXIT", "ONLY"])[1], height: h, font: cfg.font };
     var arrows = bar.arrows || 1;
     if (arrows >= 2) return [arrow, exit, only, arrow];
     return [exit, arrow, only];
@@ -237,11 +314,12 @@
       borderBottomLeftRadius: px(innerRadius), borderBottomRightRadius: px(innerRadius),
       display: "flex", flexDirection: "row", justifyContent: "center",
     });
-    e.appendChild(renderContainer({ type: "row", items: items, gap: h * 0.5 }, { font: ctx.font, fg: s.fg }, true));
+    e.appendChild(renderContainer({ type: "row", items: items, gap: h * 0.5 }, { font: (T.def.exitOnly || {}).font || ctx.font, fg: s.fg, bg: s.bg }, true));
     return e;
   }
 
   function renderSign(doc) {
+    useTheme(doc);
     // Custom colors ("background" / "foreground" as CSS colors) override the scheme.
     var base = scheme(doc.scheme);
     var s = { bg: doc.background || base.bg, fg: doc.foreground || base.fg };
@@ -249,7 +327,7 @@
     var radius = doc.cornerRadius != null ? doc.cornerRadius : DEFAULTS.cornerRadius;
     var legend = spacingHeight({ type: "stack", items: doc.items || [] }) || DEFAULTS.textHeight;
     var margin = doc.margin != null ? doc.margin : legend * DEFAULTS.margin;
-    var ctx = { font: doc.font || DEFAULTS.font, fg: s.fg };
+    var ctx = { font: doc.font || DEFAULTS.font, fg: s.fg, bg: s.bg };
     var tab = doc.exitTab;
     var tabSide = tab ? (tab.align || "right") : null;
 
@@ -257,7 +335,7 @@
 
     if (tab) {
       // MUTCD exit plaques use 12" capitals on most guide signs (15" on the largest freeway signs).
-      var th = tab.height || 12;
+      var th = tab.height || (T.def.exitTab && T.def.exitTab.height) || 12;
       var tabRow = el("div", "sb-tab-row", { justifyContent: { left: "flex-start", center: "center", right: "flex-end" }[tabSide] });
       var tabBox = el("div", "sb-tab", {
         backgroundColor: s.bg, padding: px(border) + " " + px(border) + " 0px " + px(border),
@@ -269,7 +347,7 @@
         borderTopLeftRadius: px(radius - border), borderTopRightRadius: px(radius - border),
         padding: px(th * 0.45) + " " + px(th * 0.7) + " " + px(th * 0.45) + " " + px(th * 0.7),
       });
-      tabInner.appendChild(tag(renderText({ text: tab.text || "EXIT", height: th, font: tab.font || "RG2014E" }, ctx), "exitTab"));
+      tabInner.appendChild(tag(renderText({ text: tab.text || "EXIT", height: th, font: tab.font || (T.def.exitTab && T.def.exitTab.font) || ctx.font }, ctx), "exitTab"));
       tabBox.appendChild(tabInner);
       tabRow.appendChild(tabBox);
       sign.appendChild(tabRow);
@@ -310,10 +388,9 @@
       annotate = !!(options && options.annotate);
       try { return renderSign(doc || {}); } finally { annotate = false; }
     },
-    schemes: SCHEMES,
-    shields: Object.keys(SHIELDS),
+    registerTheme: registerTheme,
+    themes: THEMES,
     arrows: Object.keys(ARROWS),
-    fonts: ["RG2014B", "RG2014C", "RG2014D", "RG2014E", "RG2014EM", "RG2014EEM", "RG2014F"],
   };
 
   window.hsRender = function (doc, pixelsPerInch) {

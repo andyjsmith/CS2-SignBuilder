@@ -7,11 +7,21 @@ const RENDERER_BASE = "coui://signbuilder/Renderer/";
 
 declare global {
   interface Window {
-    SignRenderer?: { render: (doc: Design, ppi: number, options?: { annotate?: boolean }) => HTMLElement };
+    SignRenderer?: {
+      render: (doc: Design, ppi: number, options?: { annotate?: boolean }) => HTMLElement;
+      registerTheme: (def: any, base: string) => void;
+    };
   }
 }
 
 let loading: Promise<void> | null = null;
+let themes: { def: any; base: string }[] = [];
+
+/** Makes the themes (fonts, colors, plates) known to the renderer; previews re-render with them. */
+export function registerThemes(list: { def: any; base: string }[]) {
+  themes = list;
+  if (window.SignRenderer) themes.forEach((t) => window.SignRenderer!.registerTheme(t.def, t.base));
+}
 
 function loadRenderer(): Promise<void> {
   if (window.SignRenderer) return Promise.resolve();
@@ -23,7 +33,10 @@ function loadRenderer(): Promise<void> {
     document.head.appendChild(css);
     const script = document.createElement("script");
     script.src = RENDERER_BASE + "renderer.js";
-    script.onload = () => resolve();
+    script.onload = () => {
+      themes.forEach((t) => window.SignRenderer!.registerTheme(t.def, t.base));
+      resolve();
+    };
     document.head.appendChild(script);
   });
   return loading;

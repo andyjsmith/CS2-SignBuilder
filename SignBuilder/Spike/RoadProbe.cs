@@ -169,6 +169,49 @@ namespace SignBuilder.Spike
             return snap;
         }
 
+        /// <summary>
+        /// Adds <paramref name="edge"/> to the snap's roads if the gantry line (through Point along Right) crosses it
+        /// while it runs alongside (parallel). Returns its index (an existing one if already known), or -1.
+        /// </summary>
+        public int AddRoad(Snap snap, Entity edge, float maxDistance = 250f)
+        {
+            if (!m_EM.HasComponent<Curve>(edge) || !m_EM.HasComponent<Composition>(edge)) return -1;
+            var curve = m_EM.GetComponentData<Curve>(edge).m_Bezier;
+            // Where the curve crosses the gantry line: the point with no offset along the gantry's tangent.
+            float Along(float t) => math.dot(MathUtils.Position(curve, t) - snap.Point, snap.Tangent);
+            float best = -1f, bestAbs = float.MaxValue;
+            for (var i = 0; i <= 32; i++)
+            {
+                var t = i / 32f;
+                var a = math.abs(Along(t));
+                if (a < bestAbs) { bestAbs = a; best = t; }
+            }
+            for (var step = 1f / 64f; step > 1e-4f; step *= 0.5f)
+            {
+                var lo = math.max(0f, best - step);
+                var hi = math.min(1f, best + step);
+                if (math.abs(Along(lo)) < bestAbs) { best = lo; bestAbs = math.abs(Along(lo)); }
+                if (math.abs(Along(hi)) < bestAbs) { best = hi; bestAbs = math.abs(Along(hi)); }
+            }
+            if (bestAbs > 3f) return -1; // the gantry line does not cross it
+            var point = MathUtils.Position(curve, best);
+            var tangent = MathUtils.Tangent(curve, best);
+            tangent.y = 0;
+            if (math.abs(math.dot(math.normalizesafe(tangent), snap.Tangent)) < 0.9f) return -1; // not alongside
+            var offset = math.dot(point - snap.Point, snap.Right);
+            if (math.abs(offset) > maxDistance) return -1;
+            for (var i = 0; i < snap.Carriageways.Count; i++)
+            {
+                var c = snap.Carriageways[i];
+                if (math.abs(offset - c.Offset) <= math.max(1.5f, c.Width * 0.5f)) return i;
+            }
+            var composition = m_EM.GetComponentData<Composition>(edge).m_Edge;
+            var width = m_EM.HasComponent<NetCompositionData>(composition) ? m_EM.GetComponentData<NetCompositionData>(composition).m_Width : 8f;
+            snap.Carriageways.Add(new Carriageway { Edge = edge, Offset = offset, Width = width });
+            AddLanes(snap, edge, snap.Carriageways.Count - 1);
+            return snap.Carriageways.Count - 1;
+        }
+
         /// <summary>How far to each side parallel roads count as part of the same crossing.</summary>
         private const float kParallelReach = 45f;
 

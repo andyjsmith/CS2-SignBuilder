@@ -1,0 +1,225 @@
+{
+  "id": "nordic",
+  "name": "Nordic (Norway, Sweden)",
+  "description": "Vienna-convention direction signs as used in Norway and Sweden",
+  "units": "mm",
+  "defaults": {
+    "font": "DDIN",
+    "textHeight": 280,
+    "shieldHeight": 300,
+    "arrowHeight": 420,
+    "border": 22,
+    "cornerRadius": 50,
+    "lineGap": 0.55,
+    "margin": 0.6,
+    "itemGap": 0.45,
+    "scheme": "blue"
+  },
+  "fonts": [
+    {
+      "family": "Tratex",
+      "file": "fonts/Tratex.ttf",
+      "optional": true,
+      "label": "Tratex (SE, add the file yourself)",
+      "scale": 1.4,
+      "offset": 0.03
+    },
+    {
+      "family": "Trafikkalfabetet",
+      "file": "fonts/Trafikkalfabetet.ttf",
+      "optional": true,
+      "label": "Trafikkalfabetet (NO, add the file yourself)",
+      "scale": 1.4,
+      "offset": 0.03
+    },
+    {
+      "family": "DDIN",
+      "file": "fonts/D-DIN.ttf",
+      "label": "D-DIN",
+      "scale": 1.4493,
+      "offset": 0.0203
+    },
+    {
+      "family": "DDINBold",
+      "file": "fonts/D-DIN-Bold.ttf",
+      "label": "D-DIN Bold",
+      "scale": 1.4493,
+      "offset": 0.0203
+    },
+    {
+      "family": "DDINCondensed",
+      "file": "fonts/D-DINCondensed.ttf",
+      "label": "D-DIN Condensed",
+      "scale": 1.4493,
+      "offset": 0.0203
+    }
+  ],
+  "schemes": {
+    "blue": {
+      "bg": "#0b4f9c",
+      "fg": "#ffffff",
+      "label": "Motorway (NO, SE) / main roads (SE)"
+    },
+    "yellow": {
+      "bg": "#f9c900",
+      "fg": "#000000",
+      "label": "Main roads (NO)"
+    },
+    "white": {
+      "bg": "#ffffff",
+      "fg": "#000000",
+      "label": "Local destinations"
+    },
+    "brown": {
+      "bg": "#7a4a25",
+      "fg": "#ffffff",
+      "label": "Tourist"
+    },
+    "orange": {
+      "bg": "#f28c1e",
+      "fg": "#000000",
+      "label": "Detour"
+    }
+  },
+  "shields": {
+    "E": {
+      "label": "E road",
+      "shape": "rect",
+      "bg": "#00843d",
+      "fg": "#ffffff",
+      "border": "#ffffff",
+      "prefix": "E ",
+      "num": 0.6,
+      "radius": 0.12,
+      "default": "18"
+    },
+    "RV": {
+      "label": "Riksvei (NO)",
+      "shape": "rect",
+      "bg": "#00843d",
+      "fg": "#ffffff",
+      "border": "#ffffff",
+      "num": 0.6,
+      "radius": 0.12,
+      "default": "4"
+    },
+    "FV": {
+      "label": "Fylkesvei (NO)",
+      "shape": "rect",
+      "bg": "#ffffff",
+      "fg": "#000000",
+      "border": "#000000",
+      "num": 0.6,
+      "radius": 0.12,
+      "default": "120"
+    },
+    "RIKSVAG": {
+      "label": "Riksväg / länsväg (SE)",
+      "shape": "rect",
+      "bg": "#0b4f9c",
+      "fg": "#ffffff",
+      "border": "#ffffff",
+      "num": 0.6,
+      "radius": 0.12,
+      "default": "40"
+    },
+    "LANSVAG": {
+      "label": "Secondary länsväg (SE)",
+      "shape": "rect",
+      "bg": "#ffffff",
+      "fg": "#000000",
+      "border": "#000000",
+      "num": 0.6,
+      "radius": 0.12,
+      "default": "590"
+    },
+    "EXIT": {
+      "label": "Exit number",
+      "shape": "rect",
+      "bg": "#0b4f9c",
+      "fg": "#ffffff",
+      "border": "#ffffff",
+      "num": 0.6,
+      "radius": 0.3,
+      "default": "12"
+    }
+  },
+  "arrow": "M42 0 H58 V100 H82 L50 150 L18 100 H42 Z",
+  "features": {
+    "exitTab": false,
+    "exitOnly": false
+  },
+  "laneWidth": 4000,
+  "parts": [
+    {
+      "label": "Text",
+      "item": {
+        "type": "text",
+        "text": "Destination",
+        "height": 280
+      }
+    },
+    {
+      "label": "Route number",
+      "item": {
+        "type": "shield",
+        "network": "E",
+        "number": "18",
+        "height": 300
+      }
+    },
+    {
+      "label": "Exit number",
+      "item": {
+        "type": "shield",
+        "network": "EXIT",
+        "number": "12",
+        "height": 300
+      }
+    },
+    {
+      "label": "Arrow",
+      "item": {
+        "type": "arrow",
+        "direction": "up",
+        "height": 420
+      }
+    },
+    {
+      "label": "Distance",
+      "item": {
+        "type": "text",
+        "text": "2 km",
+        "height": 200
+      }
+    },
+    {
+      "label": "Panel",
+      "item": {
+        "type": "panel",
+        "scheme": "white",
+        "items": [
+          {
+            "type": "text",
+            "text": "Sentrum",
+            "height": 220
+          }
+        ]
+      }
+    },
+    {
+      "label": "Divider",
+      "item": {
+        "type": "divider"
+      }
+    },
+    {
+      "label": "Row",
+      "item": {
+        "type": "row",
+        "align": "center",
+        "items": []
+      }
+    }
+  ]
+}

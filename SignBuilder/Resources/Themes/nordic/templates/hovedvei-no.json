@@ -1,0 +1,48 @@
+{
+  "theme": "nordic",
+  "name": "Main road direction sign (NO)",
+  "scheme": "yellow",
+  "items": [
+    {
+      "type": "row",
+      "align": "center",
+      "items": [
+        {
+          "type": "shield",
+          "network": "E",
+          "number": "18"
+        },
+        {
+          "type": "text",
+          "text": "Oslo"
+        }
+      ]
+    },
+    {
+      "type": "row",
+      "align": "center",
+      "items": [
+        {
+          "type": "shield",
+          "network": "RV",
+          "number": "4"
+        },
+        {
+          "type": "text",
+          "text": "Gjøvik"
+        }
+      ]
+    },
+    {
+      "type": "panel",
+      "scheme": "white",
+      "items": [
+        {
+          "type": "text",
+          "text": "Sentrum",
+          "height": 220
+        }
+      ]
+    }
+  ]
+}

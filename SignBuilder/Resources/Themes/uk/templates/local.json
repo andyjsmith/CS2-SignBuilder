@@ -1,0 +1,23 @@
+{
+  "theme": "uk",
+  "name": "Local direction sign",
+  "scheme": "white",
+  "items": [
+    {
+      "type": "row",
+      "align": "center",
+      "items": [
+        {
+          "type": "text",
+          "text": "Town Centre",
+          "font": "TransportHeavy"
+        },
+        {
+          "type": "arrow",
+          "direction": "right",
+          "height": 300
+        }
+      ]
+    }
+  ]
+}

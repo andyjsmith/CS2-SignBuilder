@@ -1,11 +1,3 @@
-@font-face { font-family: "RG2014B"; src: url("../Fonts/RG2014B.ttf"); }
-@font-face { font-family: "RG2014C"; src: url("../Fonts/RG2014C.ttf"); }
-@font-face { font-family: "RG2014D"; src: url("../Fonts/RG2014D.ttf"); }
-@font-face { font-family: "RG2014E"; src: url("../Fonts/RG2014E.ttf"); }
-@font-face { font-family: "RG2014EM"; src: url("../Fonts/RG2014EM.ttf"); }
-@font-face { font-family: "RG2014EEM"; src: url("../Fonts/RG2014EEM.ttf"); }
-@font-face { font-family: "RG2014F"; src: url("../Fonts/RG2014F.ttf"); }
-
 /* Gameface clips painting to the body box; with an absolutely positioned root the body would be
    0px tall and nothing would draw, so give the page the full view size explicitly. */
 html, body { margin: 0; padding: 0; width: 100%; height: 100%; background: transparent; overflow: hidden; }

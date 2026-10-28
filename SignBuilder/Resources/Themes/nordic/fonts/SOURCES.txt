@@ -1,0 +1,3 @@
+D-DIN by Datto Inc., SIL Open Font License 1.1 (https://github.com/amcchord/datto-d-din), a stand-in for the
+official faces, which are not freely licensed: put Tratex.ttf (Sweden) or Trafikkalfabetet.ttf (Norway) in
+ModsData/SignBuilder/Themes/nordic/fonts to use them instead.

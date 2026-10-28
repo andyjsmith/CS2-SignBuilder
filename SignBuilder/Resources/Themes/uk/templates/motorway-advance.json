@@ -1,0 +1,42 @@
+{
+  "theme": "uk",
+  "name": "Motorway advance direction sign",
+  "scheme": "blue",
+  "items": [
+    {
+      "type": "row",
+      "align": "start",
+      "items": [
+        {
+          "type": "shield",
+          "network": "J",
+          "number": "12"
+        }
+      ]
+    },
+    {
+      "type": "text",
+      "text": "The NORTH"
+    },
+    {
+      "type": "row",
+      "align": "center",
+      "items": [
+        {
+          "type": "shield",
+          "network": "M",
+          "number": "1"
+        },
+        {
+          "type": "text",
+          "text": "Leeds"
+        }
+      ]
+    },
+    {
+      "type": "text",
+      "text": "1 mile",
+      "height": 220
+    }
+  ]
+}

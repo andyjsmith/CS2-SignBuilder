@@ -21,9 +21,8 @@ export const STRUCTURES = [
   { id: "straight", label: "Straight tube" },
 ];
 export const SPANS = [
-  { id: "full", label: "Full span", hint: "Across every carriageway" },
-  { id: "single", label: "Single span", hint: "Across one carriageway" },
-  { id: "cantilever", label: "Cantilever", hint: "One post beside the road" },
+  { id: "span", label: "Span", hint: "Posts on both sides; click roads alongside in the world to span them too" },
+  { id: "cantilever", label: "Cantilever", hint: "One post beside the road, an arm over the lanes" },
 ];
 /** Summary for a support id such as "curved/cantilever/left" or "ground". */
 export function supportLabel(id: string): string {
@@ -33,16 +32,6 @@ export function supportLabel(id: string): string {
   const s = SPANS.find((x) => x.id === span)?.label.toLowerCase() ?? span ?? "";
   return `${t}, ${s}${side === "left" ? " (left side)" : ""}`;
 }
-
-export const PALETTE: { label: string; make: () => Item }[] = [
-  { label: "Text", make: () => ({ type: "text", text: "Destination", height: 16 }) },
-  { label: "Shield", make: () => ({ type: "shield", network: "I", number: "95", height: 36 }) },
-  { label: "Cardinal", make: () => ({ type: "text", text: "NORTH", height: 15, font: "RG2014D" }) },
-  { label: "Arrow", make: () => ({ type: "arrow", direction: "up", height: 24 }) },
-  { label: "Distance", make: () => ({ type: "text", text: "1 MILE", height: 12, font: "RG2014D" }) },
-  { label: "Divider", make: () => ({ type: "divider" }) },
-  { label: "Row", make: () => ({ type: "row", align: "center", items: [] }) },
-];
 
 export function clone<T>(value: T): T {
   return JSON.parse(JSON.stringify(value));
@@ -153,10 +142,12 @@ export function moveTo(design: Design, from: string, target: string, position: D
   return { design: next, path: findPath(next.items, moving) ?? from };
 }
 
-export function describe(item: Item): string {
+/** A part's name in the parts list; <labels> are the theme's route plate names. */
+export function describe(item: Item, labels?: Record<string, string>): string {
   switch (item.type) {
     case "text": return `Text "${item.text}"`;
-    case "shield": return `${item.network === "I" ? "Interstate" : item.network === "US" ? "US route" : "State route"} ${item.number}`;
+    case "shield": return `${labels?.[item.network] ?? item.network} ${item.number}`;
+    case "panel": return `Panel (${item.items?.length ?? 0})`;
     case "arrow": return `Arrow ${item.direction}`;
     case "row": return `Row (${item.items.length})`;
     case "stack": return `Stack (${item.items.length})`;

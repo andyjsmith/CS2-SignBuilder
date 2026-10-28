@@ -84,7 +84,8 @@ namespace SignBuilder.Rendering
         /// <summary>Bakes <paramref name="design"/> and yields until <paramref name="onDone"/> has been called (with null on failure).</summary>
         public IEnumerator Bake(JObject design, float pixelsPerInch, Action<BakedFace> onDone)
         {
-            var json = design.ToString(Formatting.None);
+            // The design carries its theme (fonts, colors, plates), so theme changes rebake too.
+            var json = Core.Themes.ForRender(design).ToString(Formatting.None);
             var key = Hash($"{m_RendererVersion}|{pixelsPerInch}|{json}");
             var cached = TryLoadCached(key);
             if (cached != null)
@@ -169,6 +170,9 @@ namespace SignBuilder.Rendering
         {
             m_UISystem = GameManager.instance.userInterface.view.uiSystem;
             m_UISystem.AddHostLocation(kHost, m_ResourcesDir, shouldWatch: false);
+            // Player themes (fonts, plate artwork) load from ModsData.
+            System.IO.Directory.CreateDirectory(Core.SignBuilderRuntime.DataDir);
+            m_UISystem.AddHostLocation(Core.Themes.DataHost, Core.SignBuilderRuntime.DataDir, shouldWatch: false);
 
             var go = new GameObject("SignBuilder.SignFaceBakerCamera");
             Object.DontDestroyOnLoad(go);

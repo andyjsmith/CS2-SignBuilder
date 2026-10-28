@@ -1,0 +1,39 @@
+{
+  "theme": "uk",
+  "name": "Primary route with motorway patch",
+  "scheme": "green",
+  "items": [
+    {
+      "type": "panel",
+      "scheme": "blue",
+      "items": [
+        {
+          "type": "shield",
+          "network": "M",
+          "number": "62",
+          "height": 300
+        },
+        {
+          "type": "text",
+          "text": "Manchester",
+          "height": 260
+        }
+      ]
+    },
+    {
+      "type": "row",
+      "align": "center",
+      "items": [
+        {
+          "type": "shield",
+          "network": "AP",
+          "number": "580"
+        },
+        {
+          "type": "text",
+          "text": "Liverpool"
+        }
+      ]
+    }
+  ]
+}

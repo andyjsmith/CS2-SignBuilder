@@ -1,0 +1,37 @@
+{
+  "theme": "nordic",
+  "name": "Motorway direction sign (NO)",
+  "scheme": "blue",
+  "items": [
+    {
+      "type": "row",
+      "align": "center",
+      "items": [
+        {
+          "type": "shield",
+          "network": "E",
+          "number": "6"
+        },
+        {
+          "type": "text",
+          "text": "Trondheim"
+        }
+      ]
+    },
+    {
+      "type": "row",
+      "align": "center",
+      "items": [
+        {
+          "type": "text",
+          "text": "Gardermoen"
+        },
+        {
+          "type": "arrow",
+          "direction": "up-right",
+          "height": 360
+        }
+      ]
+    }
+  ]
+}

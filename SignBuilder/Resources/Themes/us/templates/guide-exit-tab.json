@@ -1,4 +1,5 @@
 {
+  "theme": "us",
   "id": "guide-exit-tab",
   "name": "Guide sign with exit tab",
   "scheme": "green",

@@ -1,0 +1,43 @@
+{
+  "theme": "de",
+  "name": "Autobahn advance sign (Vorwegweiser)",
+  "scheme": "blue",
+  "items": [
+    {
+      "type": "row",
+      "align": "center",
+      "items": [
+        {
+          "type": "shield",
+          "network": "AS",
+          "number": "12"
+        },
+        {
+          "type": "text",
+          "text": "Frankfurt-Süd"
+        }
+      ]
+    },
+    {
+      "type": "row",
+      "align": "center",
+      "items": [
+        {
+          "type": "shield",
+          "network": "A",
+          "number": "5"
+        },
+        {
+          "type": "shield",
+          "network": "E",
+          "number": "451"
+        }
+      ]
+    },
+    {
+      "type": "text",
+      "text": "1000 m",
+      "height": 200
+    }
+  ]
+}

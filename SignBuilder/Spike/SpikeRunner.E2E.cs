@@ -71,6 +71,7 @@ namespace SignBuilder.Spike
             yield return Test("e2e.free", TestFreePlacement(tool));
             yield return Test("e2e.standalone", TestStandalone(tool));
             yield return Test("e2e.templates", TestTemplates(ui));
+            yield return Test("e2e.themes", TestThemes(ui, tool));
             yield return Test("e2e.uipause", TestDesignerPause(ui));
             yield return Test("e2e.save", TestSaveForReload());
             ui.SetEditorOpen(false);
@@ -87,8 +88,12 @@ namespace SignBuilder.Spike
             yield return new WaitForSecondsRealtime(0.5f);
         }
 
-        private static LayoutOptions Options(string type, string span, bool left = false) =>
-            new LayoutOptions { Type = type, Span = span, LeftSide = left };
+        /// <summary>Test shorthand: "full" = a span over every road alongside, "single" = a span over its own road.</summary>
+        private static LayoutOptions Options(string type, string span, bool left = false) => new LayoutOptions
+        {
+            Type = type, Span = span == "cantilever" ? "cantilever" : "span", LeftSide = left,
+            ExtraRoads = span == "full" ? Enumerable.Range(0, 12).ToList() : new List<int>(),
+        };
 
         /// <summary>One structure per type x span (plus left-hand cantilevers and roadside posts), each on its own stretch of highway.</summary>
         private IEnumerator TestPlaceAll(SignPlacementToolSystem tool)
@@ -232,11 +237,12 @@ namespace SignBuilder.Spike
             SpikeReport.Set("e2e.arrange.leftCantilever", Arrangement(ui));
             SpikeReport.Screenshot("e2e_arrange_left.png");
             yield return new WaitForSecondsRealtime(0.5f);
-            tool.Arrange("{\"op\":\"span\",\"value\":\"single\"}");
+            tool.Arrange("{\"op\":\"span\",\"value\":\"span\"}");
             tool.Arrange("{\"op\":\"side\",\"value\":\"right\"}");
             tool.Arrange("{\"op\":\"removeSign\",\"index\":2}");
             // Full span across every parallel carriageway, raised 1 m, with a sign on the back for the other direction.
-            tool.Arrange("{\"op\":\"span\",\"value\":\"full\"}");
+            tool.Arrange("{\"op\":\"span\",\"value\":\"span\"}");
+            tool.Arrange("{\"op\":\"addRoads\"}");
             tool.Arrange("{\"op\":\"lift\",\"value\":1}");
             tool.Arrange("{\"op\":\"view\",\"value\":\"back\"}");
             tool.Arrange(new JObject { ["op"] = "addSign", ["design"] = Template("guide-exit-only") }.ToString());
@@ -389,6 +395,38 @@ namespace SignBuilder.Spike
             SpikeReport.Set("e2e.standalone.minWidth", Describe(SignPlacementToolSystem.LastPlaced));
         }
 
+        /// <summary>
+        /// Themes: every theme's templates in the designer (UI renderer), and a gantry mixing German, UK and Nordic
+        /// signs (baked renderer) to check fonts, plates and metric sizes end to end.
+        /// </summary>
+        private IEnumerator TestThemes(SignBuilderUISystem ui, SignPlacementToolSystem tool)
+        {
+            SpikeReport.Set("e2e.themes.loaded", string.Join(", ", Themes.All.Select(t => $"{t.Id}:{(t.Def["fonts"] as JArray)?.Count}fonts")));
+            ui.SetEditorOpen(true);
+            foreach (var theme in new[] { "de", "uk", "nordic" })
+            {
+                var dir = Path.Combine(SignBuilderRuntime.ResourcesDir, "Themes", theme, "templates");
+                foreach (var file in Directory.GetFiles(dir, "*.json").OrderBy(f => f))
+                {
+                    ui.OpenForEdit(new AssemblyRecord { Designs = new List<JObject> { JObject.Parse(File.ReadAllText(file)) } }, "new");
+                    yield return new WaitForSecondsRealtime(2.5f);
+                    SpikeReport.Screenshot($"theme_{theme}_{Path.GetFileNameWithoutExtension(file)}.png");
+                    yield return new WaitForSecondsRealtime(0.5f);
+                }
+            }
+            ui.SetEditorOpen(false);
+            var spot = m_Placed.FirstOrDefault(p => p.support == "doubleTruss-full");
+            if (spot.record == null) yield break;
+            var t = math.clamp(spot.t + 0.3f, 0.05f, 0.95f);
+            var designs = new List<JObject> { Template("de/autobahn-vorwegweiser"), Template("uk/motorway-advance"), Template("nordic/motorvag-se") };
+            yield return PlaceAndWait(() => tool.PlaceForTest(spot.edge, t, designs, Options("doubleTruss", "full")));
+            SpikeReport.Set("e2e.themes.gantry", Describe(SignPlacementToolSystem.LastPlaced));
+            yield return Shoot(SignPlacementToolSystem.LastPlaced, "e2e_themes_gantry.png", 10f, 40f);
+            var standalone = Template("uk/primary-route");
+            yield return PlaceAndWait(() => tool.PlaceForTest(spot.edge, math.clamp(t - 0.12f, 0.05f, 0.95f), new List<JObject> { standalone }, Options("ground", "single")));
+            yield return Shoot(SignPlacementToolSystem.LastPlaced, "e2e_themes_standalone.png", 20f, 22f);
+        }
+
         /// <summary>Templates on disk: save, rename, hide a built-in, delete.</summary>
         private IEnumerator TestTemplates(SignBuilderUISystem ui)
         {
@@ -405,7 +443,7 @@ namespace SignBuilder.Spike
                 SpikeReport.Set("e2e.templates.renamed", JArray.Parse(UITemplates(ui)).Any(x => (string)x["name"] == "E2E Renamed"));
                 // Keep it for the UI screenshots, deleted at the end of the designer pause.
             }
-            ui.DeleteTemplate("builtin:advance-guide");
+            ui.DeleteTemplate("builtin:us/advance-guide");
             yield return null;
             SpikeReport.Set("e2e.templates.hidden", $"before={builtIns} now={JArray.Parse(UITemplates(ui)).Count} ids={Names()}");
             var hidden = Path.Combine(SignBuilderRuntime.DataDir, "hidden-templates.json");
@@ -444,7 +482,7 @@ namespace SignBuilder.Spike
         }
 
         private static JObject Template(string name) =>
-            JObject.Parse(File.ReadAllText(Path.Combine(SignBuilderRuntime.ResourcesDir, "Templates", name + ".json")));
+            JObject.Parse(File.ReadAllText(Path.Combine(SignBuilderRuntime.ResourcesDir, "Themes", name.Contains("/") ? name.Split('/')[0] : "us", "templates", (name.Contains("/") ? name.Split('/')[1] : name) + ".json")));
 
         private IEnumerator PlaceAndWait(Action place)
         {

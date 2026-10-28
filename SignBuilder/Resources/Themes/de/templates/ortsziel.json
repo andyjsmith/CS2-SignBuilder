@@ -1,0 +1,22 @@
+{
+  "theme": "de",
+  "name": "Local destination",
+  "scheme": "white",
+  "items": [
+    {
+      "type": "row",
+      "align": "center",
+      "items": [
+        {
+          "type": "text",
+          "text": "Stadtmitte"
+        },
+        {
+          "type": "arrow",
+          "direction": "right",
+          "height": 300
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,41 @@
+{
+  "theme": "nordic",
+  "name": "Motorway advance sign (SE)",
+  "scheme": "blue",
+  "items": [
+    {
+      "type": "row",
+      "align": "center",
+      "items": [
+        {
+          "type": "shield",
+          "network": "EXIT",
+          "number": "151"
+        },
+        {
+          "type": "shield",
+          "network": "E",
+          "number": "4"
+        },
+        {
+          "type": "shield",
+          "network": "RIKSVAG",
+          "number": "40"
+        }
+      ]
+    },
+    {
+      "type": "text",
+      "text": "Stockholm"
+    },
+    {
+      "type": "text",
+      "text": "Södertälje"
+    },
+    {
+      "type": "text",
+      "text": "2 km",
+      "height": 200
+    }
+  ]
+}

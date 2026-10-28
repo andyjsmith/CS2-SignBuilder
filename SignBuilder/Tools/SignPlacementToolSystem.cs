@@ -218,6 +218,12 @@ namespace SignBuilder.Tools
                 case "scale": m_Options.SignScale = Step(m_Options.SignScale, (int?)a["value"] ?? 0); break;
                 case "lift": m_Options.Lift = math.clamp(m_Options.Lift + ((float?)a["value"] ?? 0f), -1f, 6f); break;
                 case "view": m_ViewBack = (string)a["value"] == "back"; break;
+                case "addRoads": // test hook: every road alongside
+                    m_Options.ExtraRoads = Enumerable.Range(0, m_Pinned?.Carriageways.Count ?? 0).ToList();
+                    break;
+                case "toggleRoad":
+                    if (i >= 0 && !m_Options.ExtraRoads.Remove(i)) m_Options.ExtraRoads.Add(i);
+                    break;
                 case "addSign":
                     if (a["design"] is JObject added) AddSign(added);
                     break;
@@ -352,6 +358,12 @@ namespace SignBuilder.Tools
                 ["structure"] = new JArray(structure.x, structure.y),
                 ["posts"] = new JArray((p.PostXs ?? System.Array.Empty<float>()).Select(V)),
                 ["signs"] = signs, ["otherSide"] = other, ["view"] = m_ViewBack ? "back" : "front", ["total"] = m_Designs.Count,
+                ["roads"] = new JArray((p.Roads ?? System.Array.Empty<float3>()).Select(r =>
+                {
+                    var a = m_ViewBack ? -r.y : r.x;
+                    var b = m_ViewBack ? -r.x : r.y;
+                    return new JArray(a, b, r.z > 0.5f);
+                })),
                 ["type"] = m_Options.Type, ["span"] = m_Options.Span, ["side"] = m_Options.LeftSide ? "left" : "right",
                 ["reverse"] = m_Options.Reverse, ["free"] = m_Options.Free, ["scale"] = m_Options.SignScale / LayoutOptions.kDefaultScale,
                 ["lift"] = m_Options.Lift, ["angle"] = m_Options.Angle, ["elevation"] = m_Options.Elevation, ["width"] = m_Options.FreeWidth,
@@ -420,11 +432,21 @@ namespace SignBuilder.Tools
 
             if (m_Mode == Mode.Arrange)
             {
-                // The pinned gantry is previewed; clicking another road (or spot) moves it there.
+                // The pinned gantry is previewed. Clicking a road alongside adds it to (or removes it from) the span;
+                // clicking anywhere else moves the gantry there.
                 if (snap != null && !m_Busy && applyAction.WasPressedThisFrame())
                 {
-                    m_Pinned = snap;
-                    if (m_Options.Free) m_FreePoint = raycast.m_HitPosition;
+                    var road = m_Options.Free ? -1 : RoadAlongside(entity);
+                    if (road > 0 && m_Options.Span != "cantilever" && road != m_LastPlacement?.BaseRoad)
+                    {
+                        if (!m_Options.ExtraRoads.Remove(road)) m_Options.ExtraRoads.Add(road);
+                    }
+                    else if (road < 0 || m_Options.Span == "cantilever")
+                    {
+                        m_Pinned = snap;
+                        m_Options.ExtraRoads.Clear();
+                        if (m_Options.Free) m_FreePoint = raycast.m_HitPosition;
+                    }
                 }
                 if (m_Pinned != null) DrawPreview(m_Pinned, "pinned " + m_Pinned.Point);
             }
@@ -445,6 +467,13 @@ namespace SignBuilder.Tools
             }
             return base.OnUpdate(inputDeps);
         }
+
+        /// <summary>
+        /// The clicked road as one of the pinned gantry's roads (Snap.Carriageways index): any road the gantry line
+        /// crosses while running alongside, however far, is added to the snap's roads. -1 when it is not one.
+        /// </summary>
+        private int RoadAlongside(Entity edge) =>
+            m_Pinned == null ? -1 : new RoadProbe(EntityManager, m_PrefabSystem).AddRoad(m_Pinned, edge);
 
         private void Cancel()
         {

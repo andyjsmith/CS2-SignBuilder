@@ -1,0 +1,22 @@
+{
+  "theme": "nordic",
+  "name": "Local destination",
+  "scheme": "white",
+  "items": [
+    {
+      "type": "row",
+      "align": "center",
+      "items": [
+        {
+          "type": "text",
+          "text": "Centrum"
+        },
+        {
+          "type": "arrow",
+          "direction": "right",
+          "height": 300
+        }
+      ]
+    }
+  ]
+}

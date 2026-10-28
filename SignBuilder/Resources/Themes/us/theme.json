@@ -1,0 +1,232 @@
+{
+  "id": "us",
+  "name": "United States",
+  "description": "MUTCD guide signs (Roadgeek 2014 fonts)",
+  "units": "in",
+  "defaults": {
+    "font": "RG2014EM",
+    "textHeight": 16,
+    "shieldHeight": 36,
+    "arrowHeight": 24,
+    "border": 2,
+    "cornerRadius": 12,
+    "lineGap": 0.75,
+    "margin": 0.75,
+    "itemGap": 0.6,
+    "scheme": "green"
+  },
+  "fonts": [
+    {
+      "family": "RG2014D",
+      "file": "fonts/RG2014D.ttf",
+      "label": "Series D",
+      "scale": 1.75,
+      "offset": 0.125
+    },
+    {
+      "family": "RG2014E",
+      "file": "fonts/RG2014E.ttf",
+      "label": "Series E",
+      "scale": 1.75,
+      "offset": 0.125
+    },
+    {
+      "family": "RG2014EM",
+      "file": "fonts/RG2014EM.ttf",
+      "label": "Series E(M)",
+      "scale": 1.75,
+      "offset": 0.125
+    },
+    {
+      "family": "RG2014C",
+      "file": "fonts/RG2014C.ttf",
+      "label": "Series C",
+      "scale": 1.75,
+      "offset": 0.125
+    },
+    {
+      "family": "RG2014F",
+      "file": "fonts/RG2014F.ttf",
+      "label": "Series F",
+      "scale": 1.75,
+      "offset": 0.125
+    },
+    {
+      "family": "RG2014B",
+      "file": "fonts/RG2014B.ttf",
+      "label": "Series B",
+      "scale": 1.75,
+      "offset": 0.125,
+      "hidden": true
+    },
+    {
+      "family": "RG2014EEM",
+      "file": "fonts/RG2014EEM.ttf",
+      "label": "Series EE(M)",
+      "scale": 1.75,
+      "offset": 0.125,
+      "hidden": true
+    }
+  ],
+  "schemes": {
+    "green": {
+      "bg": "#006b45",
+      "fg": "#ffffff",
+      "label": "Guide"
+    },
+    "blue": {
+      "bg": "#1f4ea1",
+      "fg": "#ffffff",
+      "label": "Services"
+    },
+    "brown": {
+      "bg": "#6b3f1d",
+      "fg": "#ffffff",
+      "label": "Recreation"
+    },
+    "yellow": {
+      "bg": "#ffcc00",
+      "fg": "#000000",
+      "label": "Warning / EXIT ONLY"
+    },
+    "white": {
+      "bg": "#ffffff",
+      "fg": "#000000",
+      "label": "Regulatory"
+    }
+  },
+  "shields": {
+    "I": {
+      "label": "Interstate",
+      "shape": "img",
+      "img": "shields/interstate.svg",
+      "aspect": 1.0,
+      "fg": "#ffffff",
+      "num": 0.4,
+      "top": 0.36,
+      "font": "RG2014D",
+      "wideFont": "RG2014C",
+      "wide": 1.25,
+      "default": "95"
+    },
+    "US": {
+      "label": "US route",
+      "shape": "img",
+      "img": "shields/us_route.svg",
+      "aspect": 1.0,
+      "fg": "#000000",
+      "num": 0.45,
+      "top": 0.27,
+      "font": "RG2014D",
+      "wideFont": "RG2014C",
+      "wide": 1.25,
+      "default": "1"
+    },
+    "STATE": {
+      "label": "State route",
+      "shape": "ellipse",
+      "bg": "#ffffff",
+      "border": "#000000",
+      "fg": "#000000",
+      "aspect": 1.0,
+      "num": 0.45,
+      "top": 0.27,
+      "font": "RG2014D",
+      "wideFont": "RG2014C",
+      "wide": 1.25,
+      "default": "2"
+    }
+  },
+  "arrow": "M32 0 H68 V88 H100 L50 150 L0 88 H32 Z",
+  "features": {
+    "exitTab": true,
+    "exitOnly": true,
+    "cardinal": true
+  },
+  "exitTab": {
+    "font": "RG2014E",
+    "height": 12
+  },
+  "exitOnly": {
+    "font": "RG2014E",
+    "words": [
+      "EXIT",
+      "ONLY"
+    ]
+  },
+  "laneWidth": 157.48031496062993,
+  "parts": [
+    {
+      "label": "Text",
+      "item": {
+        "type": "text",
+        "text": "Destination",
+        "height": 16
+      }
+    },
+    {
+      "label": "Shield",
+      "item": {
+        "type": "shield",
+        "network": "I",
+        "number": "95",
+        "height": 36
+      }
+    },
+    {
+      "label": "Cardinal",
+      "item": {
+        "type": "text",
+        "text": "NORTH",
+        "height": 15,
+        "font": "RG2014D"
+      }
+    },
+    {
+      "label": "Arrow",
+      "item": {
+        "type": "arrow",
+        "direction": "up",
+        "height": 24
+      }
+    },
+    {
+      "label": "Distance",
+      "item": {
+        "type": "text",
+        "text": "1 MILE",
+        "height": 12,
+        "font": "RG2014D"
+      }
+    },
+    {
+      "label": "Divider",
+      "item": {
+        "type": "divider"
+      }
+    },
+    {
+      "label": "Row",
+      "item": {
+        "type": "row",
+        "align": "center",
+        "items": []
+      }
+    },
+    {
+      "label": "Panel",
+      "item": {
+        "type": "panel",
+        "scheme": "white",
+        "items": [
+          {
+            "type": "text",
+            "text": "TOLL",
+            "height": 12,
+            "font": "RG2014D"
+          }
+        ]
+      }
+    }
+  ]
+}

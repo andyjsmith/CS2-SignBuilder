@@ -26,6 +26,7 @@ namespace SignBuilder.Systems
 
         private ValueBinding<bool> m_EditorOpen;
         private ValueBinding<string> m_Templates;
+        private ValueBinding<string> m_Themes;
         private ValueBinding<string> m_EditingDesign;
         private ValueBinding<string> m_ToolStatus;
         private ValueBinding<string> m_ToolMode;
@@ -46,6 +47,7 @@ namespace SignBuilder.Systems
             m_Tool = World.GetOrCreateSystemManaged<SignPlacementToolSystem>();
             AddBinding(m_EditorOpen = new ValueBinding<bool>(Group, "editorOpen", false));
             AddBinding(m_Templates = new ValueBinding<string>(Group, "templates", "[]"));
+            AddBinding(m_Themes = new ValueBinding<string>(Group, "themes", "[]"));
             AddBinding(m_EditingDesign = new ValueBinding<string>(Group, "editingDesign", ""));
             AddBinding(m_ToolStatus = new ValueBinding<string>(Group, "toolStatus", ""));
             AddBinding(m_ToolMode = new ValueBinding<string>(Group, "toolMode", "off"));
@@ -107,22 +109,30 @@ namespace SignBuilder.Systems
         {
             base.OnGameLoadingComplete(purpose, mode);
             // The editor preview loads renderer.js/css and fonts from the mod folder through this host.
-            GameManager.instance.userInterface.view.uiSystem.AddHostLocation("signbuilder", SignBuilderRuntime.ResourcesDir, shouldWatch: false);
-            m_Templates.Update(LoadTemplates());
+            var ui = GameManager.instance.userInterface.view.uiSystem;
+            ui.AddHostLocation("signbuilder", SignBuilderRuntime.ResourcesDir, shouldWatch: false);
+            Directory.CreateDirectory(SignBuilderRuntime.DataDir);
+            ui.AddHostLocation(Themes.DataHost, SignBuilderRuntime.DataDir, shouldWatch: false);
+            RefreshLibrary();
         }
 
         public void SetEditorOpen(bool open)
         {
             m_EditorOpen.Update(open);
-            if (open)
-            {
-                m_Templates.Update(LoadTemplates());
-            }
+            if (open) RefreshLibrary();
             else
             {
                 m_Tool.Deactivate();
                 SetStatus("");
             }
+        }
+
+        /// <summary>Re-reads themes and templates from disk (players may have added files).</summary>
+        public void RefreshLibrary()
+        {
+            Themes.Reload();
+            m_Themes.Update(Themes.Json());
+            m_Templates.Update(LoadTemplates());
         }
 
         /// <summary>Opens the editor on a placed structure's signs (kind: "posts" or "gantry").</summary>
@@ -148,25 +158,27 @@ namespace SignBuilder.Systems
             catch { return new HashSet<string>(); }
         }
 
-        /// <summary>Built-in templates (Resources/Templates, minus hidden ones) followed by the player's own.</summary>
+        /// <summary>Each theme's templates (minus hidden ones), then the player's own; every design names its theme.</summary>
         private static string LoadTemplates()
         {
             var list = new JArray();
             var hidden = Hidden();
-            void AddFrom(string dir, bool builtIn)
+            void AddFrom(string dir, bool builtIn, string theme)
             {
                 if (!Directory.Exists(dir)) return;
                 foreach (var file in Directory.GetFiles(dir, "*.json").OrderBy(f => f))
                 {
-                    var id = (builtIn ? "builtin:" : "user:") + Path.GetFileNameWithoutExtension(file);
+                    var id = (builtIn ? $"builtin:{theme}/" : "user:") + Path.GetFileNameWithoutExtension(file);
                     if (hidden.Contains(id)) continue;
                     try
                     {
                         var design = JObject.Parse(File.ReadAllText(file));
+                        if (design["theme"] == null) design["theme"] = theme ?? Themes.DefaultId;
                         list.Add(new JObject
                         {
                             ["id"] = id, ["builtIn"] = builtIn,
                             ["name"] = (string)design["name"] ?? Path.GetFileNameWithoutExtension(file),
+                            ["theme"] = design["theme"],
                             ["design"] = design,
                         });
                     }
@@ -176,8 +188,8 @@ namespace SignBuilder.Systems
                     }
                 }
             }
-            AddFrom(Path.Combine(SignBuilderRuntime.ResourcesDir, "Templates"), true);
-            AddFrom(UserTemplatesDir, false);
+            foreach (var theme in Themes.All) AddFrom(Path.Combine(theme.Dir, "templates"), true, theme.Id);
+            AddFrom(UserTemplatesDir, false, null);
             return list.ToString(Formatting.None);
         }
 

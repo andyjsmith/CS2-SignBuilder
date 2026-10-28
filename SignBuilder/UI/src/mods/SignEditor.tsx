@@ -2,9 +2,11 @@ import { useValue } from "cs2/api";
 import { useEffect, useMemo, useState } from "react";
 import { Arrange } from "./Arrange";
 import {
-  arrange, cancelTool, editingDesign$, editorOpen$, replacing$, savePosts, setEditorOpen, startGantry, startPosts, templates$, toolMode$, toolStatus$,
+  arrange, cancelTool, editingDesign$, editorOpen$, replacing$, savePosts, setEditorOpen, startGantry, startPosts, templates$, themes$, toolMode$, toolStatus$,
 } from "./bindings";
-import { BLANK, Designer, DesignerAction } from "./Designer";
+import { Designer, DesignerAction } from "./Designer";
+import { registerThemes } from "./SignPreview";
+import { Theme, blankFor } from "./themeModel";
 import { Design, clone } from "./designModel";
 import { PlacementBar } from "./PlacementBar";
 import { Template } from "./TemplateLibrary";
@@ -28,8 +30,11 @@ export const SignEditor = () => {
   const mode = useValue(toolMode$);
   const replacing = useValue(replacing$);
   const templates: Template[] = useMemo(() => { try { return JSON.parse(templatesJson); } catch { return []; } }, [templatesJson]);
+  const themesJson = useValue(themes$);
+  const themes: Theme[] = useMemo(() => { try { return JSON.parse(themesJson); } catch { return []; } }, [themesJson]);
+  useEffect(() => registerThemes(themes), [themes]);
 
-  const [design, setDesign] = useState<Design>(BLANK);
+  const [design, setDesign] = useState<Design>(blankFor());
   const [context, setContext] = useState<Context>({ kind: "new" });
 
   // A placed structure opened for editing (or a design pushed by the harness).
@@ -101,7 +106,7 @@ export const SignEditor = () => {
   }
 
   return (
-    <Designer design={design} setDesign={setDesign} templates={templates} title={title} actions={actions}
+    <Designer design={design} setDesign={setDesign} templates={templates} themes={themes} title={title} actions={actions}
       status={mode === "off" ? status : ""} onClose={close} />
   );
 };
