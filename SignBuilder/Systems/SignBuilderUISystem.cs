@@ -26,6 +26,8 @@ namespace SignBuilder.Systems
         private ValueBinding<string> m_EditingDesign;
         private ValueBinding<string> m_ToolStatus;
         private ValueBinding<string> m_ToolMode;
+        private ValueBinding<string> m_PlaceInfo;
+        private ValueBinding<bool> m_Replacing;
         private SignPlacementToolSystem m_Tool;
 
         public bool EditorOpen => m_EditorOpen.value;
@@ -39,6 +41,11 @@ namespace SignBuilder.Systems
             AddBinding(m_EditingDesign = new ValueBinding<string>(Group, "editingDesign", ""));
             AddBinding(m_ToolStatus = new ValueBinding<string>(Group, "toolStatus", ""));
             AddBinding(m_ToolMode = new ValueBinding<string>(Group, "toolMode", "off"));
+            AddBinding(m_PlaceInfo = new ValueBinding<string>(Group, "placeInfo", "{}"));
+            AddBinding(m_Replacing = new ValueBinding<bool>(Group, "replacing", false));
+            AddBinding(new TriggerBinding<string>(Group, "adjust", a => m_Tool.Adjust(a)));
+            AddBinding(new TriggerBinding<string>(Group, "saveEdit", SaveEdit));
+            AddBinding(new TriggerBinding(Group, "forgetEdit", () => m_Tool.ForgetReplacing()));
             AddBinding(new TriggerBinding<bool>(Group, "setEditorOpen", SetEditorOpen));
             AddBinding(new TriggerBinding<string>(Group, "startPlacement", StartPlacement));
             AddBinding(new TriggerBinding(Group, "cancelTool", () => m_Tool.BeginPick()));
@@ -50,6 +57,9 @@ namespace SignBuilder.Systems
             // The editor shrinks to a small bar while placing so the road stays clickable.
             var mode = m_Tool.ModeName;
             if (mode != m_ToolMode.value) m_ToolMode.Update(mode);
+            var info = m_Tool.PlacementInfo;
+            if (info != m_PlaceInfo.value) m_PlaceInfo.Update(info);
+            if (m_Tool.IsReplacing != m_Replacing.value) m_Replacing.Update(m_Tool.IsReplacing);
         }
 
         public string ToolMode => m_ToolMode.value;
@@ -81,12 +91,31 @@ namespace SignBuilder.Systems
         {
             try
             {
-                var obj = JObject.Parse(payload);
-                // { designs: [...] } (several signs on one structure) or the older { design }.
-                var designs = obj["designs"] is JArray list ? list.OfType<JObject>().ToList() : new System.Collections.Generic.List<JObject> { (JObject)obj["design"] };
-                var support = (string)obj["support"] ?? "truss";
-                if (!AssemblyBuilder.Supports.Contains(support)) support = "truss";
-                m_Tool.BeginPlace(designs, support, (bool?)obj["reverse"] ?? false);
+                var (designs, support, reverse, free) = ReadPayload(payload);
+                m_Tool.BeginPlace(designs, support, reverse, free);
+            }
+            catch (Exception e)
+            {
+                SetStatus("Could not read the sign design: " + e.Message);
+            }
+        }
+
+        /// <summary>{ designs: [...] } (several signs on one structure) or the older { design }, plus support, reverse, free.</summary>
+        private static (System.Collections.Generic.List<JObject> designs, string support, bool reverse, bool free) ReadPayload(string payload)
+        {
+            var obj = JObject.Parse(payload);
+            var designs = obj["designs"] is JArray list ? list.OfType<JObject>().ToList() : new System.Collections.Generic.List<JObject> { (JObject)obj["design"] };
+            var support = (string)obj["support"] ?? "truss";
+            if (!AssemblyBuilder.Supports.Contains(support)) support = "truss";
+            return (designs, support, (bool?)obj["reverse"] ?? false, (bool?)obj["free"] ?? false);
+        }
+
+        public void SaveEdit(string payload)
+        {
+            try
+            {
+                var (designs, support, reverse, _) = ReadPayload(payload);
+                m_Tool.SaveEdit(designs, support, reverse);
             }
             catch (Exception e)
             {
@@ -99,7 +128,11 @@ namespace SignBuilder.Systems
         {
             m_EditorOpen.Update(true);
             // A fresh object each time so the React effect fires even for the same assembly.
-            m_EditingDesign.Update(new JObject { ["designs"] = new JArray(record.Designs), ["support"] = record.Support, ["reverse"] = record.Reverse, ["nonce"] = Guid.NewGuid().ToString("N") }.ToString(Formatting.None));
+            m_EditingDesign.Update(new JObject
+            {
+                ["designs"] = new JArray(record.Designs), ["support"] = record.Support, ["reverse"] = record.Reverse,
+                ["free"] = record.Context?.Options?.Free ?? false, ["nonce"] = Guid.NewGuid().ToString("N"),
+            }.ToString(Formatting.None));
         }
 
         public void SetStatus(string status) => m_ToolStatus.Update(status ?? "");

@@ -22,3 +22,13 @@ export const startPlacement = (payload: string) => trigger(group, "startPlacemen
 export const cancelTool = () => trigger(group, "cancelTool");
 /** Opens the editor on the structure selected in the game's selected-object panel. */
 export const editSelected = () => trigger(group, "editSelected");
+/** JSON { free, lane, laneCount, shift, angle, elevation, width, support } while placing. */
+export const placeInfo$ = bindValue<string>(group, "placeInfo", "{}");
+/** True while a placed sign is being edited (Save rebuilds it in place). */
+export const replacing$ = bindValue<boolean>(group, "replacing", false);
+/** Placement bar actions: laneLeft, laneRight, shiftLeft, shiftRight, rotateLeft, rotateRight, raise, lower, wider, narrower, free, road, reset. */
+export const adjust = (action: string) => trigger(group, "adjust", action);
+/** Saves the edited design over the placed sign being edited. */
+export const saveEdit = (payload: string) => trigger(group, "saveEdit", payload);
+/** Stops editing the placed sign; the next placement is a new sign. */
+export const forgetEdit = () => trigger(group, "forgetEdit");

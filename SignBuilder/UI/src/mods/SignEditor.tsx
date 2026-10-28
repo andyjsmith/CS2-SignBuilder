@@ -2,25 +2,55 @@ import { useValue } from "cs2/api";
 import { getModule } from "cs2/modding";
 import { Button, Panel } from "cs2/ui";
 import { useEffect, useMemo, useState } from "react";
-import { cancelTool, editingDesign$, editorOpen$, setEditorOpen, startPlacement, templates$, toolMode$, toolStatus$ } from "./bindings";
+import {
+  adjust, cancelTool, editingDesign$, editorOpen$, forgetEdit, placeInfo$, replacing$, saveEdit, setEditorOpen, startPlacement,
+  templates$, toolMode$, toolStatus$,
+} from "./bindings";
 import {
   Design, Item, PALETTE, SUPPORTS, clone, describe, getItem, insertItem, joinWithNext, moveItem, outline, removeItem, updateItem,
 } from "./designModel";
+import { AlignIcon, ArrowIcon, ExitOnlyIcon, ExitTabIcon, SCHEME_COLOURS, ShieldIcon } from "./Icons";
 import { SignPreview } from "./SignPreview";
 import styles from "./SignEditor.module.scss";
 
 type Template = { id: string; name: string; design: Design; support?: string };
+type Option = { value: string; label?: string; icon?: any; title?: string; style?: any };
 
 const BLANK: Design = { scheme: "green", items: [{ type: "text", text: "Destination", height: 16 }] };
 const SCHEMES = ["green", "blue", "brown", "yellow", "white"];
-const FONTS = ["RG2014D", "RG2014E", "RG2014EM", "RG2014C", "RG2014F"];
-const ARROWS = ["up", "down", "left", "right", "up-left", "up-right", "down-left", "down-right"];
-const NETWORKS = ["I", "US", "STATE"];
+const FONTS: Option[] = [
+  { value: "RG2014D", label: "Series D" }, { value: "RG2014E", label: "Series E" }, { value: "RG2014EM", label: "Series E(M)" },
+  { value: "RG2014C", label: "Series C" }, { value: "RG2014F", label: "Series F" },
+].map((f) => ({ ...f, style: { fontFamily: f.value } }));
+const ARROWS = ["up-left", "up", "up-right", "left", "right", "down-left", "down", "down-right"];
+const NETWORKS: Option[] = [
+  { value: "I", icon: <ShieldIcon network="I" />, title: "Interstate" },
+  { value: "US", icon: <ShieldIcon network="US" />, title: "US route" },
+  { value: "STATE", icon: <ShieldIcon network="STATE" />, title: "State route" },
+];
+const ALIGN: Option[] = ["start", "center", "end"].map((a) => ({ value: a, icon: <AlignIcon align={a} />, title: a }));
 
-const Choice = (props: { options: string[]; value: string; onChange: (v: string) => void }) => (
+/** A row of option buttons showing an icon, a label, or both. */
+const Choice = (props: { options: (string | Option)[]; value: string; onChange: (v: string) => void }) => (
   <div className={styles.choices}>
-    {props.options.map((o) => (
-      <div key={o} className={o === props.value ? styles.choiceOn : styles.choice} onClick={() => props.onChange(o)}>{o}</div>
+    {props.options.map((raw) => {
+      const o: Option = typeof raw === "string" ? { value: raw, label: raw } : raw;
+      return (
+        <div key={o.value} title={o.title} className={o.value === props.value ? styles.choiceOn : styles.choice} style={o.style}
+          onClick={() => props.onChange(o.value)}>
+          {o.icon}
+          {o.icon && o.label ? <span style={{ marginLeft: "6rem" }}>{o.label}</span> : o.label}
+        </div>
+      );
+    })}
+  </div>
+);
+
+const Swatches = (props: { value: string; onChange: (v: string) => void }) => (
+  <div className={styles.choices}>
+    {SCHEMES.map((s) => (
+      <div key={s} title={s} className={s === props.value ? styles.swatchOn : styles.swatch}
+        style={{ backgroundColor: SCHEME_COLOURS[s] }} onClick={() => props.onChange(s)} />
     ))}
   </div>
 );
@@ -77,16 +107,85 @@ function ItemProperties(props: { item: Item; onChange: (patch: Partial<Item>) =>
     case "arrow":
       return (
         <>
-          <Field label="Direction"><Choice options={ARROWS} value={item.direction ?? "up"} onChange={(direction) => onChange({ direction })} /></Field>
+          <Field label="Direction">
+            <Choice options={ARROWS.map((a) => ({ value: a, icon: <ArrowIcon direction={a} />, title: a }))}
+              value={item.direction ?? "up"} onChange={(direction) => onChange({ direction })} />
+          </Field>
           <Field label="Size"><NumberBox value={item.height ?? 24} step={2} onChange={(height) => onChange({ height })} /></Field>
         </>
       );
     case "row":
-      return <Field label="Align"><Choice options={["start", "center", "end"]} value={item.align ?? "center"} onChange={(align) => onChange({ align })} /></Field>;
+      return <Field label="Align"><Choice options={ALIGN} value={item.align ?? "center"} onChange={(align) => onChange({ align })} /></Field>;
     default:
       return null;
   }
 }
+
+type PlaceInfo = { free?: boolean; lane?: number; laneCount?: number; shift?: number; angle?: number; elevation?: number; width?: number; support?: string };
+
+/** The small bar shown at the top of the screen while placing (or picking a sign to edit). */
+const PlacementBar = (props: { picking: boolean; status: string; onBack: () => void; onClose: () => void }) => {
+  const infoJson = useValue(placeInfo$);
+  const info: PlaceInfo = useMemo(() => { try { return JSON.parse(infoJson); } catch { return {}; } }, [infoJson]);
+  const Step = (p: { action: string; children: any; title?: string }) => (
+    <div className={styles.step} title={p.title} onClick={() => adjust(p.action)}>{p.children}</div>
+  );
+  const laneLabel = !info.laneCount ? "No lanes" : (info.lane ?? -1) < 0 ? "All lanes" : `Lane ${(info.lane ?? 0) + 1} of ${info.laneCount}`;
+  const overhead = info.support !== "ground";
+  const PanelAny: any = Panel;
+  return (
+    <PanelAny draggable initialPosition={{ x: 0.5, y: 0.06 }} header="Sign Builder" className={styles.compact} onClose={props.onClose}>
+      <div className={styles.compactBody}>
+        <div className={styles.status}>{props.picking ? "Click a placed Sign Builder sign to edit it. Right-click to go back." : props.status}</div>
+        {!props.picking && (
+          <>
+            <div className={styles.barRow}>
+              <Choice options={[{ value: "road", label: "Snap to road" }, { value: "free", label: "Free placement" }]}
+                value={info.free ? "free" : "road"} onChange={(v) => adjust(v)} />
+            </div>
+            {!info.free && (
+              <div className={styles.barRow}>
+                <div className={styles.barLabel}>Signs over</div>
+                <Step action="laneLeft" title="Previous lane (,)"><ArrowIcon direction="left" size={12} /></Step>
+                <div className={styles.barValue}>{laneLabel}</div>
+                <Step action="laneRight" title="Next lane (.)"><ArrowIcon direction="right" size={12} /></Step>
+              </div>
+            )}
+            {info.free && (
+              <div className={styles.barRow}>
+                <div className={styles.barLabel}>Rotate</div>
+                <Step action="rotateLeft" title="Rotate left (,)">-15°</Step>
+                <div className={styles.barValue}>{`${Math.round(info.angle ?? 0)}°`}</div>
+                <Step action="rotateRight" title="Rotate right (.)">+15°</Step>
+                <div className={styles.barLabel} style={{ marginLeft: "16rem" }}>Height</div>
+                <Step action="lower" title="Lower (Page Down)"><ArrowIcon direction="down" size={12} /></Step>
+                <div className={styles.barValue}>{`${(info.elevation ?? 0).toFixed(1)} m`}</div>
+                <Step action="raise" title="Raise (Page Up)"><ArrowIcon direction="up" size={12} /></Step>
+              </div>
+            )}
+            <div className={styles.barRow}>
+              <div className={styles.barLabel}>Shift signs</div>
+              <Step action="shiftLeft"><ArrowIcon direction="left" size={12} /></Step>
+              <div className={styles.barValue}>{`${(info.shift ?? 0).toFixed(1)} m`}</div>
+              <Step action="shiftRight"><ArrowIcon direction="right" size={12} /></Step>
+              {info.free && overhead && (
+                <>
+                  <div className={styles.barLabel} style={{ marginLeft: "16rem" }}>Span</div>
+                  <Step action="narrower">-</Step>
+                  <div className={styles.barValue}>{`${(info.width ?? 14).toFixed(0)} m`}</div>
+                  <Step action="wider">+</Step>
+                </>
+              )}
+            </div>
+          </>
+        )}
+        <div className={styles.actions}>
+          <Button variant="flat" onSelect={props.onBack}><div className={styles.flatLabel}>Back to editor</div></Button>
+        </div>
+      </div>
+    </PanelAny>
+  );
+};
 
 /** The Sign Builder editor: templates and parts on the left, live preview in the middle, properties on the right. */
 export const SignEditor = () => {
@@ -95,6 +194,7 @@ export const SignEditor = () => {
   const editing = useValue(editingDesign$);
   const status = useValue(toolStatus$);
   const mode = useValue(toolMode$);
+  const replacing = useValue(replacing$);
   // "Edit a placed sign": the editor shrinks so the world can be clicked; picking a sign restores it.
   const [picking, setPicking] = useState(false);
   useEffect(() => { if (mode === "off") setPicking(false); }, [mode]);
@@ -111,8 +211,9 @@ export const SignEditor = () => {
   const [selected, setSelected] = useState<string | null>(null);
   const [support, setSupport] = useState("truss");
   const [reverse, setReverse] = useState(false);
+  const [free, setFree] = useState(false);
 
-  // Re-editing a placed sign: the C# side pushes { design, support } when it opens the editor.
+  // Re-editing a placed sign: the C# side pushes { designs, support, reverse, free } when it opens the editor.
   useEffect(() => {
     if (!editing) return;
     try {
@@ -121,6 +222,7 @@ export const SignEditor = () => {
       setActive(0);
       if (payload.support) setSupport(payload.support);
       setReverse(!!payload.reverse);
+      setFree(!!payload.free);
       setSelected(null);
       setPicking(false);
     } catch { /* ignore malformed payloads */ }
@@ -129,20 +231,13 @@ export const SignEditor = () => {
   if (!open) return null;
 
   const close = () => { cancelTool(); setPicking(false); setEditorOpen(false); };
+  const payload = () => JSON.stringify({ designs: signs, support, reverse: free ? false : reverse, free });
 
   // While placing (or picking a sign to edit) only a small bar stays on screen so the road is reachable.
   if (mode === "place" || (picking && mode === "pick")) {
     return (
-      <Panel draggable header="Sign Builder" className={styles.compact} onClose={close}>
-        <div className={styles.compactBody}>
-          <div className={styles.status}>{picking && mode === "pick" ? "Click a placed Sign Builder sign to edit it. Right-click to go back." : status}</div>
-          <div className={styles.actions}>
-            <Button variant="flat" onSelect={() => { if (mode === "place") cancelTool(); setPicking(false); }}>
-              <div className={styles.flatLabel}>Back to editor</div>
-            </Button>
-          </div>
-        </div>
-      </Panel>
+      <PlacementBar picking={picking && mode === "pick"} status={status} onClose={close}
+        onBack={() => { if (mode === "place") cancelTool(); setPicking(false); }} />
     );
   }
 
@@ -171,17 +266,18 @@ export const SignEditor = () => {
           </div>
 
           <div className={styles.heading}>Sign</div>
-          <Field label="Colour"><Choice options={SCHEMES} value={design.scheme ?? "green"} onChange={(scheme) => setDesign({ ...design, scheme })} /></Field>
+          <Field label="Colour"><Swatches value={design.scheme ?? "green"} onChange={(scheme) => setDesign({ ...design, scheme })} /></Field>
           <Field label="Exit tab">
-            <Choice options={["none", "left", "right"]} value={design.exitTab ? design.exitTab.align ?? "right" : "none"}
+            <Choice options={["none", "left", "right"].map((v) => ({ value: v, icon: <ExitTabIcon side={v} />, title: v }))}
+              value={design.exitTab ? design.exitTab.align ?? "right" : "none"}
               onChange={(v) => setDesign({ ...design, exitTab: v === "none" ? null : { text: design.exitTab?.text ?? "EXIT 1", align: v } })} />
           </Field>
           <Field label="EXIT ONLY panel">
-            <Choice options={["none", "1 arrow", "2 arrows"]}
-              value={design.bottomBar ? ((design.bottomBar.arrows ?? 1) > 1 ? "2 arrows" : "1 arrow") : "none"}
-              onChange={(v) => setDesign({ ...design, bottomBar: v === "none" ? null : { type: "exitOnly", arrows: v.startsWith("2") ? 2 : 1, height: 15 } })} />
+            <Choice options={[0, 1, 2].map((n) => ({ value: String(n), icon: <ExitOnlyIcon arrows={n} />, title: n === 0 ? "none" : `${n} arrow${n > 1 ? "s" : ""}` }))}
+              value={design.bottomBar ? String(design.bottomBar.arrows ?? 1) : "0"}
+              onChange={(v) => setDesign({ ...design, bottomBar: v === "0" ? null : { type: "exitOnly", arrows: Number(v), height: 15 } })} />
           </Field>
-          <Field label="Align lines"><Choice options={["start", "center", "end"]} value={design.align ?? "start"} onChange={(align) => setDesign({ ...design, align })} /></Field>
+          <Field label="Align lines"><Choice options={ALIGN} value={design.align ?? "start"} onChange={(align) => setDesign({ ...design, align })} /></Field>
         </div>
 
         <div className={styles.centre}>
@@ -203,12 +299,33 @@ export const SignEditor = () => {
           <div className={styles.heading}>Mounting</div>
           <Choice options={SUPPORTS.map((s) => s.label)} value={supportLabel}
             onChange={(label) => setSupport(SUPPORTS.find((s) => s.label === label)!.id)} />
-          <div className={styles.heading}>Facing</div>
-          <Choice options={["Clicked road's traffic", "Opposite direction"]} value={reverse ? "Opposite direction" : "Clicked road's traffic"}
-            onChange={(v) => setReverse(v === "Opposite direction")} />
+          <div className={styles.optionRow}>
+            <div className={styles.optionGroup}>
+              <div className={styles.heading}>Placement</div>
+              <Choice options={[{ value: "road", label: "Snap to road" }, { value: "free", label: "Free placement" }]}
+                value={free ? "free" : "road"} onChange={(v) => setFree(v === "free")} />
+            </div>
+            {!free && (
+              <div className={styles.optionGroup}>
+                <div className={styles.heading}>Facing</div>
+                <Choice options={["Clicked road's traffic", "Opposite direction"]} value={reverse ? "Opposite direction" : "Clicked road's traffic"}
+                  onChange={(v) => setReverse(v === "Opposite direction")} />
+              </div>
+            )}
+          </div>
           <div className={styles.actions}>
-            <Button variant="primary" onSelect={() => startPlacement(JSON.stringify({ designs: signs, support, reverse }))}>Place on road</Button>
-            <div className={styles.chip} style={{ marginLeft: "12rem", alignSelf: "center" }} onClick={() => { cancelTool(); setPicking(true); }}>Edit a placed sign</div>
+            {replacing ? (
+              <>
+                <Button variant="primary" onSelect={() => saveEdit(payload())}>Save</Button>
+                <div className={styles.chip} style={{ marginLeft: "12rem", alignSelf: "center" }} onClick={() => startPlacement(payload())}>Move</div>
+                <div className={styles.chip} style={{ alignSelf: "center" }} onClick={() => { forgetEdit(); startPlacement(payload()); }}>Place as new sign</div>
+              </>
+            ) : (
+              <>
+                <Button variant="primary" onSelect={() => startPlacement(payload())}>{free ? "Place" : "Place on road"}</Button>
+                <div className={styles.chip} style={{ marginLeft: "12rem", alignSelf: "center" }} onClick={() => { cancelTool(); setPicking(true); }}>Edit a placed sign</div>
+              </>
+            )}
           </div>
           {status && <div className={styles.status}>{status}</div>}
         </div>

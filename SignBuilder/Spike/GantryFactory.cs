@@ -13,6 +13,13 @@ namespace SignBuilder.Spike
         public const float kTrussDepth = 1.5f;
         public const float kMountHeight = kClearance + kTrussDepth * 0.5f;
 
+        /// <summary>
+        /// How far posts reach below the base plate, so uneven ground never shows a gap under them.
+        /// <c>ground</c> parameters are the drop from the structure's origin (road level) to the terrain
+        /// under its posts: base plates sit on the terrain and posts continue below it.
+        /// </summary>
+        public const float kFooting = 0.5f;
+
         /// <summary>Builds the support described by a spec (layout output, stored in records and saves).</summary>
         public static Mesh FromSpec(Assemblies.SupportSpec spec)
         {
@@ -20,16 +27,16 @@ namespace SignBuilder.Spike
             float Arg(int i) => i < a.Length ? a[i] : 0f;
             return spec.Kind switch
             {
-                "monotube" => Monotube(Arg(0)),
-                "curvedSpan" => CurvedSpan(Arg(0), Arg(1)),
-                "curvedCantilever" => CurvedCantilever(Arg(0), Arg(1)),
-                "cantilever" => Cantilever(Arg(0)),
+                "monotube" => Monotube(Arg(0), Arg(1)),
+                "curvedSpan" => CurvedSpan(Arg(0), Arg(1), ground: Arg(2)),
+                "curvedCantilever" => CurvedCantilever(Arg(0), Arg(1), ground: Arg(2)),
+                "cantilever" => Cantilever(Arg(0), Arg(1)),
                 "ground" => GroundPosts(Arg(0), Arg(1), out _, Arg(2)),
-                _ => Truss(Arg(0)),
+                _ => Truss(Arg(0), Arg(1)),
             };
         }
 
-        public static Mesh Truss(float span)
+        public static Mesh Truss(float span, float ground = 0f)
         {
             var b = new MeshBuilder();
             var half = span * 0.5f;
@@ -69,8 +76,8 @@ namespace SignBuilder.Spike
             {
                 foreach (var z in new[] { z0, z1 })
                 {
-                    b.AddTube(new Vector3(x, 0, z), new Vector3(x, y1 + 0.2f, z), 0.2f, 14);
-                    b.AddBox(new Vector3(x, 0.03f, z), new Vector3(0.8f, 0.06f, 0.8f), Quaternion.identity);
+                    b.AddTube(new Vector3(x, -ground - kFooting, z), new Vector3(x, y1 + 0.2f, z), 0.2f, 14);
+                    b.AddBox(new Vector3(x, 0.03f - ground, z), new Vector3(0.8f, 0.06f, 0.8f), Quaternion.identity);
                 }
                 for (var y = 1.0f; y < y0; y += 1.6f)
                 {
@@ -81,7 +88,7 @@ namespace SignBuilder.Spike
             return b.Build("SignBuilder.Truss");
         }
 
-        public static Mesh Monotube(float span)
+        public static Mesh Monotube(float span, float ground = 0f)
         {
             var b = new MeshBuilder();
             var half = span * 0.5f;
@@ -89,21 +96,19 @@ namespace SignBuilder.Spike
             b.AddTube(new Vector3(-half - 0.2f, y, 0), new Vector3(half + 0.2f, y, 0), 0.32f, 20);
             foreach (var x in new[] { -half, half })
             {
-                b.AddTube(new Vector3(x, 0, 0), new Vector3(x, y + 0.5f, 0), 0.36f, 20);
-                b.AddBox(new Vector3(x, 0.03f, 0), new Vector3(1.0f, 0.06f, 1.0f), Quaternion.identity);
+                b.AddTube(new Vector3(x, -ground - kFooting, 0), new Vector3(x, y + 0.5f, 0), 0.36f, 20);
+                b.AddBox(new Vector3(x, 0.03f - ground, 0), new Vector3(1.0f, 0.06f, 1.0f), Quaternion.identity);
             }
             return b.Build("SignBuilder.Monotube");
         }
 
-        public static Mesh Cantilever(float armLength)
+        public static Mesh Cantilever(float armLength, float ground = 0f)
         {
             var b = new MeshBuilder();
             var y = kMountHeight;
-            b.AddTube(new Vector3(0, 0, 0), new Vector3(0, y + 0.6f, 0), 0.38f, 20);
-            b.AddTube(new Vector3(-0.3f, y, 0), new Vector3(armLength, y, 0), 0.28f, 20);
-            // Upper tie back to the post.
-            b.AddTube(new Vector3(0, y + 0.55f, 0), new Vector3(armLength * 0.45f, y + 0.05f, 0), 0.08f, 10);
-            b.AddBox(new Vector3(0, 0.03f, 0), new Vector3(1.1f, 0.06f, 1.1f), Quaternion.identity);
+            b.AddTube(new Vector3(0, -ground - kFooting, 0), new Vector3(0, y + 0.6f, 0), 0.38f, 20);
+            b.AddTube(new Vector3(-0.3f * Mathf.Sign(armLength), y, 0), new Vector3(armLength, y, 0), 0.28f, 20);
+            b.AddBox(new Vector3(0, 0.03f - ground, 0), new Vector3(1.1f, 0.06f, 1.1f), Quaternion.identity);
             return b.Build("SignBuilder.Cantilever");
         }
 
@@ -114,21 +119,21 @@ namespace SignBuilder.Spike
         /// the horizontal member, with flange rings at the joints. <paramref name="height"/> is the
         /// centre line of the horizontal pipe; signs hang below it.
         /// </summary>
-        public static Mesh CurvedSpan(float span, float height, float bendRadius = 3f)
+        public static Mesh CurvedSpan(float span, float height, float bendRadius = 3f, float ground = 0f)
         {
             var b = new MeshBuilder();
             var half = span * 0.5f;
             var path = new System.Collections.Generic.List<Vector3>();
-            path.Add(new Vector3(-half, 0, 0));
+            path.Add(new Vector3(-half, -ground - kFooting, 0));
             AddArc(path, new Vector3(-half + bendRadius, height - bendRadius, 0), bendRadius, 180f, 90f);
             AddArc(path, new Vector3(half - bendRadius, height - bendRadius, 0), bendRadius, 90f, 0f);
-            path.Add(new Vector3(half, 0, 0));
+            path.Add(new Vector3(half, -ground - kFooting, 0));
             b.AddSweptTube(path, kCurvedPipeRadius, 20);
             foreach (var x in new[] { -half, half })
             {
-                AddFlange(b, new Vector3(x, 1.4f, 0), Vector3.up);
+                AddFlange(b, new Vector3(x, 1.4f - ground, 0), Vector3.up);
                 AddFlange(b, new Vector3(x, height - bendRadius, 0), Vector3.up);
-                b.AddBox(new Vector3(x, 0.04f, 0), new Vector3(1.1f, 0.08f, 1.1f), Quaternion.identity);
+                b.AddBox(new Vector3(x, 0.04f - ground, 0), new Vector3(1.1f, 0.08f, 1.1f), Quaternion.identity);
             }
             AddFlange(b, new Vector3(-half + bendRadius, height, 0), Vector3.right);
             AddFlange(b, new Vector3(half - bendRadius, height, 0), Vector3.right);
@@ -136,17 +141,17 @@ namespace SignBuilder.Spike
         }
 
         /// <summary>Curved tubular cantilever: post at X = 0 bending over into an arm that reaches -X.</summary>
-        public static Mesh CurvedCantilever(float armLength, float height, float bendRadius = 3f)
+        public static Mesh CurvedCantilever(float armLength, float height, float bendRadius = 3f, float ground = 0f)
         {
             var b = new MeshBuilder();
-            var path = new System.Collections.Generic.List<Vector3> { new Vector3(0, 0, 0) };
+            var path = new System.Collections.Generic.List<Vector3> { new Vector3(0, -ground - kFooting, 0) };
             AddArc(path, new Vector3(-bendRadius, height - bendRadius, 0), bendRadius, 0f, 90f);
             path.Add(new Vector3(-armLength, height, 0));
             b.AddSweptTube(path, kCurvedPipeRadius, 20);
-            AddFlange(b, new Vector3(0, 1.4f, 0), Vector3.up);
+            AddFlange(b, new Vector3(0, 1.4f - ground, 0), Vector3.up);
             AddFlange(b, new Vector3(0, height - bendRadius, 0), Vector3.up);
             AddFlange(b, new Vector3(-bendRadius, height, 0), Vector3.right);
-            b.AddBox(new Vector3(0, 0.04f, 0), new Vector3(1.1f, 0.08f, 1.1f), Quaternion.identity);
+            b.AddBox(new Vector3(0, 0.04f - ground, 0), new Vector3(1.1f, 0.08f, 1.1f), Quaternion.identity);
             return b.Build("SignBuilder.CurvedCantilever");
         }
 

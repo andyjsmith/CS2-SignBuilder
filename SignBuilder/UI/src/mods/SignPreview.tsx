@@ -41,8 +41,9 @@ function pathOf(target: EventTarget | null, stop: HTMLElement): string | null {
 
 export const SignPreview = (props: { design: Design; selected: string | null; onSelect: (path: string | null) => void; maxWidth: number; maxHeight: number }) => {
   const host = useRef<HTMLDivElement>(null);
+  const outer = useRef<HTMLDivElement>(null);
   const [ready, setReady] = useState(!!window.SignRenderer);
-  const [fit, setFit] = useState({ scale: 1, x: 0, y: 0 });
+  const [fit, setFit] = useState({ scale: 1, x: 0, y: 0, shown: false });
 
   useEffect(() => {
     loadRenderer().then(() => setReady(true));
@@ -63,23 +64,43 @@ export const SignPreview = (props: { design: Design; selected: string | null; on
       const hit = el.querySelector(`[data-sb-path="${props.selected}"]`) as HTMLElement | null;
       if (hit) hit.style.boxShadow = "0px 0px 0px 3px #ffd400";
     }
-    // Fit the sign into the preview area once it has been laid out.
-    requestAnimationFrame(() => {
-      const w = sign.offsetWidth || 1;
-      const h = sign.offsetHeight || 1;
-      const scale = Math.min(1, (props.maxWidth - 16) / w, (props.maxHeight - 16) / h);
-      setFit({ scale, x: (props.maxWidth - w * scale) / 2, y: (props.maxHeight - h * scale) / 2 });
-    });
+    // Fit the sign into the preview box. Layout is not ready on the first frame (offsetWidth 0) and
+    // grows when the sign fonts and shield images finish loading, so keep measuring for a while.
+    let frames = 0;
+    let cancelled = false;
+    let last = "";
+    const measure = () => {
+      if (cancelled) return;
+      const box = outer.current;
+      const w = sign.offsetWidth;
+      const h = sign.offsetHeight;
+      const bw = box?.clientWidth || props.maxWidth;
+      const bh = box?.clientHeight || props.maxHeight;
+      if (w > 1 && h > 1 && bw > 1 && bh > 1) {
+        const scale = Math.min(1, (bw - 16) / w, (bh - 16) / h);
+        const next = { scale, x: (bw - w * scale) / 2, y: (bh - h * scale) / 2, shown: true };
+        const key = `${next.scale.toFixed(4)} ${next.x.toFixed(1)} ${next.y.toFixed(1)}`;
+        if (key !== last) {
+          last = key;
+          setFit(next);
+        }
+      }
+      if (frames++ < 180) requestAnimationFrame(measure);
+    };
+    requestAnimationFrame(measure);
+    return () => { cancelled = true; };
   }, [ready, props.design, props.selected, props.maxWidth, props.maxHeight]);
 
   return (
     <div
-      style={{ position: "relative", width: props.maxWidth + "px", height: props.maxHeight + "px", overflow: "hidden" }}
+      ref={outer}
+      style={{ position: "relative", width: "100%", height: "100%", overflow: "hidden" }}
       onClick={(e) => props.onSelect(pathOf(e.target, e.currentTarget as HTMLElement))}
     >
       <div ref={host} style={{
         position: "absolute", left: "0px", top: "0px", width: "4000px", height: "4000px",
         transform: `translate(${fit.x}px, ${fit.y}px) scale(${fit.scale})`, transformOrigin: "0px 0px",
+        visibility: fit.shown ? "visible" : "hidden",
       }} />
     </div>
   );

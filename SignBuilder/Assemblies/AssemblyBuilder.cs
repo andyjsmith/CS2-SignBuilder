@@ -21,6 +21,8 @@ namespace SignBuilder.Assemblies
         public SupportSpec Spec;
         public Mesh Support;
         public Vector3[] SignCentres; // assembly-local, one per sign
+        /// <summary>Lanes the signs can be centred over (for the lane picker).</summary>
+        public int LaneCount;
     }
 
     /// <summary>
@@ -36,43 +38,50 @@ namespace SignBuilder.Assemblies
         private const float kElevatedDrop = 2f;
         /// <summary>Post centre distance inside the deck edge on elevated roads (on the shoulder, inside the barrier).</summary>
         private const float kDeckInset = 0.7f;
+        /// <summary>Lowest bottom edge for overhead signs (about 17.5 ft).</summary>
+        private const float kMinClearance = 5.3f;
 
         /// <summary>
         /// Lays out <paramref name="support"/> for signs of the given sizes (metres, x = width,
-        /// y = height) at a road snap. Several signs sit side by side, centred over the lanes they face.
+        /// y = height) at a road snap (or a synthetic one for free placement). Several signs sit side by
+        /// side, centred over the lanes they face unless <paramref name="options"/> picks a lane or shift.
         /// </summary>
-        public static AssemblyPlacement Layout(string support, RoadProbe.Snap s, IReadOnlyList<Vector2> sizes, bool reverse = false)
+        public static AssemblyPlacement Layout(string support, RoadProbe.Snap s, IReadOnlyList<Vector2> sizes, bool reverse = false, LayoutOptions options = null)
         {
-            var placement = LayoutSpec(support, s, sizes, reverse);
+            var placement = LayoutSpec(support, s, sizes, reverse, options ?? new LayoutOptions());
             placement.Support = GantryFactory.FromSpec(placement.Spec);
             return placement;
         }
 
-        private static AssemblyPlacement LayoutSpec(string support, RoadProbe.Snap s, IReadOnlyList<Vector2> sizes, bool reverse)
+        private static AssemblyPlacement LayoutSpec(string support, RoadProbe.Snap s, IReadOnlyList<Vector2> sizes, bool reverse, LayoutOptions o)
         {
             // Signs face the traffic of the clicked carriageway; reverse aims them at the other direction
             // (the paired carriageway of a divided highway, or the opposing lanes of a two-way road).
             var dir = s.MainDirection * (reverse ? -1 : 1);
             var fwd = s.Tangent * dir;
             var rotation = quaternion.LookRotationSafe(fwd, new float3(0, 1, 0));
-            var lanes = s.Lanes.Where(l => l.Direction == dir).ToList();
-            var laneAbsolute = lanes.Count > 0 ? lanes.Average(l => l.Offset) : 0f;
+            // Lanes this structure's signs face, left to right as drivers see them.
+            var lanes = s.Lanes.Where(l => l.Direction == dir).OrderBy(l => l.Offset * dir).ToList();
+            var laneAbsolute = lanes.Count == 0 ? 0f
+                : o.Lane >= 0 ? lanes[math.min(o.Lane, lanes.Count - 1)].Offset
+                : lanes.Average(l => l.Offset);
             // Single-carriageway supports sit on the carriageway whose traffic they face: when reversing on
             // a divided highway that is the paired carriageway, not the one that was clicked.
-            var onPaired = reverse && s.PairedEdge != Unity.Entities.Entity.Null && lanes.Count > 0 && lanes.All(l => l.OnPairedEdge);
+            var onPaired = reverse && s.IsPaired && lanes.Count > 0 && lanes.All(l => l.OnPairedEdge);
             var baseOffset = onPaired ? s.PairedOffset : 0f;
             var basePoint = s.Point + s.Right * baseOffset;
             var baseWidth = onPaired ? s.PairedWidth : s.EdgeWidth;
-            var laneCentre = laneAbsolute - baseOffset;
 
             var maxH = sizes.Count > 0 ? sizes.Max(z => z.y) : 2f;
             var total = sizes.Sum(z => z.x) + kSignGap * Math.Max(0, sizes.Count - 1);
-            float overheadBottom = math.max(GantryFactory.kMountHeight - maxH * 0.5f, 5.3f);
             // Curved tube supports carry the signs bolted in front of the horizontal pipe, centred on it.
             float curvedHeight = math.max(7.0f, 5.3f + maxH * 0.5f);
 
-            // Side-by-side row of signs centred on local X = centreX; bottoms aligned (overhead/ground) or
-            // centred on the pipe (curved tube supports).
+            // Row centre in structure space for signs over the chosen lanes, measured from a reference
+            // point (lateral offset along Right), plus the user's shift.
+            float LocalX(float reference) => (laneAbsolute - reference) * dir + o.Shift;
+
+            // Side-by-side row of signs centred on local X = centreX.
             Vector3[] Row(float centreX, float z, Func<float, float> centreY)
             {
                 var result = new Vector3[sizes.Count];
@@ -86,73 +95,108 @@ namespace SignBuilder.Assemblies
             }
             Func<float, float> standing(float bottom) => h => bottom + h * 0.5f;
             Func<float, float> onPipe(float pipeHeight) => h => pipeHeight;
+            // Overhead signs are each centred on the beam (a short sign beside a tall one still crosses it),
+            // raised only as far as the clearance under their bottom edge needs.
+            Func<float, float> onBeam = h => math.max(GantryFactory.kMountHeight, kMinClearance + h * 0.5f);
 
             // On elevated roads and bridges there is no ground beside the deck: posts that would stand off it
             // move onto the deck, just inside its edges, and the structure narrows to match.
-            bool OffDeck(float3 post) => post.y - TerrainHeight(post) > kElevatedDrop;
+            var elevated = false;
+            bool OffDeck(float3 post) => !o.Free && post.y - TerrainHeight(post) > kElevatedDrop;
             float FitSpan(float3 centre, float deckWidth, float span, float minSpan)
             {
                 if (!OffDeck(centre - s.Right * span * 0.5f) && !OffDeck(centre + s.Right * span * 0.5f)) return span;
+                elevated = true;
                 return math.max(deckWidth - 2f * kDeckInset, minSpan);
             }
+            // How far below the structure's origin the terrain is under its posts: posts reach down to it
+            // (plus a footing) so sloped verges never leave them hovering. Free placement uses its elevation.
+            float GroundUnder(params float3[] posts)
+            {
+                if (o.Free) return o.Elevation;
+                if (elevated) return 0f;
+                return math.clamp(posts.Max(p => p.y - TerrainHeight(p)), 0f, kElevatedDrop);
+            }
 
+            AssemblyPlacement result;
             switch (support)
             {
                 case "monotube":
-                    return new AssemblyPlacement
-                    {
-                        Origin = basePoint, Rotation = rotation, Spec = SupportSpec.Of("monotube", FitSpan(basePoint, baseWidth, math.max(baseWidth, total) + 5f, total + 0.5f)),
-                        SignCentres = Row(laneCentre * dir, -0.45f, standing(overheadBottom)),
-                    };
                 case "curvedSpan":
-                    return new AssemblyPlacement
+                {
+                    var curved = support == "curvedSpan";
+                    var span = FitSpan(basePoint, baseWidth, curved ? math.max(baseWidth + 5f, total + 7f) : math.max(baseWidth, total) + 5f, total + (curved ? 1f : 0.5f));
+                    var ground = GroundUnder(basePoint - s.Right * span * 0.5f, basePoint + s.Right * span * 0.5f);
+                    var limit = math.max(0f, span * 0.5f - total * 0.5f - (curved ? 3.2f : 0.4f));
+                    var centreX = math.clamp(LocalX(baseOffset), -limit, limit);
+                    result = new AssemblyPlacement
                     {
-                        Origin = basePoint, Rotation = rotation, Spec = SupportSpec.Of("curvedSpan", FitSpan(basePoint, baseWidth, math.max(baseWidth + 5f, total + 7f), total + 1f), curvedHeight),
-                        SignCentres = Row(laneCentre * dir, -0.4f, onPipe(curvedHeight)),
+                        Origin = basePoint, Rotation = rotation,
+                        Spec = curved ? SupportSpec.Of("curvedSpan", span, curvedHeight, ground) : SupportSpec.Of("monotube", span, ground),
+                        SignCentres = curved ? Row(centreX, -0.4f, onPipe(curvedHeight)) : Row(centreX, -0.45f, onBeam),
                     };
+                    break;
+                }
                 case "cantilever":
                 case "curvedCantilever":
                 {
                     // Post just off the right-hand edge (relative to traffic), arm reaching back over the lanes.
-                    var postOffset = dir * (baseWidth * 0.5f + 1.5f);
-                    if (OffDeck(basePoint + s.Right * postOffset)) postOffset = dir * (baseWidth * 0.5f - kDeckInset);
+                    // Free placement puts the post at the cursor.
+                    var postOffset = o.Free ? 0f : dir * (baseWidth * 0.5f + 1.5f);
+                    if (OffDeck(basePoint + s.Right * postOffset))
+                    {
+                        postOffset = dir * (baseWidth * 0.5f - kDeckInset);
+                        elevated = true;
+                    }
+                    var post = basePoint + s.Right * postOffset;
+                    var ground = GroundUnder(post);
                     var curved = support == "curvedCantilever";
                     // Signs on the curved arm stay clear of the bend above the post.
                     var postClear = curved ? 3.3f : 0.5f;
-                    var arm = math.max(baseWidth * (curved ? 0.75f : 0.55f) + 1.5f, total + postClear + 1f);
-                    var centreX = math.clamp((laneCentre - postOffset) * dir, -arm + total * 0.5f, -total * 0.5f - postClear);
-                    return new AssemblyPlacement
+                    var wanted = LocalX(baseOffset + postOffset);
+                    // The arm reaches over the lanes, and further if the signs were shifted beyond them.
+                    var arm = math.max(math.max(baseWidth * (curved ? 0.75f : 0.55f) + 1.5f, total + postClear + 1f), -wanted + total * 0.5f + 0.5f);
+                    var centreX = math.clamp(wanted, -arm + total * 0.5f, -total * 0.5f - postClear);
+                    result = new AssemblyPlacement
                     {
-                        Origin = basePoint + s.Right * postOffset, Rotation = rotation,
-                        Spec = curved ? SupportSpec.Of("curvedCantilever", arm, curvedHeight) : SupportSpec.Of("cantilever", -arm),
-                        SignCentres = curved ? Row(centreX, -0.4f, onPipe(curvedHeight)) : Row(centreX, -0.45f, standing(overheadBottom)),
+                        Origin = post, Rotation = rotation,
+                        Spec = curved ? SupportSpec.Of("curvedCantilever", arm, curvedHeight, ground) : SupportSpec.Of("cantilever", -arm, ground),
+                        SignCentres = curved ? Row(centreX, -0.4f, onPipe(curvedHeight)) : Row(centreX, -0.45f, onBeam),
                     };
+                    break;
                 }
                 case "ground":
                 {
-                    var lateral = dir * (baseWidth * 0.5f + 2.5f + total * 0.5f);
-                    var origin = basePoint + s.Right * lateral;
+                    var lateral = o.Free ? 0f : dir * (baseWidth * 0.5f + 2.5f + total * 0.5f);
+                    var origin = basePoint + s.Right * (lateral + o.Shift * dir);
                     // On a raised road the posts reach down to the terrain instead of floating.
-                    var drop = math.clamp(origin.y - TerrainHeight(origin), 0f, 20f);
-                    return new AssemblyPlacement
+                    var drop = o.Free ? o.Elevation : math.clamp(origin.y - TerrainHeight(origin), 0f, 20f);
+                    result = new AssemblyPlacement
                     {
                         Origin = origin, Rotation = rotation, Spec = SupportSpec.Of("ground", total, maxH, drop),
                         SignCentres = Row(0f, 0f, standing(GantryFactory.kGroundClearance)),
                     };
+                    break;
                 }
                 default:
                 {
                     // Truss: spans both carriageways of a divided highway.
                     var extent = s.Extent;
                     var centre = (extent.x + extent.y) * 0.5f;
-                    var span = FitSpan(s.Point + s.Right * centre, extent.y - extent.x, math.max(extent.y - extent.x, total) + 5f, total + 0.5f);
-                    return new AssemblyPlacement
+                    var origin = s.Point + s.Right * centre;
+                    var span = FitSpan(origin, extent.y - extent.x, math.max(extent.y - extent.x, total) + 5f, total + 0.5f);
+                    var ground = GroundUnder(origin - s.Right * span * 0.5f, origin + s.Right * span * 0.5f);
+                    var limit = math.max(0f, span * 0.5f - total * 0.5f - 0.5f);
+                    result = new AssemblyPlacement
                     {
-                        Origin = s.Point + s.Right * centre, Rotation = rotation, Spec = SupportSpec.Of("truss", span),
-                        SignCentres = Row((laneAbsolute - centre) * dir, -(GantryFactory.kTrussDepth * 0.5f + 0.15f), standing(overheadBottom)),
+                        Origin = origin, Rotation = rotation, Spec = SupportSpec.Of("truss", span, ground),
+                        SignCentres = Row(math.clamp(LocalX(centre), -limit, limit), -(GantryFactory.kTrussDepth * 0.5f + 0.15f), onBeam),
                     };
+                    break;
                 }
             }
+            result.LaneCount = lanes.Count;
+            return result;
         }
 
         internal static float TerrainHeight(float3 position)
@@ -187,7 +231,7 @@ namespace SignBuilder.Assemblies
         /// passed to <paramref name="onDone"/>, failures to <paramref name="onError"/>.
         /// </summary>
         public static IEnumerator Build(IReadOnlyList<JObject> designs, string support, bool reverse, Func<IReadOnlyList<Vector2>, AssemblyPlacement> layout,
-            Action<AssemblyRecord, AssemblyPlacement> onDone, Action<string> onError)
+            Action<AssemblyRecord, AssemblyPlacement> onDone, Action<string> onError, PlacementContext context = null)
         {
             List<BakedFace> faces = null;
             yield return BakeAll(designs, f => faces = f);
@@ -210,6 +254,7 @@ namespace SignBuilder.Assemblies
                     Designs = designs.ToList(),
                     SupportSpec = placement.Spec,
                     SignCentres = placement.SignCentres.SelectMany(c => new[] { c.x, c.y, c.z }).ToArray(),
+                    Context = context,
                     Created = DateTime.UtcNow,
                 };
                 CreateAssets(record, placement.Support, faces);

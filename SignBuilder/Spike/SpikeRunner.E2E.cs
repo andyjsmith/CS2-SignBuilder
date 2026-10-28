@@ -59,6 +59,9 @@ namespace SignBuilder.Spike
             yield return Test("e2e.place", TestPlaceAll(tool));
             yield return Test("e2e.shots", TestAssemblyShots());
             yield return Test("e2e.elevated", TestElevated(tool));
+            yield return Test("e2e.options", TestLayoutOptions(tool));
+            yield return Test("e2e.free", TestFreePlacement(tool));
+            yield return Test("e2e.saveedit", TestSaveInPlace(ui, tool));
             yield return Test("e2e.hover", TestRealRaycast(tool));
             yield return Test("e2e.infopanel", TestInfoPanelEdit(ui, tool));
             yield return Test("e2e.compact", TestCompactWhilePlacing(ui, tool));
@@ -271,6 +274,126 @@ namespace SignBuilder.Spike
             }
         }
 
+        private static JObject Template(string name) =>
+            JObject.Parse(File.ReadAllText(Path.Combine(SignBuilderRuntime.ResourcesDir, "Templates", name + ".json")));
+
+        private IEnumerator PlaceAndWait(Action place)
+        {
+            var before = SignPlacementToolSystem.LastPlaced;
+            var start = Time.realtimeSinceStartup;
+            place();
+            var tool = World.DefaultGameObjectInjectionWorld.GetOrCreateSystemManaged<SignPlacementToolSystem>();
+            while ((tool.Busy || SignPlacementToolSystem.LastPlaced == before) && Time.realtimeSinceStartup - start < 20f) yield return null;
+            yield return new WaitForSecondsRealtime(2f);
+        }
+
+        private IEnumerator Shoot(AssemblyRecord record, string name, float yawOffset = 15f, float zoom = 45f)
+        {
+            var entity = InstancesOf(record.PrefabName).FirstOrDefault();
+            if (entity == Entity.Null) yield break;
+            var t = World.DefaultGameObjectInjectionWorld.EntityManager.GetComponentData<Game.Objects.Transform>(entity);
+            var fwd = math.mul(t.m_Rotation, new float3(0, 0, 1));
+            SetCamera(t.m_Position + new float3(0, 5f, 0), math.degrees(math.atan2(fwd.x, fwd.z)) + yawOffset, 10f, zoom);
+            yield return new WaitForSecondsRealtime(3f);
+            SpikeReport.Screenshot(name);
+            yield return new WaitForSecondsRealtime(0.5f);
+        }
+
+        private static string Describe(AssemblyRecord r) =>
+            $"spec={r.SupportSpec?.Kind}({string.Join(",", r.SupportSpec?.Args?.Select(a => a.ToString("F2")) ?? Array.Empty<string>())}) centres=[{string.Join(" ", r.Centres.Select(c => $"({c.x:F2},{c.y:F2})"))}]";
+
+        /// <summary>
+        /// Two signs of different heights on a monotube (each centred on the tube), a cantilever over the
+        /// rightmost lane, and signs shifted along a truss.
+        /// </summary>
+        private IEnumerator TestLayoutOptions(SignPlacementToolSystem tool)
+        {
+            if (m_Placed.Count < 3) yield break;
+            var tall = Template("guide-long");
+            var shortSign = Template("services-blue");
+            var spot = m_Placed.First(p => p.support == "monotube");
+            var t = math.clamp(spot.t + 0.3f, 0.05f, 0.95f);
+            yield return PlaceAndWait(() => tool.PlaceForTest(spot.edge, t, new List<JObject> { tall, shortSign }, "monotube"));
+            var mixed = SignPlacementToolSystem.LastPlaced;
+            SpikeReport.Set("e2e.options.mixedHeights", Describe(mixed));
+            yield return Shoot(mixed, "e2e_mixed_heights.png");
+
+            var cant = m_Placed.First(p => p.support == "cantilever");
+            var t2 = math.clamp(cant.t + 0.3f, 0.05f, 0.95f);
+            var exitOnly = Template("guide-exit-only");
+            yield return PlaceAndWait(() => tool.PlaceForTest(cant.edge, t2, new List<JObject> { exitOnly }, "cantilever", false, new LayoutOptions { Lane = 9 }));
+            var rightLane = SignPlacementToolSystem.LastPlaced;
+            SpikeReport.Set("e2e.options.rightLane", Describe(rightLane) + $" lanes={rightLane.Context?.Lanes.Count}");
+            yield return Shoot(rightLane, "e2e_right_lane.png");
+
+            var truss = m_Placed.First(p => p.support == "truss");
+            var t3 = math.clamp(truss.t + 0.3f, 0.05f, 0.95f);
+            yield return PlaceAndWait(() => tool.PlaceForTest(truss.edge, t3, new List<JObject> { exitOnly }, "truss", false, new LayoutOptions { Shift = 4f }));
+            SpikeReport.Set("e2e.options.shifted", Describe(SignPlacementToolSystem.LastPlaced));
+            yield return Shoot(SignPlacementToolSystem.LastPlaced, "e2e_shifted.png");
+        }
+
+        /// <summary>Free placement on open ground: a truss rotated 30 degrees and a raised roadside sign.</summary>
+        private IEnumerator TestFreePlacement(SignPlacementToolSystem tool)
+        {
+            if (m_Placed.Count == 0) yield break;
+            var em = World.DefaultGameObjectInjectionWorld.EntityManager;
+            var anchor = em.GetComponentData<Game.Objects.Transform>(InstancesOf(m_Placed[0].record.PrefabName).FirstOrDefault()).m_Position;
+            var right = math.mul(em.GetComponentData<Game.Objects.Transform>(InstancesOf(m_Placed[0].record.PrefabName).FirstOrDefault()).m_Rotation, new float3(1, 0, 0));
+            var p = anchor + right * 45f;
+            p.y = AssemblyBuilder.TerrainHeight(p);
+            yield return PlaceAndWait(() => tool.PlaceFreeForTest(p, 30f, new List<JObject> { Template("guide-exit-tab") }, "truss", new LayoutOptions { FreeWidth = 12f }));
+            var freeTruss = SignPlacementToolSystem.LastPlaced;
+            SpikeReport.Set("e2e.free.truss", Describe(freeTruss) + $" free={freeTruss.Context?.Options.Free}");
+            yield return Shoot(freeTruss, "e2e_free_truss.png", 20f, 50f);
+
+            var q = p + right * 25f;
+            q.y = AssemblyBuilder.TerrainHeight(q);
+            yield return PlaceAndWait(() => tool.PlaceFreeForTest(q, 0f, new List<JObject> { Template("gore-exit") }, "ground", new LayoutOptions { Elevation = 1.5f }));
+            SpikeReport.Set("e2e.free.ground", Describe(SignPlacementToolSystem.LastPlaced));
+            yield return Shoot(SignPlacementToolSystem.LastPlaced, "e2e_free_ground.png", 20f, 25f);
+        }
+
+        /// <summary>Edit a placed sign and Save twice: rebuilt in the same spot, the original removed each time.</summary>
+        private IEnumerator TestSaveInPlace(SignBuilderUISystem ui, SignPlacementToolSystem tool)
+        {
+            var target = m_Placed.FirstOrDefault(p => p.support == "curvedSpan");
+            if (target.record == null) yield break;
+            var em = World.DefaultGameObjectInjectionWorld.EntityManager;
+            var entity = InstancesOf(target.record.PrefabName).FirstOrDefault();
+            var originalPos = em.GetComponentData<Game.Objects.Transform>(entity).m_Position;
+            tool.EditPlaced(entity);
+            yield return new WaitForSecondsRealtime(2f);
+            SpikeReport.Set("e2e.saveedit.replacingUi", $"replacing={tool.IsReplacing}");
+            SpikeReport.Screenshot("e2e_saveedit_editor.png");
+            yield return new WaitForSecondsRealtime(0.5f);
+
+            var current = target.record;
+            for (var round = 1; round <= 2; round++)
+            {
+                var designs = current.Designs.Select(d => (JObject)d.DeepClone()).ToList();
+                ((JArray)designs[0]["items"])[1]["text"] = round == 1 ? "Saved Once" : "Saved Twice";
+                var payload = new JObject { ["designs"] = new JArray(designs), ["support"] = current.Support, ["reverse"] = current.Reverse }.ToString();
+                var before = SignPlacementToolSystem.LastPlaced;
+                var start = Time.realtimeSinceStartup;
+                ui.SaveEdit(payload);
+                while ((tool.Busy || SignPlacementToolSystem.LastPlaced == before) && Time.realtimeSinceStartup - start < 20f) yield return null;
+                yield return new WaitForSecondsRealtime(2.5f);
+                var saved = SignPlacementToolSystem.LastPlaced;
+                if (saved == before)
+                {
+                    SpikeReport.Set($"e2e.saveedit.round{round}", "FAILED: " + ui.Status);
+                    break;
+                }
+                var newEntity = InstancesOf(saved.PrefabName).FirstOrDefault();
+                var moved = newEntity == Entity.Null ? -1f : math.distance(em.GetComponentData<Game.Objects.Transform>(newEntity).m_Position, originalPos);
+                SpikeReport.Set($"e2e.saveedit.round{round}", $"old remaining={InstancesOf(current.PrefabName).Count} new={saved.PrefabName} count={InstancesOf(saved.PrefabName).Count} moved={moved:F2}m stillEditing={tool.IsReplacing} status={ui.Status}");
+                current = saved;
+            }
+            ui.SetEditorOpen(false);
+            yield return Shoot(current, "e2e_saveedit.png");
+        }
+
         private Entity FirstInstance(string support) =>
             m_Placed.Where(p => p.support == support).Select(p => InstancesOf(p.record.PrefabName).FirstOrDefault()).FirstOrDefault();
 
@@ -351,6 +474,11 @@ namespace SignBuilder.Spike
             SpikeReport.Set("e2e.compact.mode", ui.ToolMode);
             SpikeReport.Screenshot("e2e_compact.png");
             yield return new WaitForSecondsRealtime(0.5f);
+            tool.Adjust("free");
+            yield return new WaitForSecondsRealtime(1f);
+            SpikeReport.Screenshot("e2e_compact_free.png");
+            yield return new WaitForSecondsRealtime(0.5f);
+            tool.Adjust("road");
             tool.BeginPick(); // what right-click and "Back to editor" do
             yield return new WaitForSecondsRealtime(1.5f);
             SpikeReport.Set("e2e.compact.after", ui.ToolMode);
@@ -372,7 +500,7 @@ namespace SignBuilder.Spike
             yield return new WaitForSecondsRealtime(0.5f);
             File.WriteAllText(Path.Combine(SpikeReport.OutputDir, "ui-ready.flag"), "");
             var end = Time.realtimeSinceStartup + 120f;
-            while (Environment.GetCommandLineArgs().Contains("-uiDeveloperMode") && Time.realtimeSinceStartup < end
+            while (File.Exists(Path.Combine(SpikeReport.OutputDir, "ui-wait.flag")) && Time.realtimeSinceStartup < end
                    && !File.Exists(Path.Combine(SpikeReport.OutputDir, "ui-done.flag")))
             {
                 foreach (var flag in Directory.GetFiles(SpikeReport.OutputDir, "shot-*.flag"))

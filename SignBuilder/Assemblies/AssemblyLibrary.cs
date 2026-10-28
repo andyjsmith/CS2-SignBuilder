@@ -35,6 +35,8 @@ namespace SignBuilder.Assemblies
         public SupportSpec SupportSpec;
         /// <summary>Sign panel centres in assembly space, x y z per sign.</summary>
         public float[] SignCentres;
+        /// <summary>Where and how it was placed (road snapshot or free position, lane, shift), for Save in place.</summary>
+        public PlacementContext Context;
 
         [JsonIgnore]
         public UnityEngine.Vector3[] Centres

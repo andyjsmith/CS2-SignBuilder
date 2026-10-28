@@ -42,7 +42,11 @@ namespace SignBuilder.Spike
             public readonly List<LaneInfo> Lanes = new();
 
             /// <summary>Lateral extent (min, max along Right) of all carriageways covered.</summary>
-            public float2 Extent => PairedEdge == Entity.Null
+            /// <summary>Set for snaps rebuilt from a stored context, which have no live paired edge entity.</summary>
+            public bool StoredPaired;
+            public bool IsPaired => StoredPaired || PairedEdge != Entity.Null;
+
+            public float2 Extent => !IsPaired
                 ? new float2(-EdgeWidth * 0.5f, EdgeWidth * 0.5f)
                 : new float2(math.min(-EdgeWidth * 0.5f, PairedOffset - PairedWidth * 0.5f), math.max(EdgeWidth * 0.5f, PairedOffset + PairedWidth * 0.5f));
 
