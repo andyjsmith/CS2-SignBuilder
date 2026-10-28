@@ -25,21 +25,25 @@ using UnityEngine;
 namespace SignBuilder.Spike
 {
     /// <summary>
-    /// End-to-end run of the real feature code: editor UI system, placement tool (all supports),
-    /// pick-and-replace re-editing, then a save for the fresh-boot reload check ("reload" mode).
+    /// End-to-end run of the real feature code: every structure type and span, the gantry arrangement flow,
+    /// editing placed structures, templates, then a save for the fresh-boot reload check ("reload" mode).
     /// </summary>
     internal sealed partial class SpikeRunner
     {
         private const string kE2ESave = "SignBuilder_E2E";
 
-        private static readonly (string support, string template)[] kPlacements =
+        private static readonly (string type, string span, bool left, string template)[] kPlacements =
         {
-            ("truss", "guide-exit-tab"), ("curvedSpan", "guide-exit-only"), ("monotube", "services-blue"),
-            ("curvedCantilever", "attraction-brown"), ("cantilever", "advance-guide"), ("ground", "gore-exit"),
-            ("trussSingle", "guide-exit-tab"), ("trussCantilever", "guide-exit-only"), ("curvedFull", "guide-exit-tab"), ("monotubeFull", "services-blue"),
+            ("doubleTruss", "full", false, "guide-exit-tab"), ("doubleTruss", "single", false, "guide-exit-only"), ("doubleTruss", "cantilever", false, "guide-exit-tab"),
+            ("singleTruss", "full", false, "guide-exit-tab"), ("singleTruss", "single", false, "services-blue"), ("singleTruss", "cantilever", true, "guide-exit-only"),
+            ("curved", "full", false, "guide-exit-only"), ("curved", "single", false, "guide-exit-tab"), ("curved", "cantilever", false, "attraction-brown"),
+            ("straight", "full", false, "services-blue"), ("straight", "single", false, "guide-exit-tab"), ("straight", "cantilever", true, "advance-guide"),
+            ("ground", "single", false, "gore-exit"),
         };
 
         private readonly List<(string support, AssemblyRecord record, Entity edge, float t)> m_Placed = new();
+
+        private static string Key(string type, string span, bool left) => type == "ground" ? "ground" : $"{type}-{span}{(left ? "-left" : "")}";
 
         private IEnumerator RunE2E()
         {
@@ -52,7 +56,6 @@ namespace SignBuilder.Spike
 
             if (m_Mode == "reload-e2e")
             {
-                // Booted into the previous E2E save: check it loads, then clear it for this run's placements.
                 yield return Test("reload", ReloadChecks());
                 RemoveAllAssemblies();
                 yield return new WaitForSecondsRealtime(2f);
@@ -61,15 +64,13 @@ namespace SignBuilder.Spike
             yield return Test("e2e.place", TestPlaceAll(tool));
             yield return Test("e2e.shots", TestAssemblyShots());
             yield return Test("e2e.elevated", TestElevated(tool));
-            yield return Test("e2e.options", TestLayoutOptions(tool));
+            yield return Test("e2e.arrange", TestArrange(ui, tool));
+            yield return Test("e2e.editgantry", TestEditGantry(ui, tool));
+            yield return Test("e2e.editposts", TestEditPosts(ui, tool));
+            yield return Test("e2e.infopanel", TestInfoPanel(ui, tool));
             yield return Test("e2e.free", TestFreePlacement(tool));
-            yield return Test("e2e.saveedit", TestSaveInPlace(ui, tool));
-            yield return Test("e2e.hover", TestRealRaycast(tool));
-            yield return Test("e2e.infopanel", TestInfoPanelEdit(ui, tool));
-            yield return Test("e2e.compact", TestCompactWhilePlacing(ui, tool));
-            yield return Test("e2e.longpreview", TestLongPreview(ui));
-            yield return Test("e2e.preview", TestPreviewAndReverse(tool));
-            yield return Test("e2e.reedit", TestReedit(ui, tool));
+            yield return Test("e2e.templates", TestTemplates(ui));
+            yield return Test("e2e.uipause", TestDesignerPause(ui));
             yield return Test("e2e.save", TestSaveForReload());
             ui.SetEditorOpen(false);
             RestoreContinueTarget();
@@ -81,12 +82,14 @@ namespace SignBuilder.Spike
             ui.SetEditorOpen(true);
             yield return new WaitForSecondsRealtime(4f);
             SpikeReport.Set("e2e.editor.open", ui.EditorOpen);
-            SpikeReport.Set("e2e.editor.status", ui.Status);
             SpikeReport.Screenshot("e2e_editor.png");
             yield return new WaitForSecondsRealtime(0.5f);
         }
 
-        /// <summary>One assembly per support type, each on its own stretch of the nearest highway.</summary>
+        private static LayoutOptions Options(string type, string span, bool left = false) =>
+            new LayoutOptions { Type = type, Span = span, LeftSide = left };
+
+        /// <summary>One structure per type x span (plus left-hand cantilevers and roadside posts), each on its own stretch of highway.</summary>
         private IEnumerator TestPlaceAll(SignPlacementToolSystem tool)
         {
             var world = World.DefaultGameObjectInjectionWorld;
@@ -94,142 +97,45 @@ namespace SignBuilder.Spike
             var near = (float3)(CameraController()?.pivot ?? Camera.main.transform.position);
             var spots = HighwaySpots(em, near, kPlacements.Length);
             SpikeReport.Set("e2e.place.spots", spots.Count);
-            var templates = Path.Combine(SignBuilderRuntime.ResourcesDir, "Templates");
-
             for (var i = 0; i < kPlacements.Length && i < spots.Count; i++)
             {
-                var (support, template) = kPlacements[i];
-                var design = JObject.Parse(File.ReadAllText(Path.Combine(templates, template + ".json")));
+                var (type, span, left, template) = kPlacements[i];
+                var key = Key(type, span, left);
+                var designs = type == "doubleTruss" && span == "full"
+                    ? new List<JObject> { Template(template), Template("guide-exit-only") } // multi-sign layout
+                    : new List<JObject> { Template(template) };
                 var before = SignPlacementToolSystem.LastPlaced;
                 var start = Time.realtimeSinceStartup;
-                // The truss carries two signs side by side to exercise multi-sign layout.
-                var designs = support == "truss"
-                    ? new List<JObject> { design, JObject.Parse(File.ReadAllText(Path.Combine(templates, "guide-exit-only.json"))) }
-                    : new List<JObject> { design };
-                tool.PlaceForTest(spots[i].edge, spots[i].t, designs, support);
-                while ((tool.Busy || SignPlacementToolSystem.LastPlaced == before) && Time.realtimeSinceStartup - start < 20f) yield return null;
+                tool.PlaceForTest(spots[i].edge, spots[i].t, designs, Options(type, span, left));
+                while ((tool.Busy || SignPlacementToolSystem.LastPlaced == before) && Time.realtimeSinceStartup - start < 25f) yield return null;
                 var record = SignPlacementToolSystem.LastPlaced;
                 if (record == before)
                 {
-                    SpikeReport.Set($"e2e.place.{support}", $"FAILED: {world.GetOrCreateSystemManaged<SignBuilderUISystem>().Status}");
+                    SpikeReport.Set($"e2e.place.{key}", $"FAILED: {world.GetOrCreateSystemManaged<SignBuilderUISystem>().Status}");
                     continue;
                 }
-                m_Placed.Add((support, record, spots[i].edge, spots[i].t));
-                SpikeReport.Set($"e2e.place.{support}", $"{record.PrefabName} ms={(Time.realtimeSinceStartup - start) * 1000:F0}");
+                m_Placed.Add((key, record, spots[i].edge, spots[i].t));
+                SpikeReport.Set($"e2e.place.{key}", $"{record.PrefabName} {Describe(record)}");
             }
             yield return new WaitForSecondsRealtime(5f);
             foreach (var p in m_Placed)
             {
                 var entities = InstancesOf(p.record.PrefabName);
                 var batches = entities.Count(e => em.HasBuffer<Game.Rendering.MeshBatch>(e) && em.GetBuffer<Game.Rendering.MeshBatch>(e, true).Length > 0);
-                var overridden = entities.Count(e => em.HasComponent<Game.Common.Overridden>(e));
-                SpikeReport.Set($"e2e.instances.{p.support}", $"count={entities.Count} batches={batches} overridden={overridden}");
+                SpikeReport.Set($"e2e.instances.{p.support}", $"count={entities.Count} batches={batches}");
             }
         }
 
         private IEnumerator TestAssemblyShots()
         {
             World.DefaultGameObjectInjectionWorld.GetOrCreateSystemManaged<SignBuilderUISystem>().SetEditorOpen(false);
-            var em = World.DefaultGameObjectInjectionWorld.EntityManager;
-            foreach (var p in m_Placed)
-            {
-                var entity = InstancesOf(p.record.PrefabName).FirstOrDefault();
-                if (entity == Entity.Null) continue;
-                var t = em.GetComponentData<Game.Objects.Transform>(entity);
-                var fwd = math.mul(t.m_Rotation, new float3(0, 0, 1));
-                SetCamera(t.m_Position + new float3(0, p.support == "ground" ? 3f : 6f, 0), math.degrees(math.atan2(fwd.x, fwd.z)) + 15f, 8f, p.support == "ground" ? 30f : 55f);
-                yield return new WaitForSecondsRealtime(3f);
-                SpikeReport.Screenshot($"e2e_{p.support}.png");
-                yield return new WaitForSecondsRealtime(0.5f);
-            }
+            foreach (var p in m_Placed) yield return Shoot(p.record, $"e2e_{p.support}.png", 15f, p.support == "ground" ? 30f : 50f);
         }
 
-        /// <summary>
-        /// Hover preview (drawn for a road position like the mouse would), then a reversed truss on the
-        /// same spot facing the opposite carriageway.
-        /// </summary>
-        private IEnumerator TestPreviewAndReverse(SignPlacementToolSystem tool)
-        {
-            if (m_Placed.Count == 0) yield break;
-            var spot = m_Placed[0];
-            var design = JObject.Parse(File.ReadAllText(Path.Combine(SignBuilderRuntime.ResourcesDir, "Templates", "guide-long.json")));
-            tool.BeginPlace(new List<JObject> { design }, "curvedSpan", reverse: true);
-            var t = math.clamp(spot.t + 0.25f, 0.05f, 0.95f);
-            var start = Time.realtimeSinceStartup;
-            while (!tool.PreviewReady && Time.realtimeSinceStartup - start < 10f) yield return null;
-            SpikeReport.Set("e2e.preview.ready", tool.PreviewReady);
-            var snap = new RoadProbe(World.DefaultGameObjectInjectionWorld.EntityManager, m_Runtime.PrefabSystem).SnapAt(spot.edge, t);
-            var fwd = -snap.Tangent * snap.MainDirection;
-            SetCamera(snap.Point + new float3(0, 6f, 0), math.degrees(math.atan2(fwd.x, fwd.z)) + 15f, 8f, 55f);
-            var end = Time.realtimeSinceStartup + 3f;
-            while (Time.realtimeSinceStartup < end)
-            {
-                tool.PreviewForTest(spot.edge, t);
-                yield return null;
-            }
-            SpikeReport.Screenshot("e2e_preview.png");
-            for (var i = 0; i < 10; i++) { tool.PreviewForTest(spot.edge, t); yield return null; }
-
-            var before = SignPlacementToolSystem.LastPlaced;
-            start = Time.realtimeSinceStartup;
-            tool.PlaceForTest(spot.edge, t, new List<JObject> { design }, "curvedSpan", reverse: true);
-            while ((tool.Busy || SignPlacementToolSystem.LastPlaced == before) && Time.realtimeSinceStartup - start < 20f) yield return null;
-            SpikeReport.Set("e2e.reverse.placed", SignPlacementToolSystem.LastPlaced == before ? "FAILED" : SignPlacementToolSystem.LastPlaced.PrefabName);
-            yield return new WaitForSecondsRealtime(3f);
-            SpikeReport.Screenshot("e2e_reverse.png");
-            yield return new WaitForSecondsRealtime(0.5f);
-            World.DefaultGameObjectInjectionWorld.GetOrCreateSystemManaged<SignBuilderUISystem>().SetEditorOpen(false);
-        }
-
-        /// <summary>Pick the first assembly, change its text, place again: the original must be replaced.</summary>
-        private IEnumerator TestReedit(SignBuilderUISystem ui, SignPlacementToolSystem tool)
-        {
-            if (m_Placed.Count == 0) yield break;
-            var first = m_Placed[0];
-            var entity = InstancesOf(first.record.PrefabName).FirstOrDefault();
-            tool.PickForTest(entity);
-            yield return new WaitForSecondsRealtime(2f);
-            SpikeReport.Set("e2e.reedit.editorOpen", ui.EditorOpen);
-            SpikeReport.Screenshot("e2e_reedit_editor.png");
-            yield return new WaitForSecondsRealtime(0.5f);
-
-            var designs = first.record.Designs.Select(d => (JObject)d.DeepClone()).ToList();
-            var items = (JArray)designs[0]["items"];
-            items[1]["text"] = "Edited City";
-            var before = SignPlacementToolSystem.LastPlaced;
-            var start = Time.realtimeSinceStartup;
-            tool.PlaceForTest(first.edge, first.t, designs, first.support);
-            while ((tool.Busy || SignPlacementToolSystem.LastPlaced == before) && Time.realtimeSinceStartup - start < 20f) yield return null;
-            yield return new WaitForSecondsRealtime(4f);
-            ui.SetEditorOpen(false);
-            var replacement = SignPlacementToolSystem.LastPlaced;
-            SpikeReport.Set("e2e.reedit.original", $"{first.record.PrefabName} remaining={InstancesOf(first.record.PrefabName).Count}");
-            SpikeReport.Set("e2e.reedit.replacement", replacement == before ? "FAILED" : $"{replacement.PrefabName} count={InstancesOf(replacement.PrefabName).Count}");
-            if (replacement != before)
-            {
-                m_Placed[0] = (first.support, replacement, first.edge, first.t);
-                var e = InstancesOf(replacement.PrefabName).FirstOrDefault();
-                if (e != Entity.Null)
-                {
-                    var t = World.DefaultGameObjectInjectionWorld.EntityManager.GetComponentData<Game.Objects.Transform>(e);
-                    var fwd = math.mul(t.m_Rotation, new float3(0, 0, 1));
-                    SetCamera(t.m_Position + new float3(0, 6f, 0), math.degrees(math.atan2(fwd.x, fwd.z)) + 15f, 8f, 55f);
-                    yield return new WaitForSecondsRealtime(3f);
-                    SpikeReport.Screenshot("e2e_reedit.png");
-                    yield return new WaitForSecondsRealtime(0.5f);
-                }
-            }
-        }
-
-        /// <summary>
-        /// Overhead supports on an elevated road (bridge deck well above terrain/water): posts must stand on
-        /// the deck. Reports each post's height above the terrain below it (0 = on the ground, not wanted
-        /// here) and whether both posts are within the deck width.
-        /// </summary>
+        /// <summary>Overhead structures on an elevated deck: posts must stand on the deck.</summary>
         private IEnumerator TestElevated(SignPlacementToolSystem tool)
         {
             var em = World.DefaultGameObjectInjectionWorld.EntityManager;
-            var probe = new RoadProbe(em, m_Runtime.PrefabSystem);
             using var query = em.CreateEntityQuery(ComponentType.ReadOnly<Edge>(), ComponentType.ReadOnly<Curve>(), ComponentType.ReadOnly<PrefabRef>(), ComponentType.ReadOnly<Composition>());
             using var edges = query.ToEntityArray(Allocator.Temp);
             var spots = new List<(Entity edge, float t)>();
@@ -243,37 +149,260 @@ namespace SignBuilder.Spike
                 if (p.y - AssemblyBuilder.TerrainHeight(p) < 8f || used.Any(u => math.distance(u, p) < 50f)) continue;
                 used.Add(p);
                 spots.Add((e, 0.5f));
-                if (spots.Count >= 4) break;
+                if (spots.Count >= 3) break;
             }
             SpikeReport.Set("e2e.elevated.spots", spots.Count);
-            var supports = new[] { "truss", "monotube", "curvedSpan", "cantilever" };
-            var design = JObject.Parse(File.ReadAllText(Path.Combine(SignBuilderRuntime.ResourcesDir, "Templates", "guide-exit-tab.json")));
-            for (var i = 0; i < spots.Count && i < supports.Length; i++)
+            var cases = new[] { Options("singleTruss", "single"), Options("curved", "cantilever"), Options("curved", "single") };
+            for (var i = 0; i < spots.Count && i < cases.Length; i++)
             {
-                var snap = probe.SnapAt(spots[i].edge, spots[i].t);
-                var placement = AssemblyBuilder.Layout(supports[i], snap, new List<Vector2> { new Vector2(4.5f, 3f) });
-                var b = placement.Support.bounds;
-                var posts = new[] { b.min.x, b.max.x }.Select(x => (float3)placement.Origin + math.mul(placement.Rotation, new float3(x, 0, 0))).ToArray();
+                // A sign over the outermost lane: it must stay centred over it (overlapping the bend if needed).
+                cases[i].Signs.Add(new SignSlot { Mode = "lane", Lane = 0, FromRight = true });
+                yield return PlaceAndWait(() => tool.PlaceForTest(spots[i].edge, spots[i].t, new List<JObject> { Template("guide-exit-only") }, cases[i]));
+                var r = SignPlacementToolSystem.LastPlaced;
+                var snap = r.Context.ToSnap();
+                var placement = AssemblyBuilder.Layout(snap, new List<Vector2> { new Vector2(r.Centres.Length > 0 ? 3f : 3f, 2f) }, r.Context.Options);
                 UnityEngine.Object.Destroy(placement.Support);
-                var aboveGround = string.Join("/", posts.Select(q => (q.y - AssemblyBuilder.TerrainHeight(q)).ToString("F1")));
-                SpikeReport.Set($"e2e.elevated.{supports[i]}.layout", $"{snap.PrefabName} deck={snap.EdgeWidth:F1} postsAboveGround={aboveGround} span={b.size.x:F1}");
-
-                var before = SignPlacementToolSystem.LastPlaced;
-                var start = Time.realtimeSinceStartup;
-                tool.PlaceForTest(spots[i].edge, spots[i].t, new List<JObject> { design }, supports[i]);
-                while ((tool.Busy || SignPlacementToolSystem.LastPlaced == before) && Time.realtimeSinceStartup - start < 20f) yield return null;
-                var record = SignPlacementToolSystem.LastPlaced;
-                if (record == before) continue;
-                yield return new WaitForSecondsRealtime(2f);
-                var entity = InstancesOf(record.PrefabName).FirstOrDefault();
-                if (entity == Entity.Null) continue;
-                var t = em.GetComponentData<Game.Objects.Transform>(entity);
-                var fwd = math.mul(t.m_Rotation, new float3(0, 0, 1));
-                SetCamera(t.m_Position + new float3(0, 4f, 0), math.degrees(math.atan2(fwd.x, fwd.z)) + 35f, 18f, 45f);
-                yield return new WaitForSecondsRealtime(3f);
-                SpikeReport.Screenshot($"e2e_elevated_{supports[i]}.png");
-                yield return new WaitForSecondsRealtime(0.5f);
+                SpikeReport.Set($"e2e.elevated.{cases[i].Type}-{cases[i].Span}", $"{Describe(r)} lanes=[{string.Join(" ", placement.LaneXs.Select(x => x.ToString("F1")))}]");
+                yield return Shoot(r, $"e2e_elevated_{cases[i].Type}_{cases[i].Span}.png", 35f, 40f);
             }
+        }
+
+        private string Arrangement(SignBuilderUISystem ui)
+        {
+            var json = ui.ArrangeInfoJson;
+            if (string.IsNullOrEmpty(json)) return "(none)";
+            var a = JObject.Parse(json);
+            var signs = string.Join(" ", a["signs"].Select(sg => $"[x={(float)sg["x"]:F2} w={(float)sg["w"]:F2} {sg["mode"]} lane={sg["lane"]}{((bool)sg["fromRight"] ? "R" : "L")} off={(float)sg["offset"]:F2}]"));
+            return $"type={a["type"]} span={a["span"]} side={a["side"]} lanes=[{string.Join(" ", a["lanes"].Select(l => ((float)l).ToString("F1")))}] structure=[{a["structure"][0]:F1},{a["structure"][1]:F1}] signs={signs}";
+        }
+
+        private IEnumerator WaitArrange(SignPlacementToolSystem tool, SignBuilderUISystem ui)
+        {
+            var end = Time.realtimeSinceStartup + 15f;
+            while ((!tool.PreviewReady || string.IsNullOrEmpty(ui.ArrangeInfoJson)) && Time.realtimeSinceStartup < end) yield return null;
+            for (var i = 0; i < 5; i++) yield return null;
+        }
+
+        /// <summary>
+        /// The gantry flow: pin on a road with two signs, drag one onto the rightmost lane (snaps, remembered from
+        /// the right), add a third sign, switch to a single-truss left cantilever and back, then build.
+        /// </summary>
+        private IEnumerator TestArrange(SignBuilderUISystem ui, SignPlacementToolSystem tool)
+        {
+            var spot = m_Placed.FirstOrDefault(p => p.support == "doubleTruss-single");
+            if (spot.record == null) yield break;
+            var t = math.clamp(spot.t + 0.3f, 0.05f, 0.95f);
+            ui.SetEditorOpen(true);
+            tool.ArrangeForTest(spot.edge, t, new List<JObject> { Template("guide-exit-tab"), Template("guide-exit-only") }, Options("doubleTruss", "single"));
+            yield return WaitArrange(tool, ui);
+            SpikeReport.Set("e2e.arrange.start", $"mode={ui.ToolMode} {Arrangement(ui)}");
+            var snapForCamera = new RoadProbe(World.DefaultGameObjectInjectionWorld.EntityManager, m_Runtime.PrefabSystem).SnapAt(spot.edge, t);
+            var fwd = snapForCamera.Tangent * snapForCamera.MainDirection;
+            SetCamera(snapForCamera.Point + new float3(0, 5f, 0), math.degrees(math.atan2(fwd.x, fwd.z)) + 180f, 10f, 45f);
+            yield return new WaitForSecondsRealtime(2.5f);
+            SpikeReport.Screenshot("e2e_arrange_start.png");
+            yield return new WaitForSecondsRealtime(0.5f);
+
+            var info = JObject.Parse(ui.ArrangeInfoJson);
+            var lanes = info["lanes"].Select(l => (float)l).ToArray();
+            if (lanes.Length > 0)
+            {
+                tool.Arrange(new JObject { ["op"] = "moveSign", ["index"] = 1, ["x"] = lanes[^1] + 0.3f, ["snap"] = true }.ToString());
+                tool.Arrange(new JObject { ["op"] = "moveSign", ["index"] = 0, ["x"] = lanes[0] - 0.2f, ["snap"] = true }.ToString());
+            }
+            tool.Arrange(new JObject { ["op"] = "addSign", ["design"] = Template("services-blue") }.ToString());
+            yield return WaitArrange(tool, ui);
+            yield return new WaitForSecondsRealtime(0.5f);
+            SpikeReport.Set("e2e.arrange.dragged", Arrangement(ui));
+            SpikeReport.Screenshot("e2e_arrange_dragged.png");
+            yield return new WaitForSecondsRealtime(0.5f);
+
+            tool.Arrange("{\"op\":\"type\",\"value\":\"singleTruss\"}");
+            tool.Arrange("{\"op\":\"span\",\"value\":\"cantilever\"}");
+            tool.Arrange("{\"op\":\"side\",\"value\":\"left\"}");
+            yield return new WaitForSecondsRealtime(1f);
+            SpikeReport.Set("e2e.arrange.leftCantilever", Arrangement(ui));
+            SpikeReport.Screenshot("e2e_arrange_left.png");
+            yield return new WaitForSecondsRealtime(0.5f);
+            tool.Arrange("{\"op\":\"span\",\"value\":\"single\"}");
+            tool.Arrange("{\"op\":\"removeSign\",\"index\":2}");
+            yield return new WaitForSecondsRealtime(1f);
+
+            var before = SignPlacementToolSystem.LastPlaced;
+            tool.Arrange("{\"op\":\"build\"}");
+            var start = Time.realtimeSinceStartup;
+            while ((tool.Busy || SignPlacementToolSystem.LastPlaced == before) && Time.realtimeSinceStartup - start < 20f) yield return null;
+            yield return new WaitForSecondsRealtime(2f);
+            var built = SignPlacementToolSystem.LastPlaced;
+            SpikeReport.Set("e2e.arrange.built", built == before ? "FAILED: " + ui.Status : $"{built.PrefabName} {Describe(built)} mode={ui.ToolMode}");
+            if (built != before)
+            {
+                m_Placed.Add(("arranged", built, spot.edge, t));
+                yield return Shoot(built, "e2e_arrange_built.png", 180f, 40f);
+            }
+        }
+
+        /// <summary>Info panel Edit on a gantry: back in the arrangement pinned in place; replace a sign and Save.</summary>
+        private IEnumerator TestEditGantry(SignBuilderUISystem ui, SignPlacementToolSystem tool)
+        {
+            var target = m_Placed.FirstOrDefault(p => p.support == "arranged");
+            if (target.record == null) yield break;
+            var entity = InstancesOf(target.record.PrefabName).FirstOrDefault();
+            var em = World.DefaultGameObjectInjectionWorld.EntityManager;
+            var pos = em.GetComponentData<Game.Objects.Transform>(entity).m_Position;
+            tool.EditPlaced(entity);
+            yield return WaitArrange(tool, ui);
+            SpikeReport.Set("e2e.editgantry.open", $"mode={ui.ToolMode} replacing={tool.IsReplacing} signs={tool.SignCount} {Arrangement(ui)}");
+            SpikeReport.Screenshot("e2e_editgantry.png");
+            yield return new WaitForSecondsRealtime(0.5f);
+            var edited = (JObject)target.record.Designs[0].DeepClone();
+            ((JArray)edited["items"])[1]["text"] = "Edited In Place";
+            tool.Arrange(new JObject { ["op"] = "replaceSign", ["index"] = 0, ["design"] = edited }.ToString());
+            yield return WaitArrange(tool, ui);
+            var before = SignPlacementToolSystem.LastPlaced;
+            tool.Arrange("{\"op\":\"build\"}");
+            var start = Time.realtimeSinceStartup;
+            while ((tool.Busy || SignPlacementToolSystem.LastPlaced == before) && Time.realtimeSinceStartup - start < 20f) yield return null;
+            yield return new WaitForSecondsRealtime(2.5f);
+            var saved = SignPlacementToolSystem.LastPlaced;
+            var newEntity = saved == before ? Entity.Null : InstancesOf(saved.PrefabName).FirstOrDefault();
+            SpikeReport.Set("e2e.editgantry.saved", saved == before ? "FAILED: " + ui.Status
+                : $"old remaining={InstancesOf(target.record.PrefabName).Count} moved={(newEntity == Entity.Null ? -1 : math.distance(em.GetComponentData<Game.Objects.Transform>(newEntity).m_Position, pos)):F2}m mode={ui.ToolMode}");
+            if (saved != before) yield return Shoot(saved, "e2e_editgantry_saved.png", 180f, 40f);
+        }
+
+        /// <summary>Edit a roadside sign: designer Save rebuilds it where it stands.</summary>
+        private IEnumerator TestEditPosts(SignBuilderUISystem ui, SignPlacementToolSystem tool)
+        {
+            var target = m_Placed.FirstOrDefault(p => p.support == "ground");
+            if (target.record == null) yield break;
+            var entity = InstancesOf(target.record.PrefabName).FirstOrDefault();
+            tool.EditPlaced(entity);
+            yield return new WaitForSecondsRealtime(2f);
+            SpikeReport.Set("e2e.editposts.open", $"editor={ui.EditorOpen} mode={ui.ToolMode} replacing={tool.IsReplacing}");
+            SpikeReport.Screenshot("e2e_editposts.png");
+            yield return new WaitForSecondsRealtime(0.5f);
+            var edited = (JObject)target.record.Designs[0].DeepClone();
+            edited["scheme"] = "blue";
+            var before = SignPlacementToolSystem.LastPlaced;
+            tool.SavePosts(edited);
+            var start = Time.realtimeSinceStartup;
+            while ((tool.Busy || SignPlacementToolSystem.LastPlaced == before) && Time.realtimeSinceStartup - start < 20f) yield return null;
+            yield return new WaitForSecondsRealtime(2f);
+            var saved = SignPlacementToolSystem.LastPlaced;
+            SpikeReport.Set("e2e.editposts.saved", saved == before ? "FAILED: " + ui.Status : $"old remaining={InstancesOf(target.record.PrefabName).Count} new={InstancesOf(saved.PrefabName).Count}");
+            if (saved != before) yield return Shoot(saved, "e2e_editposts_saved.png", 15f, 25f);
+            ui.SetEditorOpen(false);
+        }
+
+        /// <summary>Selected-object panel: name, and its Move / Duplicate / Edit buttons.</summary>
+        private IEnumerator TestInfoPanel(SignBuilderUISystem ui, SignPlacementToolSystem tool)
+        {
+            var world = World.DefaultGameObjectInjectionWorld;
+            var target = m_Placed.FirstOrDefault(p => p.support == "straight-single");
+            if (target.record == null) yield break;
+            var entity = InstancesOf(target.record.PrefabName).FirstOrDefault();
+            LookAt(entity);
+            var info = world.GetOrCreateSystemManaged<Game.UI.InGame.SelectedInfoUISystem>();
+            var section = world.GetOrCreateSystemManaged<SignInfoSection>();
+            info.SetSelection(entity);
+            yield return new WaitForSecondsRealtime(2.5f);
+            GameManager.instance.localizationManager.activeDictionary.TryGetValue($"Assets.NAME[{target.record.PrefabName}]", out var displayName);
+            GameManager.instance.localizationManager.activeDictionary.TryGetValue($"Assets.DESCRIPTION[{target.record.PrefabName}]", out var description);
+            SpikeReport.Set("e2e.infopanel.name", $"visible={section.visible} {displayName} | {description}");
+            SpikeReport.Screenshot("e2e_infopanel.png");
+            yield return new WaitForSecondsRealtime(0.5f);
+            section.PlaceSelectedAgain(move: true);
+            yield return new WaitForSecondsRealtime(2f);
+            SpikeReport.Set("e2e.infopanel.move", $"mode={ui.ToolMode} replacing={tool.IsReplacing} signs={tool.SignCount}");
+            SpikeReport.Screenshot("e2e_infopanel_move.png");
+            yield return new WaitForSecondsRealtime(0.5f);
+            tool.Deactivate();
+            info.SetSelection(entity);
+            yield return new WaitForSecondsRealtime(1f);
+            section.PlaceSelectedAgain(move: false);
+            yield return new WaitForSecondsRealtime(1.5f);
+            SpikeReport.Set("e2e.infopanel.duplicate", $"mode={ui.ToolMode} replacing={tool.IsReplacing}");
+            tool.Deactivate();
+            ui.SetEditorOpen(false);
+        }
+
+        /// <summary>Free placement on open ground: a rotated single truss and a raised roadside sign.</summary>
+        private IEnumerator TestFreePlacement(SignPlacementToolSystem tool)
+        {
+            if (m_Placed.Count == 0) yield break;
+            var em = World.DefaultGameObjectInjectionWorld.EntityManager;
+            var first = InstancesOf(m_Placed[0].record.PrefabName).FirstOrDefault();
+            var tr = em.GetComponentData<Game.Objects.Transform>(first);
+            var right = math.mul(tr.m_Rotation, new float3(1, 0, 0));
+            var p = tr.m_Position + right * 45f;
+            p.y = AssemblyBuilder.TerrainHeight(p);
+            var options = Options("singleTruss", "full");
+            options.Angle = 30f;
+            options.FreeWidth = 12f;
+            yield return PlaceAndWait(() => tool.PlaceFreeForTest(p, new List<JObject> { Template("guide-exit-tab") }, options));
+            SpikeReport.Set("e2e.free.truss", Describe(SignPlacementToolSystem.LastPlaced));
+            yield return Shoot(SignPlacementToolSystem.LastPlaced, "e2e_free_truss.png", 20f, 50f);
+            var q = p + right * 25f;
+            q.y = AssemblyBuilder.TerrainHeight(q);
+            var posts = Options("ground", "single");
+            posts.Elevation = 1.5f;
+            yield return PlaceAndWait(() => tool.PlaceFreeForTest(q, new List<JObject> { Template("gore-exit") }, posts));
+            SpikeReport.Set("e2e.free.ground", Describe(SignPlacementToolSystem.LastPlaced));
+        }
+
+        /// <summary>Templates on disk: save, rename, hide a built-in, delete.</summary>
+        private IEnumerator TestTemplates(SignBuilderUISystem ui)
+        {
+            string Names() => string.Join(", ", JArray.Parse(UITemplates(ui)).Select(x => (string)x["id"]));
+            var builtIns = JArray.Parse(UITemplates(ui)).Count;
+            ui.SaveTemplate(new JObject { ["name"] = "E2E Test Sign", ["design"] = Template("guide-exit-tab") });
+            yield return null;
+            var saved = JArray.Parse(UITemplates(ui)).FirstOrDefault(x => (string)x["name"] == "E2E Test Sign");
+            SpikeReport.Set("e2e.templates.saved", saved == null ? "FAILED" : (string)saved["id"]);
+            if (saved != null)
+            {
+                ui.RenameTemplate((string)saved["id"], "E2E Renamed");
+                yield return null;
+                SpikeReport.Set("e2e.templates.renamed", JArray.Parse(UITemplates(ui)).Any(x => (string)x["name"] == "E2E Renamed"));
+                // Keep it for the UI screenshots, deleted at the end of the designer pause.
+            }
+            ui.DeleteTemplate("builtin:advance-guide");
+            yield return null;
+            SpikeReport.Set("e2e.templates.hidden", $"before={builtIns} now={JArray.Parse(UITemplates(ui)).Count} ids={Names()}");
+            var hidden = Path.Combine(SignBuilderRuntime.DataDir, "hidden-templates.json");
+            if (File.Exists(hidden)) File.Delete(hidden);
+        }
+
+        private static string UITemplates(SignBuilderUISystem ui) => ui.TemplatesJson;
+
+        /// <summary>
+        /// The designer with a long sign loaded. With ModsData/SignBuilder/ui-wait.flag present the run pauses here so a
+        /// DevTools script can click around (spike/shot-NAME.flag screenshots, spike/ui-done.flag continues).
+        /// </summary>
+        private IEnumerator TestDesignerPause(SignBuilderUISystem ui)
+        {
+            ui.SetEditorOpen(true);
+            ui.OpenForEdit(new AssemblyRecord { Designs = new List<JObject> { Template("guide-long") } }, "new");
+            yield return new WaitForSecondsRealtime(3f);
+            SpikeReport.Screenshot("e2e_designer.png");
+            yield return new WaitForSecondsRealtime(0.5f);
+            File.WriteAllText(Path.Combine(SpikeReport.OutputDir, "ui-ready.flag"), "");
+            var end = Time.realtimeSinceStartup + 150f;
+            while (File.Exists(Path.Combine(SignBuilderRuntime.DataDir, "ui-wait.flag")) && Time.realtimeSinceStartup < end
+                   && !File.Exists(Path.Combine(SpikeReport.OutputDir, "ui-done.flag")))
+            {
+                foreach (var flag in Directory.GetFiles(SpikeReport.OutputDir, "shot-*.flag"))
+                {
+                    var name = Path.GetFileNameWithoutExtension(flag).Substring(5);
+                    File.Delete(flag);
+                    SpikeReport.Screenshot($"ui_{name}.png");
+                }
+                yield return null;
+            }
+            var test = JArray.Parse(ui.TemplatesJson).FirstOrDefault(x => ((string)x["name"])?.StartsWith("E2E") == true);
+            if (test != null) ui.DeleteTemplate((string)test["id"]);
+            ui.SetEditorOpen(false);
         }
 
         private static JObject Template(string name) =>
@@ -302,245 +431,13 @@ namespace SignBuilder.Spike
         }
 
         private static string Describe(AssemblyRecord r) =>
-            $"spec={r.SupportSpec?.Kind}({string.Join(",", r.SupportSpec?.Args?.Select(a => a.ToString("F2")) ?? Array.Empty<string>())}) centres=[{string.Join(" ", r.Centres.Select(c => $"({c.x:F2},{c.y:F2})"))}]";
-
-        /// <summary>
-        /// Two signs of different heights on a monotube (each centred on the tube), a cantilever over the
-        /// rightmost lane, and signs shifted along a truss.
-        /// </summary>
-        private IEnumerator TestLayoutOptions(SignPlacementToolSystem tool)
-        {
-            if (m_Placed.Count < 3) yield break;
-            var tall = Template("guide-long");
-            var shortSign = Template("services-blue");
-            var spot = m_Placed.First(p => p.support == "monotube");
-            var t = math.clamp(spot.t + 0.3f, 0.05f, 0.95f);
-            yield return PlaceAndWait(() => tool.PlaceForTest(spot.edge, t, new List<JObject> { tall, shortSign }, "monotube"));
-            var mixed = SignPlacementToolSystem.LastPlaced;
-            SpikeReport.Set("e2e.options.mixedHeights", Describe(mixed));
-            yield return Shoot(mixed, "e2e_mixed_heights.png");
-
-            var cant = m_Placed.First(p => p.support == "cantilever");
-            var t2 = math.clamp(cant.t + 0.3f, 0.05f, 0.95f);
-            var exitOnly = Template("guide-exit-only");
-            yield return PlaceAndWait(() => tool.PlaceForTest(cant.edge, t2, new List<JObject> { exitOnly }, "cantilever", false, new LayoutOptions { SignScale = 0.75f, SignLanes = new[] { 9 } }));
-            var rightLane = SignPlacementToolSystem.LastPlaced;
-            SpikeReport.Set("e2e.options.rightLane", Describe(rightLane) + $" lanes={rightLane.Context?.Lanes.Count}");
-            yield return Shoot(rightLane, "e2e_right_lane.png");
-
-            var truss = m_Placed.First(p => p.support == "truss");
-            var t3 = math.clamp(truss.t + 0.3f, 0.05f, 0.95f);
-            yield return PlaceAndWait(() => tool.PlaceForTest(truss.edge, t3, new List<JObject> { exitOnly }, "truss", false, new LayoutOptions { SignScale = 0.75f, SignShifts = new[] { 4f } }));
-            SpikeReport.Set("e2e.options.shifted", Describe(SignPlacementToolSystem.LastPlaced));
-            yield return Shoot(SignPlacementToolSystem.LastPlaced, "e2e_shifted.png");
-
-            // Two signs on a single-span truss, each over its own lane; lanes counted once per position.
-            var snap = new RoadProbe(World.DefaultGameObjectInjectionWorld.EntityManager, m_Runtime.PrefabSystem).SnapAt(truss.edge, math.clamp(truss.t - 0.3f, 0.05f, 0.95f));
-            SpikeReport.Set("e2e.options.lanes", string.Join(" ", snap.Lanes.Select(l => $"{l.Offset:F1}/{l.Direction}")));
-            var perLane = new LayoutOptions { SignScale = 0.75f, SignLanes = new[] { 0, 1 } };
-            yield return PlaceAndWait(() => tool.PlaceForTest(truss.edge, math.clamp(truss.t - 0.3f, 0.05f, 0.95f),
-                new List<JObject> { Template("guide-exit-tab"), exitOnly }, "trussSingle", false, perLane));
-            SpikeReport.Set("e2e.options.perLane", Describe(SignPlacementToolSystem.LastPlaced));
-            yield return Shoot(SignPlacementToolSystem.LastPlaced, "e2e_per_lane.png", 0f, 40f);
-        }
-
-        /// <summary>Free placement on open ground: a truss rotated 30 degrees and a raised roadside sign.</summary>
-        private IEnumerator TestFreePlacement(SignPlacementToolSystem tool)
-        {
-            if (m_Placed.Count == 0) yield break;
-            var em = World.DefaultGameObjectInjectionWorld.EntityManager;
-            var anchor = em.GetComponentData<Game.Objects.Transform>(InstancesOf(m_Placed[0].record.PrefabName).FirstOrDefault()).m_Position;
-            var right = math.mul(em.GetComponentData<Game.Objects.Transform>(InstancesOf(m_Placed[0].record.PrefabName).FirstOrDefault()).m_Rotation, new float3(1, 0, 0));
-            var p = anchor + right * 45f;
-            p.y = AssemblyBuilder.TerrainHeight(p);
-            yield return PlaceAndWait(() => tool.PlaceFreeForTest(p, 30f, new List<JObject> { Template("guide-exit-tab") }, "truss", new LayoutOptions { FreeWidth = 12f }));
-            var freeTruss = SignPlacementToolSystem.LastPlaced;
-            SpikeReport.Set("e2e.free.truss", Describe(freeTruss) + $" free={freeTruss.Context?.Options.Free}");
-            yield return Shoot(freeTruss, "e2e_free_truss.png", 20f, 50f);
-
-            var q = p + right * 25f;
-            q.y = AssemblyBuilder.TerrainHeight(q);
-            yield return PlaceAndWait(() => tool.PlaceFreeForTest(q, 0f, new List<JObject> { Template("gore-exit") }, "ground", new LayoutOptions { Elevation = 1.5f }));
-            SpikeReport.Set("e2e.free.ground", Describe(SignPlacementToolSystem.LastPlaced));
-            yield return Shoot(SignPlacementToolSystem.LastPlaced, "e2e_free_ground.png", 20f, 25f);
-        }
-
-        /// <summary>Edit a placed sign and Save twice: rebuilt in the same spot, the original removed each time.</summary>
-        private IEnumerator TestSaveInPlace(SignBuilderUISystem ui, SignPlacementToolSystem tool)
-        {
-            var target = m_Placed.FirstOrDefault(p => p.support == "curvedSpan");
-            if (target.record == null) yield break;
-            var em = World.DefaultGameObjectInjectionWorld.EntityManager;
-            var entity = InstancesOf(target.record.PrefabName).FirstOrDefault();
-            var originalPos = em.GetComponentData<Game.Objects.Transform>(entity).m_Position;
-            tool.EditPlaced(entity);
-            yield return new WaitForSecondsRealtime(2f);
-            SpikeReport.Set("e2e.saveedit.replacingUi", $"replacing={tool.IsReplacing}");
-            SpikeReport.Screenshot("e2e_saveedit_editor.png");
-            yield return new WaitForSecondsRealtime(0.5f);
-
-            var current = target.record;
-            for (var round = 1; round <= 2; round++)
-            {
-                var designs = current.Designs.Select(d => (JObject)d.DeepClone()).ToList();
-                ((JArray)designs[0]["items"])[1]["text"] = round == 1 ? "Saved Once" : "Saved Twice";
-                var payload = new JObject { ["designs"] = new JArray(designs), ["support"] = current.Support, ["reverse"] = current.Reverse }.ToString();
-                var before = SignPlacementToolSystem.LastPlaced;
-                var start = Time.realtimeSinceStartup;
-                ui.SaveEdit(payload);
-                while ((tool.Busy || SignPlacementToolSystem.LastPlaced == before) && Time.realtimeSinceStartup - start < 20f) yield return null;
-                yield return new WaitForSecondsRealtime(2.5f);
-                var saved = SignPlacementToolSystem.LastPlaced;
-                if (saved == before)
-                {
-                    SpikeReport.Set($"e2e.saveedit.round{round}", "FAILED: " + ui.Status);
-                    break;
-                }
-                var newEntity = InstancesOf(saved.PrefabName).FirstOrDefault();
-                var moved = newEntity == Entity.Null ? -1f : math.distance(em.GetComponentData<Game.Objects.Transform>(newEntity).m_Position, originalPos);
-                SpikeReport.Set($"e2e.saveedit.round{round}", $"old remaining={InstancesOf(current.PrefabName).Count} new={saved.PrefabName} count={InstancesOf(saved.PrefabName).Count} moved={moved:F2}m stillEditing={tool.IsReplacing} status={ui.Status}");
-                current = saved;
-            }
-            ui.SetEditorOpen(false);
-            yield return Shoot(current, "e2e_saveedit.png");
-        }
-
-        private Entity FirstInstance(string support) =>
-            m_Placed.Where(p => p.support == support).Select(p => InstancesOf(p.record.PrefabName).FirstOrDefault()).FirstOrDefault();
-
-        /// <summary>World point at the middle of a placed assembly's bounds.</summary>
-        private static float3 BoundsCentre(Entity entity, AssemblyRecord record)
-        {
-            var t = World.DefaultGameObjectInjectionWorld.EntityManager.GetComponentData<Game.Objects.Transform>(entity);
-            var b = record.Bounds;
-            var local = new float3((b[0] + b[3]) * 0.5f, (b[1] + b[4]) * 0.5f, (b[2] + b[5]) * 0.5f);
-            return t.m_Position + math.mul(t.m_Rotation, local);
-        }
+            $"spec={r.SupportSpec?.Kind}{(r.SupportSpec?.Mirror == true ? "(mirrored)" : "")}({string.Join(",", r.SupportSpec?.Args?.Select(a => a.ToString("F2")) ?? Array.Empty<string>())}) centres=[{string.Join(" ", r.Centres.Select(c => $"({c.x:F2},{c.y:F2})"))}]";
 
         private static void LookAt(Entity entity, float distance = 55f)
         {
             var t = World.DefaultGameObjectInjectionWorld.EntityManager.GetComponentData<Game.Objects.Transform>(entity);
             var fwd = math.mul(t.m_Rotation, new float3(0, 0, 1));
             SetCamera(t.m_Position + new float3(0, 6f, 0), math.degrees(math.atan2(fwd.x, fwd.z)) + 15f, 8f, distance);
-        }
-
-        /// <summary>
-        /// Moves the real OS cursor over each placed assembly in pick mode and checks the tool's own raycast
-        /// (the path a mouse click takes) reports that assembly.
-        /// </summary>
-        private IEnumerator TestRealRaycast(SignPlacementToolSystem tool)
-        {
-            var ui = World.DefaultGameObjectInjectionWorld.GetOrCreateSystemManaged<SignBuilderUISystem>();
-            ui.SetEditorOpen(false);
-            foreach (var p in m_Placed)
-            {
-                var entity = InstancesOf(p.record.PrefabName).FirstOrDefault();
-                if (entity == Entity.Null) continue;
-                LookAt(entity, p.support == "ground" ? 30f : 55f);
-                yield return new WaitForSecondsRealtime(1.5f);
-                tool.BeginPick();
-                var screen = Camera.main.WorldToScreenPoint(BoundsCentre(entity, p.record));
-                var hit = Entity.Null;
-                for (var i = 0; i < 40 && hit != entity; i++)
-                {
-                    UnityEngine.InputSystem.Mouse.current?.WarpCursorPosition(new Vector2(screen.x, screen.y));
-                    yield return null;
-                    hit = tool.Hovered;
-                }
-                SpikeReport.Set($"e2e.hover.{p.support}", hit == entity ? "hit" : $"MISSED (hovered {hit}, screen {screen})");
-                tool.Deactivate();
-            }
-        }
-
-        /// <summary>Select a placed sign as the default tool would; the info panel shows our section and its button opens the editor.</summary>
-        private IEnumerator TestInfoPanelEdit(SignBuilderUISystem ui, SignPlacementToolSystem tool)
-        {
-            var world = World.DefaultGameObjectInjectionWorld;
-            var entity = FirstInstance("monotube");
-            if (entity == Entity.Null) yield break;
-            LookAt(entity);
-            var info = world.GetOrCreateSystemManaged<Game.UI.InGame.SelectedInfoUISystem>();
-            var section = world.GetOrCreateSystemManaged<SignInfoSection>();
-            info.SetSelection(entity);
-            yield return new WaitForSecondsRealtime(2.5f);
-            SpikeReport.Set("e2e.infopanel.visible", section.visible);
-            SpikeReport.Screenshot("e2e_infopanel.png");
-            yield return new WaitForSecondsRealtime(0.5f);
-            var name = World.DefaultGameObjectInjectionWorld.EntityManager.TryGetComponent(entity, out PrefabRef pr) && m_Runtime.PrefabSystem.TryGetPrefab(pr, out PrefabBase pb) ? pb.name : "";
-            GameManager.instance.localizationManager.activeDictionary.TryGetValue($"Assets.NAME[{name}]", out var displayName);
-            GameManager.instance.localizationManager.activeDictionary.TryGetValue($"Assets.DESCRIPTION[{name}]", out var description);
-            SpikeReport.Set("e2e.infopanel.name", $"{displayName} | {description}");
-            section.PlaceSelectedAgain(move: false);
-            yield return new WaitForSecondsRealtime(2f);
-            SpikeReport.Set("e2e.infopanel.duplicate", $"mode={ui.ToolMode} replacing={tool.IsReplacing}");
-            tool.BeginPick();
-            info.SetSelection(entity);
-            yield return new WaitForSecondsRealtime(1.5f);
-            section.PlaceSelectedAgain(move: true);
-            yield return new WaitForSecondsRealtime(2f);
-            SpikeReport.Set("e2e.infopanel.move", $"mode={ui.ToolMode} replacing={tool.IsReplacing}");
-            SpikeReport.Screenshot("e2e_infopanel_move.png");
-            yield return new WaitForSecondsRealtime(0.5f);
-            tool.Deactivate();
-            info.SetSelection(entity);
-            yield return new WaitForSecondsRealtime(1.5f);
-            section.EditSelected();
-            yield return new WaitForSecondsRealtime(2.5f);
-            SpikeReport.Set("e2e.infopanel.edit", $"editorOpen={ui.EditorOpen} replacing={tool.IsReplacing} mode={ui.ToolMode}");
-            SpikeReport.Screenshot("e2e_infopanel_editor.png");
-            yield return new WaitForSecondsRealtime(0.5f);
-            ui.SetEditorOpen(false);
-        }
-
-        /// <summary>The editor collapses to a small bar while placing and comes back on cancel.</summary>
-        private IEnumerator TestCompactWhilePlacing(SignBuilderUISystem ui, SignPlacementToolSystem tool)
-        {
-            ui.SetEditorOpen(true);
-            yield return new WaitForSecondsRealtime(1f);
-            var design = JObject.Parse(File.ReadAllText(Path.Combine(SignBuilderRuntime.ResourcesDir, "Templates", "guide-exit-tab.json")));
-            tool.BeginPlace(new List<JObject> { design }, "truss");
-            yield return new WaitForSecondsRealtime(2f);
-            SpikeReport.Set("e2e.compact.mode", ui.ToolMode);
-            SpikeReport.Screenshot("e2e_compact.png");
-            yield return new WaitForSecondsRealtime(0.5f);
-            tool.Adjust("free");
-            yield return new WaitForSecondsRealtime(1f);
-            SpikeReport.Screenshot("e2e_compact_free.png");
-            yield return new WaitForSecondsRealtime(0.5f);
-            tool.Adjust("road");
-            tool.BeginPick(); // what right-click and "Back to editor" do
-            yield return new WaitForSecondsRealtime(1.5f);
-            SpikeReport.Set("e2e.compact.after", ui.ToolMode);
-            SpikeReport.Screenshot("e2e_compact_back.png");
-            yield return new WaitForSecondsRealtime(0.5f);
-        }
-
-        /// <summary>
-        /// The long-legend template in the editor preview (must fit, not clip). With -uiDeveloperMode the run
-        /// pauses here so a DevTools script can click parts (spike/shot-NAME.flag screenshots, spike/ui-done.flag continues).
-        /// </summary>
-        private IEnumerator TestLongPreview(SignBuilderUISystem ui)
-        {
-            var design = JObject.Parse(File.ReadAllText(Path.Combine(SignBuilderRuntime.ResourcesDir, "Templates", "guide-long.json")));
-            ui.SetEditorOpen(true);
-            ui.OpenForEdit(new AssemblyRecord { Support = "truss", Designs = new List<JObject> { design } });
-            yield return new WaitForSecondsRealtime(3f);
-            SpikeReport.Screenshot("e2e_longpreview.png");
-            yield return new WaitForSecondsRealtime(0.5f);
-            File.WriteAllText(Path.Combine(SpikeReport.OutputDir, "ui-ready.flag"), "");
-            var end = Time.realtimeSinceStartup + 120f;
-            while (File.Exists(Path.Combine(SignBuilderRuntime.DataDir, "ui-wait.flag")) && Time.realtimeSinceStartup < end
-                   && !File.Exists(Path.Combine(SpikeReport.OutputDir, "ui-done.flag")))
-            {
-                foreach (var flag in Directory.GetFiles(SpikeReport.OutputDir, "shot-*.flag"))
-                {
-                    var name = Path.GetFileNameWithoutExtension(flag).Substring(5);
-                    File.Delete(flag);
-                    SpikeReport.Screenshot($"ui_{name}.png");
-                }
-                yield return null;
-            }
-            ui.SetEditorOpen(false);
         }
 
         private void RemoveAllAssemblies()

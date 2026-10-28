@@ -25,16 +25,72 @@ namespace SignBuilder.Spike
         {
             var a = spec.Args ?? System.Array.Empty<float>();
             float Arg(int i) => i < a.Length ? a[i] : 0f;
-            return spec.Kind switch
+            var mesh = spec.Kind switch
             {
                 "monotube" => Monotube(Arg(0), Arg(1)),
                 "curvedSpan" => CurvedSpan(Arg(0), Arg(1), ground: Arg(2)),
                 "curvedCantilever" => CurvedCantilever(Arg(0), Arg(1), ground: Arg(2)),
                 "cantilever" => Cantilever(Arg(0), Arg(1)),
                 "trussCantilever" => TrussCantilever(Arg(0), Arg(1)),
+                "planarTruss" => PlanarTruss(-Arg(0) * 0.5f, Arg(0) * 0.5f, new[] { -Arg(0) * 0.5f, Arg(0) * 0.5f }, Arg(1)),
+                "planarTrussCantilever" => PlanarTruss(-Arg(0), 0.25f, new[] { 0f }, Arg(1)),
                 "ground" => GroundPosts(Arg(0), Arg(1), out _, Arg(2)),
                 _ => Truss(Arg(0), Arg(1)),
             };
+            if (spec.Mirror) Mirror(mesh);
+            return mesh;
+        }
+
+        /// <summary>Mirrors a mesh across X in place (flipping winding so faces stay outward).</summary>
+        private static void Mirror(Mesh mesh)
+        {
+            var vertices = mesh.vertices;
+            var normals = mesh.normals;
+            for (var i = 0; i < vertices.Length; i++)
+            {
+                vertices[i].x = -vertices[i].x;
+                if (i < normals.Length) normals[i].x = -normals[i].x;
+            }
+            mesh.vertices = vertices;
+            mesh.normals = normals;
+            for (var sub = 0; sub < mesh.subMeshCount; sub++)
+            {
+                var triangles = mesh.GetTriangles(sub);
+                for (var t = 0; t + 2 < triangles.Length; t += 3) (triangles[t + 1], triangles[t + 2]) = (triangles[t + 2], triangles[t + 1]);
+                mesh.SetTriangles(triangles, sub);
+            }
+            mesh.RecalculateBounds();
+        }
+
+        /// <summary>
+        /// Single (planar) truss: top and bottom chords with verticals and diagonals in one vertical plane, on
+        /// single pipe columns. Lighter-looking than the box truss.
+        /// </summary>
+        public static Mesh PlanarTruss(float x0, float x1, float[] columns, float ground)
+        {
+            var b = new MeshBuilder();
+            const float depth = 1.2f;
+            var y0 = kMountHeight - depth * 0.5f;
+            var y1 = kMountHeight + depth * 0.5f;
+            b.AddTube(new Vector3(x0, y0, 0), new Vector3(x1, y0, 0), 0.08f, 10);
+            b.AddTube(new Vector3(x0, y1, 0), new Vector3(x1, y1, 0), 0.08f, 10);
+            var panels = Mathf.Max(2, Mathf.RoundToInt((x1 - x0) / depth));
+            var step = (x1 - x0) / panels;
+            for (var i = 0; i <= panels; i++)
+            {
+                var xa = x0 + i * step;
+                b.AddTube(new Vector3(xa, y0, 0), new Vector3(xa, y1, 0), 0.04f, 8);
+                if (i == panels) break;
+                var flip = (i & 1) == 0;
+                b.AddTube(new Vector3(xa, flip ? y0 : y1, 0), new Vector3(xa + step, flip ? y1 : y0, 0), 0.04f, 8);
+            }
+            foreach (var x in columns)
+            {
+                b.AddTube(new Vector3(x, -ground - kFooting, 0.25f), new Vector3(x, y1 + 0.25f, 0.25f), 0.22f, 16);
+                b.AddTube(new Vector3(x, y0, 0.05f), new Vector3(x, y0, 0.25f), 0.06f, 8);
+                b.AddTube(new Vector3(x, y1, 0.05f), new Vector3(x, y1, 0.25f), 0.06f, 8);
+            }
+            return b.Build("SignBuilder.PlanarTruss");
         }
 
         public static Mesh Truss(float span, float ground = 0f) => TrussBeam(-span * 0.5f, span * 0.5f, new[] { -span * 0.5f, span * 0.5f }, ground, "SignBuilder.Truss");

@@ -33,5 +33,39 @@
 .barLabel { font-size: 13rem; color: rgba(255, 255, 255, 0.75); margin-right: 8rem; }
 .barValue { min-width: 130rem; text-align: center; font-size: 14rem; color: #fff; white-space: nowrap; }
 .step { display: flex; align-items: center; justify-content: center; padding: 0 6rem; width: auto; min-width: 26rem; }
-.compact { width: 640rem; }
+.compact { width: 560rem; }
 .optionGroup .choices { flex-wrap: nowrap; }
+/* --- designer --- */
+.signOptions { display: flex; flex-direction: column; align-items: flex-start; width: 560rem; margin-top: 6rem; }
+.customColours { display: flex; flex-direction: row; }
+.customColours > div { margin-right: 16rem; }
+.library { display: flex; flex-direction: column; }
+.libraryActions, .namingRow { display: flex; flex-direction: row; flex-wrap: wrap; align-items: center; margin-bottom: 6rem; }
+.cards { display: flex; flex-direction: row; flex-wrap: wrap; max-height: 620rem; overflow-y: scroll; }
+.card { position: relative; width: 134rem; margin: 0 6rem 6rem 0; padding: 4rem; border-radius: 4rem; background-color: rgba(255, 255, 255, 0.06); }
+.card:hover { background-color: rgba(255, 255, 255, 0.16); }
+.thumb { width: 124rem; height: 64rem; background-color: rgba(120, 140, 110, 0.45); border-radius: 3rem; }
+.cardName { font-size: 12rem; color: #fff; margin-top: 3rem; height: 30rem; overflow: hidden; }
+.cardMenu { position: absolute; right: 4rem; bottom: 2rem; font-size: 14rem; color: rgba(255, 255, 255, 0.8); padding: 0 4rem; }
+.cardActions { position: absolute; left: 0; right: 0; top: 0; display: flex; flex-direction: column; padding: 4rem; background-color: rgba(20, 24, 30, 0.95); border-radius: 4rem; }
+.grip { margin-right: 8rem; }
+.dropInside { background-color: rgba(255, 212, 0, 0.25); }
+.dragging { opacity: 0.5; }
+.hintInline { font-size: 11rem; color: rgba(255, 255, 255, 0.5); }
+/* --- arrangement --- */
+.arrange { width: 1240rem; }
+.arrangeBody { padding: 8rem 12rem; display: flex; flex-direction: column; align-items: stretch; }
+.barGap { width: 18rem; }
+.barValueSmall { min-width: 60rem; text-align: center; font-size: 14rem; color: #fff; white-space: nowrap; }
+.diagram { position: relative; margin: 8rem 0 4rem 0; background-color: rgba(120, 150, 110, 0.35); border-radius: 4rem; overflow: hidden; }
+.deck { position: absolute; height: 26px; background-color: rgba(60, 62, 66, 0.95); }
+.lane, .laneOn { position: absolute; width: 36px; text-align: center; font-size: 12rem; color: rgba(255, 255, 255, 0.8); }
+.laneOn { color: #ffd400; font-weight: bold; }
+.laneLine { position: absolute; width: 2px; height: 26px; background-color: rgba(255, 255, 255, 0.6); }
+.beam { position: absolute; height: 6px; background-color: #b9bec4; }
+.post { position: absolute; width: 6px; background-color: #b9bec4; }
+.signBox, .signBoxOn { position: absolute; }
+.signBoxOn { box-shadow: 0px 0px 0px 3px #ffd400; }
+.listItem, .listItemOn { display: flex; flex-direction: row; align-items: center; }
+.barRow .choices { flex-wrap: nowrap; }
+.barRow { flex-wrap: wrap; }

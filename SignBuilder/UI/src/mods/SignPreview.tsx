@@ -39,7 +39,16 @@ function pathOf(target: EventTarget | null, stop: HTMLElement): string | null {
   return null;
 }
 
-export const SignPreview = (props: { design: Design; selected: string | null; onSelect: (path: string | null) => void; maxWidth: number; maxHeight: number }) => {
+/**
+ * Renders a design with the in-world renderer, scaled to fit its box. Interactive previews tag parts so a click
+ * selects them; thumbnails (interactive = false) just draw.
+ */
+export const SignPreview = (props: {
+  design: Design; selected?: string | null; onSelect?: (path: string | null) => void; maxWidth: number; maxHeight: number;
+  interactive?: boolean; padding?: number;
+}) => {
+  const interactive = props.interactive ?? true;
+  const padding = props.padding ?? 16;
   const host = useRef<HTMLDivElement>(null);
   const outer = useRef<HTMLDivElement>(null);
   const [ready, setReady] = useState(!!window.SignRenderer);
@@ -53,7 +62,7 @@ export const SignPreview = (props: { design: Design; selected: string | null; on
     const el = host.current;
     if (!ready || !el || !window.SignRenderer) return;
     while (el.firstChild) el.removeChild(el.firstChild);
-    const sign = window.SignRenderer.render(props.design, 2, { annotate: true });
+    const sign = window.SignRenderer.render(props.design, 2, { annotate: interactive });
     // Absolutely positioned inside an oversized host so the sign lays out at its natural width; as a
     // flex child of the preview box it would be squeezed to the box width and its legend would overflow.
     sign.style.position = "absolute";
@@ -77,7 +86,7 @@ export const SignPreview = (props: { design: Design; selected: string | null; on
       const bw = box?.clientWidth || props.maxWidth;
       const bh = box?.clientHeight || props.maxHeight;
       if (w > 1 && h > 1 && bw > 1 && bh > 1) {
-        const scale = Math.min(1, (bw - 16) / w, (bh - 16) / h);
+        const scale = Math.min(1, (bw - padding) / w, (bh - padding) / h);
         const next = { scale, x: (bw - w * scale) / 2, y: (bh - h * scale) / 2, shown: true };
         const key = `${next.scale.toFixed(4)} ${next.x.toFixed(1)} ${next.y.toFixed(1)}`;
         if (key !== last) {
@@ -85,7 +94,7 @@ export const SignPreview = (props: { design: Design; selected: string | null; on
           setFit(next);
         }
       }
-      if (frames++ < 180) requestAnimationFrame(measure);
+      if (frames++ < (interactive ? 180 : 90)) requestAnimationFrame(measure);
     };
     requestAnimationFrame(measure);
     return () => { cancelled = true; };
@@ -95,7 +104,7 @@ export const SignPreview = (props: { design: Design; selected: string | null; on
     <div
       ref={outer}
       style={{ position: "relative", width: "100%", height: "100%", overflow: "hidden" }}
-      onClick={(e) => props.onSelect(pathOf(e.target, e.currentTarget as HTMLElement))}
+      onClick={interactive && props.onSelect ? (e) => props.onSelect!(pathOf(e.target, e.currentTarget as HTMLElement)) : undefined}
     >
       <div ref={host} style={{
         position: "absolute", left: "0px", top: "0px", width: "4000px", height: "4000px",

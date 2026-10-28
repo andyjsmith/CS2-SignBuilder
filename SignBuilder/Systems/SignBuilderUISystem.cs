@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Colossal.UI.Binding;
@@ -14,8 +15,10 @@ namespace SignBuilder.Systems
 {
     /// <summary>
     /// Bridges the React editor (UI/src/mods) and the C# side. Binding group = mod id "SignBuilder".
-    /// Values: editorOpen, templates, editingDesign, toolStatus, toolMode (off|pick|place).
-    /// Triggers: setEditorOpen(bool), startPlacement(json { design, support }), cancelTool().
+    /// Values: editorOpen, templates, editingDesign, toolStatus, toolMode (off|posts|pickRoad|arrange),
+    /// placeInfo, arrangeInfo, replacing.
+    /// Triggers: setEditorOpen, startPosts, startGantry, adjust, arrange, savePosts, cancelTool,
+    /// saveTemplate, renameTemplate, deleteTemplate, openTemplatesFolder.
     /// </summary>
     public partial class SignBuilderUISystem : UISystemBase
     {
@@ -27,10 +30,15 @@ namespace SignBuilder.Systems
         private ValueBinding<string> m_ToolStatus;
         private ValueBinding<string> m_ToolMode;
         private ValueBinding<string> m_PlaceInfo;
+        private ValueBinding<string> m_ArrangeInfo;
         private ValueBinding<bool> m_Replacing;
         private SignPlacementToolSystem m_Tool;
 
         public bool EditorOpen => m_EditorOpen.value;
+
+        /// <summary>Player templates: one JSON file per template, easy to share.</summary>
+        public static string UserTemplatesDir => Path.Combine(SignBuilderRuntime.DataDir, "Templates");
+        private static string HiddenFile => Path.Combine(SignBuilderRuntime.DataDir, "hidden-templates.json");
 
         protected override void OnCreate()
         {
@@ -42,27 +50,58 @@ namespace SignBuilder.Systems
             AddBinding(m_ToolStatus = new ValueBinding<string>(Group, "toolStatus", ""));
             AddBinding(m_ToolMode = new ValueBinding<string>(Group, "toolMode", "off"));
             AddBinding(m_PlaceInfo = new ValueBinding<string>(Group, "placeInfo", "{}"));
+            AddBinding(m_ArrangeInfo = new ValueBinding<string>(Group, "arrangeInfo", ""));
             AddBinding(m_Replacing = new ValueBinding<bool>(Group, "replacing", false));
-            AddBinding(new TriggerBinding<string>(Group, "adjust", a => m_Tool.Adjust(a)));
-            AddBinding(new TriggerBinding<string>(Group, "saveEdit", SaveEdit));
-            AddBinding(new TriggerBinding(Group, "forgetEdit", () => m_Tool.ForgetReplacing()));
             AddBinding(new TriggerBinding<bool>(Group, "setEditorOpen", SetEditorOpen));
-            AddBinding(new TriggerBinding<string>(Group, "startPlacement", StartPlacement));
-            AddBinding(new TriggerBinding(Group, "cancelTool", () => m_Tool.BeginPick()));
+            AddBinding(new TriggerBinding<string>(Group, "startPosts", json => Guard(() =>
+            {
+                var o = JObject.Parse(json);
+                m_Tool.BeginPosts((JObject)o["design"], new LayoutOptions { Type = "ground", Free = (bool?)o["free"] ?? false });
+            })));
+            AddBinding(new TriggerBinding<string>(Group, "startGantry", json => Guard(() =>
+            {
+                var o = JObject.Parse(json);
+                m_Tool.BeginGantry(o["designs"] is JArray list ? list.OfType<JObject>() : Enumerable.Empty<JObject>());
+            })));
+            AddBinding(new TriggerBinding<string>(Group, "adjust", a => m_Tool.Adjust(a)));
+            AddBinding(new TriggerBinding<string>(Group, "arrange", json => m_Tool.Arrange(json)));
+            AddBinding(new TriggerBinding<string>(Group, "savePosts", json => Guard(() => m_Tool.SavePosts(JObject.Parse(json)))));
+            AddBinding(new TriggerBinding(Group, "cancelTool", () => { m_Tool.Deactivate(); SetStatus(""); }));
+            AddBinding(new TriggerBinding<string>(Group, "saveTemplate", json => Guard(() => SaveTemplate(JObject.Parse(json)))));
+            AddBinding(new TriggerBinding<string, string>(Group, "renameTemplate", (id, name) => Guard(() => RenameTemplate(id, name))));
+            AddBinding(new TriggerBinding<string>(Group, "deleteTemplate", id => Guard(() => DeleteTemplate(id))));
+            AddBinding(new TriggerBinding(Group, "openTemplatesFolder", () =>
+            {
+                Directory.CreateDirectory(UserTemplatesDir);
+                UnityEngine.Application.OpenURL("file:///" + UserTemplatesDir.Replace('\\', '/'));
+            }));
+        }
+
+        private void Guard(Action action)
+        {
+            try { action(); }
+            catch (Exception e)
+            {
+                Mod.log.Warn(e, "Sign Builder UI action failed");
+                SetStatus("Something went wrong: " + e.Message);
+            }
         }
 
         protected override void OnUpdate()
         {
             base.OnUpdate();
-            // The editor shrinks to a small bar while placing so the road stays clickable.
             var mode = m_Tool.ModeName;
             if (mode != m_ToolMode.value) m_ToolMode.Update(mode);
             var info = m_Tool.PlacementInfo;
             if (info != m_PlaceInfo.value) m_PlaceInfo.Update(info);
+            var arrange = m_Tool.ArrangeInfo();
+            if (arrange != m_ArrangeInfo.value) m_ArrangeInfo.Update(arrange);
             if (m_Tool.IsReplacing != m_Replacing.value) m_Replacing.Update(m_Tool.IsReplacing);
         }
 
         public string ToolMode => m_ToolMode.value;
+        public string ArrangeInfoJson => m_ArrangeInfo.value;
+        public string TemplatesJson => m_Templates.value;
 
         protected override void OnGameLoadingComplete(Colossal.Serialization.Entities.Purpose purpose, Game.GameMode mode)
         {
@@ -77,8 +116,7 @@ namespace SignBuilder.Systems
             m_EditorOpen.Update(open);
             if (open)
             {
-                if (m_Templates.value == "[]") m_Templates.Update(LoadTemplates());
-                m_Tool.BeginPick();
+                m_Templates.Update(LoadTemplates());
             }
             else
             {
@@ -87,51 +125,14 @@ namespace SignBuilder.Systems
             }
         }
 
-        public void StartPlacement(string payload)
-        {
-            try
-            {
-                var (designs, support, reverse, free) = ReadPayload(payload);
-                m_Tool.BeginPlace(designs, support, reverse, free);
-            }
-            catch (Exception e)
-            {
-                SetStatus("Could not read the sign design: " + e.Message);
-            }
-        }
-
-        /// <summary>{ designs: [...] } (several signs on one structure) or the older { design }, plus support, reverse, free.</summary>
-        private static (System.Collections.Generic.List<JObject> designs, string support, bool reverse, bool free) ReadPayload(string payload)
-        {
-            var obj = JObject.Parse(payload);
-            var designs = obj["designs"] is JArray list ? list.OfType<JObject>().ToList() : new System.Collections.Generic.List<JObject> { (JObject)obj["design"] };
-            var support = (string)obj["support"] ?? "truss";
-            if (!AssemblyBuilder.Supports.Contains(support)) support = "truss";
-            return (designs, support, (bool?)obj["reverse"] ?? false, (bool?)obj["free"] ?? false);
-        }
-
-        public void SaveEdit(string payload)
-        {
-            try
-            {
-                var (designs, support, reverse, _) = ReadPayload(payload);
-                m_Tool.SaveEdit(designs, support, reverse);
-            }
-            catch (Exception e)
-            {
-                SetStatus("Could not read the sign design: " + e.Message);
-            }
-        }
-
-        /// <summary>Opens the editor on a placed assembly's design (re-editing).</summary>
-        public void OpenForEdit(AssemblyRecord record)
+        /// <summary>Opens the editor on a placed structure's signs (kind: "posts" or "gantry").</summary>
+        public void OpenForEdit(AssemblyRecord record, string kind)
         {
             m_EditorOpen.Update(true);
-            // A fresh object each time so the React effect fires even for the same assembly.
+            // A fresh object each time so the React effect fires even for the same structure.
             m_EditingDesign.Update(new JObject
             {
-                ["designs"] = new JArray(record.Designs), ["support"] = record.Support, ["reverse"] = record.Reverse,
-                ["free"] = record.Context?.Options?.Free ?? false, ["nonce"] = Guid.NewGuid().ToString("N"),
+                ["designs"] = new JArray(record.Designs), ["kind"] = kind, ["nonce"] = Guid.NewGuid().ToString("N"),
             }.ToString(Formatting.None));
         }
 
@@ -139,30 +140,102 @@ namespace SignBuilder.Systems
 
         public string Status => m_ToolStatus.value;
 
+        // ------------------------------------------------------------------ templates
+
+        private static HashSet<string> Hidden()
+        {
+            try { return File.Exists(HiddenFile) ? JsonConvert.DeserializeObject<HashSet<string>>(File.ReadAllText(HiddenFile)) ?? new HashSet<string>() : new HashSet<string>(); }
+            catch { return new HashSet<string>(); }
+        }
+
+        /// <summary>Built-in templates (Resources/Templates, minus hidden ones) followed by the player's own.</summary>
         private static string LoadTemplates()
         {
-            var dir = Path.Combine(SignBuilderRuntime.ResourcesDir, "Templates");
-            if (!Directory.Exists(dir)) return "[]";
             var list = new JArray();
-            foreach (var file in Directory.GetFiles(dir, "*.json").OrderBy(f => f))
+            var hidden = Hidden();
+            void AddFrom(string dir, bool builtIn)
             {
-                try
+                if (!Directory.Exists(dir)) return;
+                foreach (var file in Directory.GetFiles(dir, "*.json").OrderBy(f => f))
                 {
-                    var design = JObject.Parse(File.ReadAllText(file));
-                    list.Add(new JObject
+                    var id = (builtIn ? "builtin:" : "user:") + Path.GetFileNameWithoutExtension(file);
+                    if (hidden.Contains(id)) continue;
+                    try
                     {
-                        ["id"] = Path.GetFileNameWithoutExtension(file),
-                        ["name"] = (string)design["name"] ?? Path.GetFileNameWithoutExtension(file),
-                        ["support"] = design["support"],
-                        ["design"] = design,
-                    });
-                }
-                catch (Exception e)
-                {
-                    Mod.log.Warn($"Skipping template {file}: {e.Message}");
+                        var design = JObject.Parse(File.ReadAllText(file));
+                        list.Add(new JObject
+                        {
+                            ["id"] = id, ["builtIn"] = builtIn,
+                            ["name"] = (string)design["name"] ?? Path.GetFileNameWithoutExtension(file),
+                            ["design"] = design,
+                        });
+                    }
+                    catch (Exception e)
+                    {
+                        Mod.log.Warn($"Skipping template {file}: {e.Message}");
+                    }
                 }
             }
+            AddFrom(Path.Combine(SignBuilderRuntime.ResourcesDir, "Templates"), true);
+            AddFrom(UserTemplatesDir, false);
             return list.ToString(Formatting.None);
+        }
+
+        private static string Slug(string name)
+        {
+            var chars = (name ?? "sign").ToLowerInvariant().Select(c => char.IsLetterOrDigit(c) ? c : '-').ToArray();
+            var slug = new string(chars).Trim('-');
+            while (slug.Contains("--")) slug = slug.Replace("--", "-");
+            return slug.Length == 0 ? "sign" : slug.Length > 60 ? slug.Substring(0, 60) : slug;
+        }
+
+        private static string UserPath(string id) => id != null && id.StartsWith("user:") ? Path.Combine(UserTemplatesDir, id.Substring(5) + ".json") : null;
+
+        /// <summary>{ name, design, id? }: overwrites a player template with that id, or creates a new file.</summary>
+        public void SaveTemplate(JObject payload)
+        {
+            Directory.CreateDirectory(UserTemplatesDir);
+            var design = (JObject)payload["design"];
+            var name = (string)payload["name"] ?? "My sign";
+            design["name"] = name;
+            var path = UserPath((string)payload["id"]);
+            if (path == null)
+            {
+                var slug = Slug(name);
+                path = Path.Combine(UserTemplatesDir, slug + ".json");
+                for (var n = 2; File.Exists(path); n++) path = Path.Combine(UserTemplatesDir, $"{slug}-{n}.json");
+            }
+            File.WriteAllText(path, design.ToString(Formatting.Indented));
+            m_Templates.Update(LoadTemplates());
+            SetStatus($"Saved template \"{name}\".");
+        }
+
+        public void RenameTemplate(string id, string name)
+        {
+            var path = UserPath(id);
+            if (path == null || !File.Exists(path)) return;
+            var design = JObject.Parse(File.ReadAllText(path));
+            design["name"] = name;
+            File.WriteAllText(path, design.ToString(Formatting.Indented));
+            m_Templates.Update(LoadTemplates());
+        }
+
+        /// <summary>Deletes a player template file; built-in templates are hidden instead.</summary>
+        public void DeleteTemplate(string id)
+        {
+            var path = UserPath(id);
+            if (path != null)
+            {
+                if (File.Exists(path)) File.Delete(path);
+            }
+            else if (id != null && id.StartsWith("builtin:"))
+            {
+                var hidden = Hidden();
+                hidden.Add(id);
+                Directory.CreateDirectory(SignBuilderRuntime.DataDir);
+                File.WriteAllText(HiddenFile, JsonConvert.SerializeObject(hidden));
+            }
+            m_Templates.Update(LoadTemplates());
         }
     }
 }

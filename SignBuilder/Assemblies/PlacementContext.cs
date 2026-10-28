@@ -5,50 +5,80 @@ using Unity.Mathematics;
 
 namespace SignBuilder.Assemblies
 {
-    /// <summary>User choices that shape a layout besides the support type.</summary>
+    /// <summary>Where one sign sits on its structure.</summary>
+    public sealed class SignSlot
+    {
+        /// <summary>"auto": side by side with the other auto signs over the lanes; "lane": centred over a lane;
+        /// "free": at <see cref="Offset"/> metres from the centre of the lanes the signs face.</summary>
+        public string Mode = "auto";
+        /// <summary>Lane mode: lane number counted from the nearer edge (0 = outermost), and which edge.</summary>
+        public int Lane;
+        public bool FromRight;
+        /// <summary>Fine shift in metres (+ = drivers' right); the position itself in free mode.</summary>
+        public float Offset;
+
+        public SignSlot Clone() => (SignSlot)MemberwiseClone();
+    }
+
+    /// <summary>Everything that shapes a structure besides its signs' designs and the road under it.</summary>
     public sealed class LayoutOptions
     {
+        /// <summary>doubleTruss (box truss), singleTruss (planar), curved, straight, or ground (roadside posts).</summary>
+        public string Type = "doubleTruss";
+        /// <summary>full (every carriageway), single (one carriageway) or cantilever.</summary>
+        public string Span = "full";
+        /// <summary>Cantilever post on the drivers' left instead of the right (left-hand exits).</summary>
+        public bool LeftSide;
+        /// <summary>Signs face the opposite direction of the clicked road's traffic.</summary>
+        public bool Reverse;
         /// <summary>Free placement: no road; the structure stands at the cursor, rotated and raised by the user.</summary>
         public bool Free;
-        /// <summary>-1 centres the signs over all lanes they face; otherwise the lane index, left to right as drivers see them.</summary>
-        public int Lane = -1;
-        /// <summary>Extra sideways shift of the signs along the structure, metres (+ = drivers' right).</summary>
-        public float Shift;
+        public float Angle;
         /// <summary>Free placement: height of the structure's base above the clicked surface.</summary>
         public float Elevation;
         /// <summary>Free placement: width of the (imaginary) roadway the structure spans.</summary>
         public float FreeWidth = 14f;
-        /// <summary>Physical size of the signs relative to full MUTCD size (stored placements default to full size).</summary>
-        public float SignScale = 1f;
-        /// <summary>Per sign: lane index to centre it over (-1 = with the others), and its own sideways shift.</summary>
-        public int[] SignLanes = System.Array.Empty<int>();
-        public float[] SignShifts = System.Array.Empty<float>();
+        /// <summary>Physical size of the signs relative to full MUTCD size.</summary>
+        public float SignScale = kDefaultScale;
+        public List<SignSlot> Signs = new();
 
-        public int LaneOf(int sign) => sign < SignLanes.Length ? SignLanes[sign] : -1;
-        public float ShiftOf(int sign) => sign < SignShifts.Length ? SignShifts[sign] : 0f;
+        /// <summary>Default sign size, shown to players as 100%: full MUTCD size is too big for the game's 4 m lanes.</summary>
+        public const float kDefaultScale = 0.7f;
 
-        /// <summary>Makes the per-sign arrays cover <paramref name="count"/> signs.</summary>
+        public SignSlot Slot(int sign) => sign < Signs.Count ? Signs[sign] : new SignSlot();
+
         public void EnsureSigns(int count)
         {
-            if (SignLanes.Length < count)
+            while (Signs.Count < count) Signs.Add(new SignSlot());
+        }
+
+        /// <summary>The support id used in records and the UI summary, e.g. "curved/cantilever/left".</summary>
+        public string Support => Type == "ground" ? "ground" : $"{Type}/{Span}{(Span == "cantilever" && LeftSide ? "/left" : "")}";
+
+        /// <summary>Options for an old support id ("truss", "curvedCantilever"...), for records made before options existed.</summary>
+        public static LayoutOptions FromLegacy(string support)
+        {
+            var o = new LayoutOptions { SignScale = 1f };
+            (o.Type, o.Span) = support switch
             {
-                var lanes = Enumerable.Repeat(-1, count).ToArray();
-                SignLanes.CopyTo(lanes, 0);
-                SignLanes = lanes;
-            }
-            if (SignShifts.Length < count)
-            {
-                var shifts = new float[count];
-                SignShifts.CopyTo(shifts, 0);
-                SignShifts = shifts;
-            }
+                "trussSingle" => ("doubleTruss", "single"),
+                "trussCantilever" => ("doubleTruss", "cantilever"),
+                "curvedFull" => ("curved", "full"),
+                "curvedSpan" => ("curved", "single"),
+                "curvedCantilever" => ("curved", "cantilever"),
+                "monotubeFull" => ("straight", "full"),
+                "monotube" => ("straight", "single"),
+                "cantilever" => ("straight", "cantilever"),
+                "ground" => ("ground", "single"),
+                _ => ("doubleTruss", "full"),
+            };
+            return o;
         }
 
         public LayoutOptions Clone()
         {
             var copy = (LayoutOptions)MemberwiseClone();
-            copy.SignLanes = (int[])SignLanes.Clone();
-            copy.SignShifts = (float[])SignShifts.Clone();
+            copy.Signs = Signs.Select(x => x.Clone()).ToList();
             return copy;
         }
     }

@@ -1,38 +1,44 @@
 import { bindValue, trigger } from "cs2/api";
 import mod from "mod.json";
 
-// C# side: SignBuilder.UI.SignBuilderUISystem (binding group = mod id).
+// C# side: SignBuilder.Systems.SignBuilderUISystem (binding group = mod id).
 const group = mod.id;
 
 export const editorOpen$ = bindValue<boolean>(group, "editorOpen", false);
-/** JSON array of { id, name, design } from Resources/Templates. */
+/** JSON array of { id, name, builtIn, design }: built-in templates, then the player's own. */
 export const templates$ = bindValue<string>(group, "templates", "[]");
-/** JSON of the design to edit when the editor opens (set when re-editing a placed sign). */
+/** JSON { designs, kind: "posts" | "gantry" | "new", nonce } pushed when a placed structure is opened for editing. */
 export const editingDesign$ = bindValue<string>(group, "editingDesign", "");
-/** Status line from the placement tool (e.g. "Click a road to place"). */
+/** Status line from the tool. */
 export const toolStatus$ = bindValue<string>(group, "toolStatus", "");
-
-/** "off", "pick" (editor open, click a placed sign to edit it) or "place" (click a road). */
+/** "off", "posts" (placing a roadside sign), "pickRoad" (choosing where a gantry goes) or "arrange". */
 export const toolMode$ = bindValue<string>(group, "toolMode", "off");
+/** JSON { free, angle, elevation, width, scale, posts } while placing posts or picking a road. */
+export const placeInfo$ = bindValue<string>(group, "placeInfo", "{}");
+/** JSON arrangement (lanes, deck, structure, posts, signs with x/w/h/slot/design, options) while arranging. */
+export const arrangeInfo$ = bindValue<string>(group, "arrangeInfo", "");
+/** True while a placed structure is being edited (its next build replaces it). */
+export const replacing$ = bindValue<boolean>(group, "replacing", false);
 
 export const setEditorOpen = (open: boolean) => trigger(group, "setEditorOpen", open);
-/** Starts the placement tool with { design, support }. */
-export const startPlacement = (payload: string) => trigger(group, "startPlacement", payload);
-/** Leaves the placement tool (back to the default tool). */
-export const cancelTool = () => trigger(group, "cancelTool");
-/** Opens the editor on the structure selected in the game's selected-object panel. */
-export const editSelected = () => trigger(group, "editSelected");
-/** JSON { free, lane, laneCount, shift, angle, elevation, width, support } while placing. */
-export const placeInfo$ = bindValue<string>(group, "placeInfo", "{}");
-/** True while a placed sign is being edited (Save rebuilds it in place). */
-export const replacing$ = bindValue<boolean>(group, "replacing", false);
-/** Placement bar actions: laneLeft, laneRight, shiftLeft, shiftRight, rotateLeft, rotateRight, raise, lower, wider, narrower, free, road, reset. */
+/** Place one sign on roadside posts. */
+export const startPosts = (design: object, free = false) => trigger(group, "startPosts", JSON.stringify({ design, free }));
+/** Pick a road for a gantry, starting with these signs (may be empty). */
+export const startGantry = (designs: object[]) => trigger(group, "startGantry", JSON.stringify({ designs }));
+/** Placement bar: free, road, rotateLeft, rotateRight, raise, lower, wider, narrower, smaller, larger. */
 export const adjust = (action: string) => trigger(group, "adjust", action);
-/** Saves the edited design over the placed sign being edited. */
-export const saveEdit = (payload: string) => trigger(group, "saveEdit", payload);
-/** Stops editing the placed sign; the next placement is a new sign. */
-export const forgetEdit = () => trigger(group, "forgetEdit");
-/** Picks the selected placed sign up to place it elsewhere (the original is removed). */
+/** Arrangement panel operation, e.g. { op: "moveSign", index, x, snap }. */
+export const arrange = (op: object) => trigger(group, "arrange", JSON.stringify(op));
+/** Save an edited roadside sign where it stands. */
+export const savePosts = (design: object) => trigger(group, "savePosts", JSON.stringify(design));
+/** Stop the tool. */
+export const cancelTool = () => trigger(group, "cancelTool");
+export const saveTemplate = (name: string, design: object, id?: string) => trigger(group, "saveTemplate", JSON.stringify({ name, design, id }));
+export const renameTemplate = (id: string, name: string) => trigger(group, "renameTemplate", id, name);
+export const deleteTemplate = (id: string) => trigger(group, "deleteTemplate", id);
+export const openTemplatesFolder = () => trigger(group, "openTemplatesFolder");
+
+/** Selected-object panel actions on a placed structure. */
+export const editSelected = () => trigger(group, "editSelected");
 export const moveSelected = () => trigger(group, "moveSelected");
-/** Places a copy of the selected placed sign. */
 export const duplicateSelected = () => trigger(group, "duplicateSelected");

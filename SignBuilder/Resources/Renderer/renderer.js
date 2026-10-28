@@ -240,7 +240,9 @@
   }
 
   function renderSign(doc) {
-    var s = scheme(doc.scheme);
+    // Custom colours ("background" / "foreground" as CSS colours) override the scheme.
+    var base = scheme(doc.scheme);
+    var s = { bg: doc.background || base.bg, fg: doc.foreground || base.fg };
     var border = doc.border != null ? doc.border : DEFAULTS.border;
     var radius = doc.cornerRadius != null ? doc.cornerRadius : DEFAULTS.cornerRadius;
     var legend = spacingHeight({ type: "stack", items: doc.items || [] }) || DEFAULTS.textHeight;

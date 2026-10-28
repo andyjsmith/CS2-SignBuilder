@@ -8,6 +8,8 @@ namespace SignBuilder.Assemblies
     {
         public string Kind;
         public float[] Args;
+        /// <summary>Mirror across X (cantilevers on the drivers' left).</summary>
+        public bool Mirror;
 
         public static SupportSpec Of(string kind, params float[] args) => new SupportSpec { Kind = kind, Args = args };
     }
