@@ -34,9 +34,14 @@ fi
 cmd.exe //c start "" "steam://rungameid/949230"
 echo "Launched (mode=$mode, save=${save:-last}); waiting for the game to quit..."
 
+# Hard stop: whatever happens in game, the process is killed after 10 minutes so it is never left running.
 sleep 20
-for _ in $(seq 1 200); do
+for _ in $(seq 1 116); do
   tasklist | grep -qi cities2.exe || break
   sleep 5
 done
+if tasklist | grep -qi cities2.exe; then
+  echo "Still running after 10 minutes: killing Cities2.exe."
+  taskkill //IM Cities2.exe //F >/dev/null 2>&1 || true
+fi
 echo "Game exited. Results: $user_dir/ModsData/SignBuilder/spike"

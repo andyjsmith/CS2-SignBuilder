@@ -32,7 +32,7 @@ namespace SignBuilder.Spike
     /// </summary>
     internal sealed partial class SpikeRunner : MonoBehaviour
     {
-        private const float kWatchdogSeconds = 900f;
+        private const float kWatchdogSeconds = 540f;
         private const string kSaveName = "SignBuilder_SpikeSave";
 
         private string m_ResourcesDir;
