@@ -2,7 +2,7 @@ import { useValue } from "cs2/api";
 import { getModule } from "cs2/modding";
 import { Button, Panel } from "cs2/ui";
 import { useEffect, useMemo, useState } from "react";
-import { cancelTool, editingDesign$, editorOpen$, setEditorOpen, startPlacement, templates$, toolStatus$ } from "./bindings";
+import { cancelTool, editingDesign$, editorOpen$, setEditorOpen, startPlacement, templates$, toolMode$, toolStatus$ } from "./bindings";
 import {
   Design, Item, PALETTE, SUPPORTS, clone, describe, getItem, insertItem, joinWithNext, moveItem, outline, removeItem, updateItem,
 } from "./designModel";
@@ -50,7 +50,7 @@ const TextBox = (props: { value: string; onChange: (v: string) => void }) =>
 const NumberBox = (props: { value: number; onChange: (v: number) => void; step?: number }) => (
   <div className={styles.stepper}>
     <div className={styles.step} onClick={() => props.onChange(Math.max(1, props.value - (props.step ?? 1)))}>-</div>
-    <div className={styles.stepValue}>{props.value}"</div>
+    <div className={styles.stepValue}>{`${props.value}"`}</div>
     <div className={styles.step} onClick={() => props.onChange(props.value + (props.step ?? 1))}>+</div>
   </div>
 );
@@ -94,6 +94,10 @@ export const SignEditor = () => {
   const templatesJson = useValue(templates$);
   const editing = useValue(editingDesign$);
   const status = useValue(toolStatus$);
+  const mode = useValue(toolMode$);
+  // "Edit a placed sign": the editor shrinks so the world can be clicked; picking a sign restores it.
+  const [picking, setPicking] = useState(false);
+  useEffect(() => { if (mode === "off") setPicking(false); }, [mode]);
   const templates: Template[] = useMemo(() => {
     try { return JSON.parse(templatesJson); } catch { return []; }
   }, [templatesJson]);
@@ -118,10 +122,29 @@ export const SignEditor = () => {
       if (payload.support) setSupport(payload.support);
       setReverse(!!payload.reverse);
       setSelected(null);
+      setPicking(false);
     } catch { /* ignore malformed payloads */ }
   }, [editing]);
 
   if (!open) return null;
+
+  const close = () => { cancelTool(); setPicking(false); setEditorOpen(false); };
+
+  // While placing (or picking a sign to edit) only a small bar stays on screen so the road is reachable.
+  if (mode === "place" || (picking && mode === "pick")) {
+    return (
+      <Panel draggable header="Sign Builder" className={styles.compact} onClose={close}>
+        <div className={styles.compactBody}>
+          <div className={styles.status}>{picking && mode === "pick" ? "Click a placed Sign Builder sign to edit it. Right-click to go back." : status}</div>
+          <div className={styles.actions}>
+            <Button variant="flat" onSelect={() => { if (mode === "place") cancelTool(); setPicking(false); }}>
+              <div className={styles.flatLabel}>Back to editor</div>
+            </Button>
+          </div>
+        </div>
+      </Panel>
+    );
+  }
 
   const item = selected != null ? getItem(design, selected) : null;
   const update = (patch: Partial<Item>) => { if (selected != null) setDesign(updateItem(design, selected, patch)); };
@@ -130,7 +153,7 @@ export const SignEditor = () => {
   const supportLabel = SUPPORTS.find((s) => s.id === support)?.label ?? "";
 
   return (
-    <Panel draggable header="Sign Builder" className={styles.panel} onClose={() => { cancelTool(); setEditorOpen(false); }}>
+    <Panel draggable header="Sign Builder" className={styles.panel} onClose={close}>
       <div className={styles.body}>
         <div className={styles.column}>
           <div className={styles.heading}>Templates</div>
@@ -185,6 +208,7 @@ export const SignEditor = () => {
             onChange={(v) => setReverse(v === "Opposite direction")} />
           <div className={styles.actions}>
             <Button variant="primary" onSelect={() => startPlacement(JSON.stringify({ designs: signs, support, reverse }))}>Place on road</Button>
+            <div className={styles.chip} style={{ marginLeft: "12rem", alignSelf: "center" }} onClick={() => { cancelTool(); setPicking(true); }}>Edit a placed sign</div>
           </div>
           {status && <div className={styles.status}>{status}</div>}
         </div>

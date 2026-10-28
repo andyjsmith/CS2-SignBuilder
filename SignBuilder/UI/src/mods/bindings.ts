@@ -12,8 +12,13 @@ export const editingDesign$ = bindValue<string>(group, "editingDesign", "");
 /** Status line from the placement tool (e.g. "Click a road to place"). */
 export const toolStatus$ = bindValue<string>(group, "toolStatus", "");
 
+/** "off", "pick" (editor open, click a placed sign to edit it) or "place" (click a road). */
+export const toolMode$ = bindValue<string>(group, "toolMode", "off");
+
 export const setEditorOpen = (open: boolean) => trigger(group, "setEditorOpen", open);
 /** Starts the placement tool with { design, support }. */
 export const startPlacement = (payload: string) => trigger(group, "startPlacement", payload);
 /** Leaves the placement tool (back to the default tool). */
 export const cancelTool = () => trigger(group, "cancelTool");
+/** Opens the editor on the structure selected in the game's selected-object panel. */
+export const editSelected = () => trigger(group, "editSelected");

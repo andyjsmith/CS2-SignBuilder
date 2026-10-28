@@ -42,7 +42,7 @@ function pathOf(target: EventTarget | null, stop: HTMLElement): string | null {
 export const SignPreview = (props: { design: Design; selected: string | null; onSelect: (path: string | null) => void; maxWidth: number; maxHeight: number }) => {
   const host = useRef<HTMLDivElement>(null);
   const [ready, setReady] = useState(!!window.SignRenderer);
-  const [scale, setScale] = useState(1);
+  const [fit, setFit] = useState({ scale: 1, x: 0, y: 0 });
 
   useEffect(() => {
     loadRenderer().then(() => setReady(true));
@@ -53,6 +53,11 @@ export const SignPreview = (props: { design: Design; selected: string | null; on
     if (!ready || !el || !window.SignRenderer) return;
     while (el.firstChild) el.removeChild(el.firstChild);
     const sign = window.SignRenderer.render(props.design, 2, { annotate: true });
+    // Absolutely positioned inside an oversized host so the sign lays out at its natural width; as a
+    // flex child of the preview box it would be squeezed to the box width and its legend would overflow.
+    sign.style.position = "absolute";
+    sign.style.left = "0px";
+    sign.style.top = "0px";
     el.appendChild(sign);
     if (props.selected != null) {
       const hit = el.querySelector(`[data-sb-path="${props.selected}"]`) as HTMLElement | null;
@@ -62,16 +67,20 @@ export const SignPreview = (props: { design: Design; selected: string | null; on
     requestAnimationFrame(() => {
       const w = sign.offsetWidth || 1;
       const h = sign.offsetHeight || 1;
-      setScale(Math.min(1, props.maxWidth / w, props.maxHeight / h));
+      const scale = Math.min(1, (props.maxWidth - 16) / w, (props.maxHeight - 16) / h);
+      setFit({ scale, x: (props.maxWidth - w * scale) / 2, y: (props.maxHeight - h * scale) / 2 });
     });
   }, [ready, props.design, props.selected, props.maxWidth, props.maxHeight]);
 
   return (
     <div
-      style={{ width: props.maxWidth + "px", height: props.maxHeight + "px", display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden" }}
+      style={{ position: "relative", width: props.maxWidth + "px", height: props.maxHeight + "px", overflow: "hidden" }}
       onClick={(e) => props.onSelect(pathOf(e.target, e.currentTarget as HTMLElement))}
     >
-      <div ref={host} style={{ transform: `scale(${scale})`, transformOrigin: "50% 50%" }} />
+      <div ref={host} style={{
+        position: "absolute", left: "0px", top: "0px", width: "4000px", height: "4000px",
+        transform: `translate(${fit.x}px, ${fit.y}px) scale(${fit.scale})`, transformOrigin: "0px 0px",
+      }} />
     </div>
   );
 };

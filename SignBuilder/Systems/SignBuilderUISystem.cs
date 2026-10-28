@@ -14,7 +14,7 @@ namespace SignBuilder.Systems
 {
     /// <summary>
     /// Bridges the React editor (UI/src/mods) and the C# side. Binding group = mod id "SignBuilder".
-    /// Values: editorOpen, templates, editingDesign, toolStatus.
+    /// Values: editorOpen, templates, editingDesign, toolStatus, toolMode (off|pick|place).
     /// Triggers: setEditorOpen(bool), startPlacement(json { design, support }), cancelTool().
     /// </summary>
     public partial class SignBuilderUISystem : UISystemBase
@@ -25,6 +25,7 @@ namespace SignBuilder.Systems
         private ValueBinding<string> m_Templates;
         private ValueBinding<string> m_EditingDesign;
         private ValueBinding<string> m_ToolStatus;
+        private ValueBinding<string> m_ToolMode;
         private SignPlacementToolSystem m_Tool;
 
         public bool EditorOpen => m_EditorOpen.value;
@@ -37,10 +38,21 @@ namespace SignBuilder.Systems
             AddBinding(m_Templates = new ValueBinding<string>(Group, "templates", "[]"));
             AddBinding(m_EditingDesign = new ValueBinding<string>(Group, "editingDesign", ""));
             AddBinding(m_ToolStatus = new ValueBinding<string>(Group, "toolStatus", ""));
+            AddBinding(m_ToolMode = new ValueBinding<string>(Group, "toolMode", "off"));
             AddBinding(new TriggerBinding<bool>(Group, "setEditorOpen", SetEditorOpen));
             AddBinding(new TriggerBinding<string>(Group, "startPlacement", StartPlacement));
             AddBinding(new TriggerBinding(Group, "cancelTool", () => m_Tool.BeginPick()));
         }
+
+        protected override void OnUpdate()
+        {
+            base.OnUpdate();
+            // The editor shrinks to a small bar while placing so the road stays clickable.
+            var mode = m_Tool.ModeName;
+            if (mode != m_ToolMode.value) m_ToolMode.Update(mode);
+        }
+
+        public string ToolMode => m_ToolMode.value;
 
         protected override void OnGameLoadingComplete(Colossal.Serialization.Entities.Purpose purpose, Game.GameMode mode)
         {

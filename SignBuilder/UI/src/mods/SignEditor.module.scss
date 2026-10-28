@@ -21,3 +21,6 @@
 .hint { font-size: 12rem; color: rgba(255, 255, 255, 0.7); margin: 4rem 0; }
 .status { font-size: 13rem; color: #ffd400; margin: 6rem 0; }
 .actions { margin-top: 10rem; display: flex; flex-direction: row; }
+.compact { width: 460rem; }
+.compactBody { padding: 8rem 12rem; display: flex; flex-direction: column; align-items: center; }
+.flatLabel { padding: 4rem 12rem; font-size: 14rem; }

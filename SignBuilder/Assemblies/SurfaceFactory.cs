@@ -29,8 +29,8 @@ namespace SignBuilder.Assemblies
                 var tex = material.GetTexture(prop);
                 if (tex != null && !tex.isReadable) material.SetTexture(prop, null);
             }
-            material.SetTexture("_BaseColorMap", baseColor);
-            if (mask != null && material.HasProperty("_MaskMap")) material.SetTexture("_MaskMap", mask);
+            material.SetTexture("_BaseColorMap", Savable(baseColor));
+            if (mask != null && material.HasProperty("_MaskMap")) material.SetTexture("_MaskMap", Savable(mask));
             if (material.HasProperty("_BaseColor")) material.SetColor("_BaseColor", Color.white);
             configure?.Invoke(material);
 
@@ -43,6 +43,7 @@ namespace SignBuilder.Assemblies
         /// <summary>A sign face: the baked texture, matte non-metallic, transparent corners cut out.</summary>
         public static SurfaceAsset SignFace(ILocalAssetDatabase database, string folder, SurfaceAsset template, Texture2D face, string key)
         {
+            face = Savable(face);
             return Create(database, folder, "SignBuilder_Face_" + key.Substring(0, Math.Min(12, key.Length)), template, face, FaceMask(), m =>
             {
                 if (m.HasProperty("_AlphaCutoffEnable")) m.SetFloat("_AlphaCutoffEnable", 1f);
@@ -51,6 +52,23 @@ namespace SignBuilder.Assemblies
                 if (m.HasProperty("_EmissiveColorMap")) m.SetTexture("_EmissiveColorMap", face);
                 if (m.HasProperty("_EmissiveColor")) m.SetColor("_EmissiveColor", Color.white * 0.3f);
             });
+        }
+
+        /// <summary>
+        /// TextureAsset stores the texture's GraphicsFormat and recreates it on load, so the format must be one
+        /// the GPU can sample. ARGB32 (what Texture2D.LoadImage produces) is an internal format that saves
+        /// fine but fails on load ("'87' is not supported for Sample usage"); copy such textures to RGBA32.
+        /// </summary>
+        public static Texture2D Savable(Texture2D tex)
+        {
+            if (tex == null || tex.format == TextureFormat.RGBA32) return tex;
+            var copy = new Texture2D(tex.width, tex.height, TextureFormat.RGBA32, tex.mipmapCount > 1, !tex.isDataSRGB)
+            {
+                name = tex.name, wrapMode = tex.wrapMode, filterMode = tex.filterMode,
+            };
+            copy.SetPixels32(tex.GetPixels32());
+            copy.Apply(updateMipmaps: true);
+            return copy;
         }
 
         private static Texture2D s_FaceMask;

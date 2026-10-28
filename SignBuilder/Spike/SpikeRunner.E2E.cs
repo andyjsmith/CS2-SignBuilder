@@ -48,9 +48,20 @@ namespace SignBuilder.Spike
             var ui = world.GetOrCreateSystemManaged<SignBuilderUISystem>();
             var tool = world.GetOrCreateSystemManaged<SignPlacementToolSystem>();
 
+            if (m_Mode == "reload-e2e")
+            {
+                // Booted into the previous E2E save: check it loads, then clear it for this run's placements.
+                yield return Test("reload", ReloadChecks());
+                RemoveAllAssemblies();
+                yield return new WaitForSecondsRealtime(2f);
+            }
             yield return Test("e2e.editor", TestEditorOpens(ui));
             yield return Test("e2e.place", TestPlaceAll(tool));
             yield return Test("e2e.shots", TestAssemblyShots());
+            yield return Test("e2e.hover", TestRealRaycast(tool));
+            yield return Test("e2e.infopanel", TestInfoPanelEdit(ui, tool));
+            yield return Test("e2e.compact", TestCompactWhilePlacing(ui, tool));
+            yield return Test("e2e.longpreview", TestLongPreview(ui));
             yield return Test("e2e.preview", TestPreviewAndReverse(tool));
             yield return Test("e2e.reedit", TestReedit(ui, tool));
             yield return Test("e2e.save", TestSaveForReload());
@@ -204,6 +215,135 @@ namespace SignBuilder.Spike
             }
         }
 
+        private Entity FirstInstance(string support) =>
+            m_Placed.Where(p => p.support == support).Select(p => InstancesOf(p.record.PrefabName).FirstOrDefault()).FirstOrDefault();
+
+        /// <summary>World point at the middle of a placed assembly's bounds.</summary>
+        private static float3 BoundsCentre(Entity entity, AssemblyRecord record)
+        {
+            var t = World.DefaultGameObjectInjectionWorld.EntityManager.GetComponentData<Game.Objects.Transform>(entity);
+            var b = record.Bounds;
+            var local = new float3((b[0] + b[3]) * 0.5f, (b[1] + b[4]) * 0.5f, (b[2] + b[5]) * 0.5f);
+            return t.m_Position + math.mul(t.m_Rotation, local);
+        }
+
+        private static void LookAt(Entity entity, float distance = 55f)
+        {
+            var t = World.DefaultGameObjectInjectionWorld.EntityManager.GetComponentData<Game.Objects.Transform>(entity);
+            var fwd = math.mul(t.m_Rotation, new float3(0, 0, 1));
+            SetCamera(t.m_Position + new float3(0, 6f, 0), math.degrees(math.atan2(fwd.x, fwd.z)) + 15f, 8f, distance);
+        }
+
+        /// <summary>
+        /// Moves the real OS cursor over each placed assembly in pick mode and checks the tool's own raycast
+        /// (the path a mouse click takes) reports that assembly.
+        /// </summary>
+        private IEnumerator TestRealRaycast(SignPlacementToolSystem tool)
+        {
+            var ui = World.DefaultGameObjectInjectionWorld.GetOrCreateSystemManaged<SignBuilderUISystem>();
+            ui.SetEditorOpen(false);
+            foreach (var p in m_Placed)
+            {
+                var entity = InstancesOf(p.record.PrefabName).FirstOrDefault();
+                if (entity == Entity.Null) continue;
+                LookAt(entity, p.support == "ground" ? 30f : 55f);
+                yield return new WaitForSecondsRealtime(1.5f);
+                tool.BeginPick();
+                var screen = Camera.main.WorldToScreenPoint(BoundsCentre(entity, p.record));
+                var hit = Entity.Null;
+                for (var i = 0; i < 40 && hit != entity; i++)
+                {
+                    UnityEngine.InputSystem.Mouse.current?.WarpCursorPosition(new Vector2(screen.x, screen.y));
+                    yield return null;
+                    hit = tool.Hovered;
+                }
+                SpikeReport.Set($"e2e.hover.{p.support}", hit == entity ? "hit" : $"MISSED (hovered {hit}, screen {screen})");
+                tool.Deactivate();
+            }
+        }
+
+        /// <summary>Select a placed sign as the default tool would; the info panel shows our section and its button opens the editor.</summary>
+        private IEnumerator TestInfoPanelEdit(SignBuilderUISystem ui, SignPlacementToolSystem tool)
+        {
+            var world = World.DefaultGameObjectInjectionWorld;
+            var entity = FirstInstance("curvedSpan");
+            if (entity == Entity.Null) yield break;
+            LookAt(entity);
+            var info = world.GetOrCreateSystemManaged<Game.UI.InGame.SelectedInfoUISystem>();
+            var section = world.GetOrCreateSystemManaged<SignInfoSection>();
+            info.SetSelection(entity);
+            yield return new WaitForSecondsRealtime(2.5f);
+            SpikeReport.Set("e2e.infopanel.visible", section.visible);
+            SpikeReport.Screenshot("e2e_infopanel.png");
+            yield return new WaitForSecondsRealtime(0.5f);
+            section.EditSelected();
+            yield return new WaitForSecondsRealtime(2.5f);
+            SpikeReport.Set("e2e.infopanel.edit", $"editorOpen={ui.EditorOpen} replacing={tool.IsReplacing} mode={ui.ToolMode}");
+            SpikeReport.Screenshot("e2e_infopanel_editor.png");
+            yield return new WaitForSecondsRealtime(0.5f);
+            ui.SetEditorOpen(false);
+        }
+
+        /// <summary>The editor collapses to a small bar while placing and comes back on cancel.</summary>
+        private IEnumerator TestCompactWhilePlacing(SignBuilderUISystem ui, SignPlacementToolSystem tool)
+        {
+            ui.SetEditorOpen(true);
+            yield return new WaitForSecondsRealtime(1f);
+            var design = JObject.Parse(File.ReadAllText(Path.Combine(SignBuilderRuntime.ResourcesDir, "Templates", "guide-exit-tab.json")));
+            tool.BeginPlace(new List<JObject> { design }, "truss");
+            yield return new WaitForSecondsRealtime(2f);
+            SpikeReport.Set("e2e.compact.mode", ui.ToolMode);
+            SpikeReport.Screenshot("e2e_compact.png");
+            yield return new WaitForSecondsRealtime(0.5f);
+            tool.BeginPick(); // what right-click and "Back to editor" do
+            yield return new WaitForSecondsRealtime(1.5f);
+            SpikeReport.Set("e2e.compact.after", ui.ToolMode);
+            SpikeReport.Screenshot("e2e_compact_back.png");
+            yield return new WaitForSecondsRealtime(0.5f);
+        }
+
+        /// <summary>
+        /// The long-legend template in the editor preview (must fit, not clip). With -uiDeveloperMode the run
+        /// pauses here so a DevTools script can click parts (spike/shot-NAME.flag screenshots, spike/ui-done.flag continues).
+        /// </summary>
+        private IEnumerator TestLongPreview(SignBuilderUISystem ui)
+        {
+            var design = JObject.Parse(File.ReadAllText(Path.Combine(SignBuilderRuntime.ResourcesDir, "Templates", "guide-long.json")));
+            ui.SetEditorOpen(true);
+            ui.OpenForEdit(new AssemblyRecord { Support = "truss", Designs = new List<JObject> { design } });
+            yield return new WaitForSecondsRealtime(3f);
+            SpikeReport.Screenshot("e2e_longpreview.png");
+            yield return new WaitForSecondsRealtime(0.5f);
+            File.WriteAllText(Path.Combine(SpikeReport.OutputDir, "ui-ready.flag"), "");
+            var end = Time.realtimeSinceStartup + 120f;
+            while (Environment.GetCommandLineArgs().Contains("-uiDeveloperMode") && Time.realtimeSinceStartup < end
+                   && !File.Exists(Path.Combine(SpikeReport.OutputDir, "ui-done.flag")))
+            {
+                foreach (var flag in Directory.GetFiles(SpikeReport.OutputDir, "shot-*.flag"))
+                {
+                    var name = Path.GetFileNameWithoutExtension(flag).Substring(5);
+                    File.Delete(flag);
+                    SpikeReport.Screenshot($"ui_{name}.png");
+                }
+                yield return null;
+            }
+            ui.SetEditorOpen(false);
+        }
+
+        private void RemoveAllAssemblies()
+        {
+            var removed = 0;
+            foreach (var record in AssemblyLibrary.All)
+            {
+                foreach (var e in InstancesOf(record.PrefabName))
+                {
+                    m_Runtime.Delete(e);
+                    removed++;
+                }
+            }
+            SpikeReport.Set("reload.removedForRun", removed);
+        }
+
         private IEnumerator TestSaveForReload()
         {
             var menu = World.DefaultGameObjectInjectionWorld.GetExistingSystemManaged<MenuUISystem>();
@@ -253,6 +393,13 @@ namespace SignBuilder.Spike
             yield return WaitForGame();
             yield return new WaitForSecondsRealtime(8f);
             m_Runtime = new RuntimePrefabs();
+            yield return ReloadChecks();
+            RestoreContinueTarget();
+            Finish();
+        }
+
+        private IEnumerator ReloadChecks()
+        {
             var em = World.DefaultGameObjectInjectionWorld.EntityManager;
             var expectedFile = Path.Combine(Application.persistentDataPath, "ModsData", "SignBuilder", "e2e_expected.txt");
             var expected = File.Exists(expectedFile) ? File.ReadAllLines(expectedFile) : Array.Empty<string>();
@@ -274,8 +421,27 @@ namespace SignBuilder.Spike
                 SpikeReport.Screenshot("reload.png");
                 yield return new WaitForSecondsRealtime(0.5f);
             }
-            RestoreContinueTarget();
-            Finish();
+            // Faces that fail to load leave their batches without a material and log this error.
+            SpikeReport.Set("reload.batchErrors", CountLogLines("Error when initializing batch"));
+            SpikeReport.Set("reload.textureErrors", CountLogLines("Texture creation failed"));
+        }
+
+        private static int CountLogLines(string text)
+        {
+            try
+            {
+                var log = Path.Combine(Application.persistentDataPath, "Player.log");
+                using var stream = new FileStream(log, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+                using var reader = new StreamReader(stream);
+                var count = 0;
+                string line;
+                while ((line = reader.ReadLine()) != null) if (line.Contains(text)) count++;
+                return count;
+            }
+            catch (Exception)
+            {
+                return -1;
+            }
         }
 
         // ------------------------------------------------------------------ helpers

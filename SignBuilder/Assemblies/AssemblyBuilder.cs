@@ -56,11 +56,11 @@ namespace SignBuilder.Assemblies
             var maxH = sizes.Count > 0 ? sizes.Max(z => z.y) : 2f;
             var total = sizes.Sum(z => z.x) + kSignGap * Math.Max(0, sizes.Count - 1);
             float overheadBottom = math.max(GantryFactory.kMountHeight - maxH * 0.5f, 5.3f);
-            float curvedHeight = math.max(7.5f, 5.3f + maxH + 0.45f);
-            float hangTop(float pipeHeight) => pipeHeight - GantryFactory.kCurvedPipeRadius - 0.15f;
+            // Curved tube supports carry the signs bolted in front of the horizontal pipe, centred on it.
+            float curvedHeight = math.max(7.0f, 5.3f + maxH * 0.5f);
 
             // Side-by-side row of signs centred on local X = centreX; bottoms aligned (overhead/ground) or
-            // tops aligned (hanging under a curved pipe).
+            // centred on the pipe (curved tube supports).
             Vector3[] Row(float centreX, float z, Func<float, float> centreY)
             {
                 var result = new Vector3[sizes.Count];
@@ -73,7 +73,7 @@ namespace SignBuilder.Assemblies
                 return result;
             }
             Func<float, float> standing(float bottom) => h => bottom + h * 0.5f;
-            Func<float, float> hanging(float top) => h => top - h * 0.5f;
+            Func<float, float> onPipe(float pipeHeight) => h => pipeHeight;
 
             switch (support)
             {
@@ -86,8 +86,8 @@ namespace SignBuilder.Assemblies
                 case "curvedSpan":
                     return new AssemblyPlacement
                     {
-                        Origin = basePoint, Rotation = rotation, Support = GantryFactory.CurvedSpan(math.max(baseWidth, total) + 5f, curvedHeight),
-                        SignCentres = Row(laneCentre * dir, -0.4f, hanging(hangTop(curvedHeight))),
+                        Origin = basePoint, Rotation = rotation, Support = GantryFactory.CurvedSpan(math.max(baseWidth + 5f, total + 7f), curvedHeight),
+                        SignCentres = Row(laneCentre * dir, -0.4f, onPipe(curvedHeight)),
                     };
                 case "cantilever":
                 case "curvedCantilever":
@@ -95,13 +95,15 @@ namespace SignBuilder.Assemblies
                     // Post just off the right-hand edge (relative to traffic), arm reaching back over the lanes.
                     var postOffset = dir * (baseWidth * 0.5f + 1.5f);
                     var curved = support == "curvedCantilever";
-                    var arm = math.max(baseWidth * (curved ? 0.75f : 0.55f) + 1.5f, total + 1.5f);
-                    var centreX = math.clamp((laneCentre - postOffset) * dir, -arm + total * 0.5f, -total * 0.5f - 0.5f);
+                    // Signs on the curved arm stay clear of the bend above the post.
+                    var postClear = curved ? 3.3f : 0.5f;
+                    var arm = math.max(baseWidth * (curved ? 0.75f : 0.55f) + 1.5f, total + postClear + 1f);
+                    var centreX = math.clamp((laneCentre - postOffset) * dir, -arm + total * 0.5f, -total * 0.5f - postClear);
                     return new AssemblyPlacement
                     {
                         Origin = basePoint + s.Right * postOffset, Rotation = rotation,
                         Support = curved ? GantryFactory.CurvedCantilever(arm, curvedHeight) : GantryFactory.Cantilever(-arm),
-                        SignCentres = curved ? Row(centreX, -0.4f, hanging(hangTop(curvedHeight))) : Row(centreX, -0.45f, standing(overheadBottom)),
+                        SignCentres = curved ? Row(centreX, -0.4f, onPipe(curvedHeight)) : Row(centreX, -0.45f, standing(overheadBottom)),
                     };
                 }
                 case "ground":

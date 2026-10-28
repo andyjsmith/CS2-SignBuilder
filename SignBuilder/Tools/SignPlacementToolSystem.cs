@@ -110,6 +110,7 @@ namespace SignBuilder.Tools
             }
 
             var hit = GetRaycastResult(out Entity entity, out RaycastHit raycast);
+            Hovered = hit ? entity : Entity.Null;
             if (m_Mode == Mode.Place)
             {
                 if (hit && EntityManager.HasComponent<Edge>(entity) && EntityManager.HasComponent<Curve>(entity) && !m_Busy)
@@ -121,13 +122,7 @@ namespace SignBuilder.Tools
             else if (hit && EntityManager.TryGetComponent(entity, out PrefabRef prefabRef)
                      && m_PrefabSystem.TryGetPrefab(prefabRef, out PrefabBase prefab))
             {
-                var record = AssemblyLibrary.FromPrefabName(prefab.name);
-                if (record != null && applyAction.WasPressedThisFrame())
-                {
-                    m_Replacing = entity;
-                    m_UI.OpenForEdit(record);
-                    m_UI.SetStatus("Editing a placed sign. Change it, press Place, then click a road.");
-                }
+                if (AssemblyLibrary.FromPrefabName(prefab.name) != null && applyAction.WasPressedThisFrame()) EditPlaced(entity);
             }
             return base.OnUpdate(inputDeps);
         }
@@ -203,15 +198,32 @@ namespace SignBuilder.Tools
             Place(edge, t);
         }
 
-        /// <summary>Test hook: behave as if the given placed assembly was clicked in pick mode.</summary>
-        public void PickForTest(Entity entity)
+        /// <summary>
+        /// Loads a placed assembly into the editor; the next placement replaces it. Used by pick mode, the
+        /// "Edit in Sign Builder" button of the selected-object panel and the test harness.
+        /// </summary>
+        public bool EditPlaced(Entity entity)
         {
-            if (!EntityManager.TryGetComponent(entity, out PrefabRef prefabRef) || !m_PrefabSystem.TryGetPrefab(prefabRef, out PrefabBase prefab)) return;
+            if (!EntityManager.TryGetComponent(entity, out PrefabRef prefabRef) || !m_PrefabSystem.TryGetPrefab(prefabRef, out PrefabBase prefab)) return false;
             var record = AssemblyLibrary.FromPrefabName(prefab.name);
-            if (record == null) return;
+            if (record == null) return false;
+            if (m_ToolSystem.activeTool != this || m_Mode != Mode.Pick) BeginPick();
             m_Replacing = entity;
             m_UI.OpenForEdit(record);
+            m_UI.SetStatus("Editing a placed sign. Change it, then press Place on road; the new sign replaces it.");
+            return true;
         }
+
+        /// <summary>Test hook: behave as if the given placed assembly was clicked in pick mode.</summary>
+        public void PickForTest(Entity entity) => EditPlaced(entity);
+
+        /// <summary>Whether the tool is active, and in which mode: "off", "pick" or "place".</summary>
+        public string ModeName => m_ToolSystem.activeTool != this ? "off" : m_Mode == Mode.Place ? "place" : "pick";
+
+        public bool IsReplacing => m_Replacing != Entity.Null;
+
+        /// <summary>The entity under the cursor this frame (test harness: checks real raycasts hit placed signs).</summary>
+        public Entity Hovered { get; private set; }
 
         public bool Busy => m_Busy;
 

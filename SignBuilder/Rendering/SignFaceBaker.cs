@@ -293,9 +293,12 @@ namespace SignBuilder.Rendering
                 var info = JObject.Parse(File.ReadAllText(meta));
                 var tex = new Texture2D(2, 2, TextureFormat.RGBA32, mipChain: true) { name = "SignBuilder.Face", wrapMode = TextureWrapMode.Clamp };
                 if (!tex.LoadImage(File.ReadAllBytes(png))) return null;
+                // LoadImage switches the texture to ARGB32, which SurfaceAsset saves but cannot load back.
+                var face = Assemblies.SurfaceFactory.Savable(tex);
+                if (face != tex) UnityEngine.Object.Destroy(tex);
                 return new BakedFace
                 {
-                    Texture = tex,
+                    Texture = face,
                     WidthMeters = (float)info["widthMeters"],
                     HeightMeters = (float)info["heightMeters"],
                     PixelsPerInch = (float)info["ppi"],
