@@ -32,6 +32,10 @@ namespace SignBuilder.Assemblies
     {
         public static readonly string[] Supports = { "truss", "curvedSpan", "monotube", "curvedCantilever", "cantilever", "ground" };
         private const float kSignGap = 0.6f;
+        /// <summary>Road surface this far above the terrain counts as elevated (bridge, viaduct, embankment).</summary>
+        private const float kElevatedDrop = 2f;
+        /// <summary>Post centre distance inside the deck edge on elevated roads (on the shoulder, inside the barrier).</summary>
+        private const float kDeckInset = 0.7f;
 
         /// <summary>
         /// Lays out <paramref name="support"/> for signs of the given sizes (metres, x = width,
@@ -83,18 +87,27 @@ namespace SignBuilder.Assemblies
             Func<float, float> standing(float bottom) => h => bottom + h * 0.5f;
             Func<float, float> onPipe(float pipeHeight) => h => pipeHeight;
 
+            // On elevated roads and bridges there is no ground beside the deck: posts that would stand off it
+            // move onto the deck, just inside its edges, and the structure narrows to match.
+            bool OffDeck(float3 post) => post.y - TerrainHeight(post) > kElevatedDrop;
+            float FitSpan(float3 centre, float deckWidth, float span, float minSpan)
+            {
+                if (!OffDeck(centre - s.Right * span * 0.5f) && !OffDeck(centre + s.Right * span * 0.5f)) return span;
+                return math.max(deckWidth - 2f * kDeckInset, minSpan);
+            }
+
             switch (support)
             {
                 case "monotube":
                     return new AssemblyPlacement
                     {
-                        Origin = basePoint, Rotation = rotation, Spec = SupportSpec.Of("monotube", math.max(baseWidth, total) + 5f),
+                        Origin = basePoint, Rotation = rotation, Spec = SupportSpec.Of("monotube", FitSpan(basePoint, baseWidth, math.max(baseWidth, total) + 5f, total + 0.5f)),
                         SignCentres = Row(laneCentre * dir, -0.45f, standing(overheadBottom)),
                     };
                 case "curvedSpan":
                     return new AssemblyPlacement
                     {
-                        Origin = basePoint, Rotation = rotation, Spec = SupportSpec.Of("curvedSpan", math.max(baseWidth + 5f, total + 7f), curvedHeight),
+                        Origin = basePoint, Rotation = rotation, Spec = SupportSpec.Of("curvedSpan", FitSpan(basePoint, baseWidth, math.max(baseWidth + 5f, total + 7f), total + 1f), curvedHeight),
                         SignCentres = Row(laneCentre * dir, -0.4f, onPipe(curvedHeight)),
                     };
                 case "cantilever":
@@ -102,6 +115,7 @@ namespace SignBuilder.Assemblies
                 {
                     // Post just off the right-hand edge (relative to traffic), arm reaching back over the lanes.
                     var postOffset = dir * (baseWidth * 0.5f + 1.5f);
+                    if (OffDeck(basePoint + s.Right * postOffset)) postOffset = dir * (baseWidth * 0.5f - kDeckInset);
                     var curved = support == "curvedCantilever";
                     // Signs on the curved arm stay clear of the bend above the post.
                     var postClear = curved ? 3.3f : 0.5f;
@@ -131,7 +145,7 @@ namespace SignBuilder.Assemblies
                     // Truss: spans both carriageways of a divided highway.
                     var extent = s.Extent;
                     var centre = (extent.x + extent.y) * 0.5f;
-                    var span = math.max(extent.y - extent.x, total) + 5f;
+                    var span = FitSpan(s.Point + s.Right * centre, extent.y - extent.x, math.max(extent.y - extent.x, total) + 5f, total + 0.5f);
                     return new AssemblyPlacement
                     {
                         Origin = s.Point + s.Right * centre, Rotation = rotation, Spec = SupportSpec.Of("truss", span),
@@ -141,7 +155,7 @@ namespace SignBuilder.Assemblies
             }
         }
 
-        private static float TerrainHeight(float3 position)
+        internal static float TerrainHeight(float3 position)
         {
             var terrain = Unity.Entities.World.DefaultGameObjectInjectionWorld.GetOrCreateSystemManaged<Game.Simulation.TerrainSystem>();
             var data = terrain.GetHeightData(true);

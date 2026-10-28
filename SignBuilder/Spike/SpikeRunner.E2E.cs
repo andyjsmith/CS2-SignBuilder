@@ -58,6 +58,7 @@ namespace SignBuilder.Spike
             yield return Test("e2e.editor", TestEditorOpens(ui));
             yield return Test("e2e.place", TestPlaceAll(tool));
             yield return Test("e2e.shots", TestAssemblyShots());
+            yield return Test("e2e.elevated", TestElevated(tool));
             yield return Test("e2e.hover", TestRealRaycast(tool));
             yield return Test("e2e.infopanel", TestInfoPanelEdit(ui, tool));
             yield return Test("e2e.compact", TestCompactWhilePlacing(ui, tool));
@@ -212,6 +213,61 @@ namespace SignBuilder.Spike
                     SpikeReport.Screenshot("e2e_reedit.png");
                     yield return new WaitForSecondsRealtime(0.5f);
                 }
+            }
+        }
+
+        /// <summary>
+        /// Overhead supports on an elevated road (bridge deck well above terrain/water): posts must stand on
+        /// the deck. Reports each post's height above the terrain below it (0 = on the ground, not wanted
+        /// here) and whether both posts are within the deck width.
+        /// </summary>
+        private IEnumerator TestElevated(SignPlacementToolSystem tool)
+        {
+            var em = World.DefaultGameObjectInjectionWorld.EntityManager;
+            var probe = new RoadProbe(em, m_Runtime.PrefabSystem);
+            using var query = em.CreateEntityQuery(ComponentType.ReadOnly<Edge>(), ComponentType.ReadOnly<Curve>(), ComponentType.ReadOnly<PrefabRef>(), ComponentType.ReadOnly<Composition>());
+            using var edges = query.ToEntityArray(Allocator.Temp);
+            var spots = new List<(Entity edge, float t)>();
+            var used = new List<float3>();
+            foreach (var e in edges)
+            {
+                if (!em.HasComponent<RoadData>(em.GetComponentData<PrefabRef>(e).m_Prefab)) continue;
+                var curve = em.GetComponentData<Curve>(e);
+                if (curve.m_Length < 50f) continue;
+                var p = Colossal.Mathematics.MathUtils.Position(curve.m_Bezier, 0.5f);
+                if (p.y - AssemblyBuilder.TerrainHeight(p) < 8f || used.Any(u => math.distance(u, p) < 50f)) continue;
+                used.Add(p);
+                spots.Add((e, 0.5f));
+                if (spots.Count >= 4) break;
+            }
+            SpikeReport.Set("e2e.elevated.spots", spots.Count);
+            var supports = new[] { "truss", "monotube", "curvedSpan", "cantilever" };
+            var design = JObject.Parse(File.ReadAllText(Path.Combine(SignBuilderRuntime.ResourcesDir, "Templates", "guide-exit-tab.json")));
+            for (var i = 0; i < spots.Count && i < supports.Length; i++)
+            {
+                var snap = probe.SnapAt(spots[i].edge, spots[i].t);
+                var placement = AssemblyBuilder.Layout(supports[i], snap, new List<Vector2> { new Vector2(4.5f, 3f) });
+                var b = placement.Support.bounds;
+                var posts = new[] { b.min.x, b.max.x }.Select(x => (float3)placement.Origin + math.mul(placement.Rotation, new float3(x, 0, 0))).ToArray();
+                UnityEngine.Object.Destroy(placement.Support);
+                var aboveGround = string.Join("/", posts.Select(q => (q.y - AssemblyBuilder.TerrainHeight(q)).ToString("F1")));
+                SpikeReport.Set($"e2e.elevated.{supports[i]}.layout", $"{snap.PrefabName} deck={snap.EdgeWidth:F1} postsAboveGround={aboveGround} span={b.size.x:F1}");
+
+                var before = SignPlacementToolSystem.LastPlaced;
+                var start = Time.realtimeSinceStartup;
+                tool.PlaceForTest(spots[i].edge, spots[i].t, new List<JObject> { design }, supports[i]);
+                while ((tool.Busy || SignPlacementToolSystem.LastPlaced == before) && Time.realtimeSinceStartup - start < 20f) yield return null;
+                var record = SignPlacementToolSystem.LastPlaced;
+                if (record == before) continue;
+                yield return new WaitForSecondsRealtime(2f);
+                var entity = InstancesOf(record.PrefabName).FirstOrDefault();
+                if (entity == Entity.Null) continue;
+                var t = em.GetComponentData<Game.Objects.Transform>(entity);
+                var fwd = math.mul(t.m_Rotation, new float3(0, 0, 1));
+                SetCamera(t.m_Position + new float3(0, 4f, 0), math.degrees(math.atan2(fwd.x, fwd.z)) + 35f, 18f, 45f);
+                yield return new WaitForSecondsRealtime(3f);
+                SpikeReport.Screenshot($"e2e_elevated_{supports[i]}.png");
+                yield return new WaitForSecondsRealtime(0.5f);
             }
         }
 
