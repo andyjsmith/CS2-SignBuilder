@@ -42,6 +42,7 @@ namespace SignBuilder
             m_Setting = new Setting(this);
             m_Setting.RegisterInOptionsUI();
             GameManager.instance.localizationManager.AddSource("en-US", new LocaleEN(m_Setting));
+            Core.AssetNames.Register();
 
 
             AssetDatabase.global.LoadSettings(nameof(SignBuilder), m_Setting, new Setting(this));

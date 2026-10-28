@@ -26,6 +26,8 @@ namespace SignBuilder.Systems
             m_Tool = World.GetOrCreateSystemManaged<SignPlacementToolSystem>();
             m_InfoUISystem.AddMiddleSection(this);
             AddBinding(new TriggerBinding(SignBuilderUISystem.Group, "editSelected", EditSelected));
+            AddBinding(new TriggerBinding(SignBuilderUISystem.Group, "moveSelected", () => PlaceSelectedAgain(move: true)));
+            AddBinding(new TriggerBinding(SignBuilderUISystem.Group, "duplicateSelected", () => PlaceSelectedAgain(move: false)));
         }
 
         private AssemblyRecord RecordOf(Entity entity)
@@ -63,6 +65,15 @@ namespace SignBuilder.Systems
             if (RecordOf(entity) == null) return;
             m_InfoUISystem.SetSelection(Entity.Null);
             m_Tool.EditPlaced(entity);
+        }
+
+        /// <summary>Move: pick the sign up and place it elsewhere (the original goes). Duplicate: place a copy.</summary>
+        internal void PlaceSelectedAgain(bool move)
+        {
+            var entity = selectedEntity;
+            if (RecordOf(entity) == null) return;
+            m_InfoUISystem.SetSelection(Entity.Null);
+            m_Tool.PlaceAgain(entity, move);
         }
     }
 }

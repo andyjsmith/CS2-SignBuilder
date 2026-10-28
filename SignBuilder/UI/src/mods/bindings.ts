@@ -32,3 +32,7 @@ export const adjust = (action: string) => trigger(group, "adjust", action);
 export const saveEdit = (payload: string) => trigger(group, "saveEdit", payload);
 /** Stops editing the placed sign; the next placement is a new sign. */
 export const forgetEdit = () => trigger(group, "forgetEdit");
+/** Picks the selected placed sign up to place it elsewhere (the original is removed). */
+export const moveSelected = () => trigger(group, "moveSelected");
+/** Places a copy of the selected placed sign. */
+export const duplicateSelected = () => trigger(group, "duplicateSelected");

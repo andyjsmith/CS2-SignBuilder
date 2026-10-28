@@ -23,8 +23,8 @@ namespace SignBuilder.Tools
     /// Sign Builder's in-world tool.
     /// Pick mode (while the editor is open): click a placed Sign Builder assembly to load it back into
     /// the editor. Place mode: build the current design where the user clicks, either snapped across
-    /// a road or freely placed (rotate with , and . , raise and lower with Page Up / Page Down). While a
-    /// placed sign is being edited, Save rebuilds it in the same spot.
+    /// a road or freely placed (right-drag rotates, Page Up / Page Down raise and lower, as for props).
+    /// While a placed sign is being edited, Save rebuilds it in the same spot.
     /// </summary>
     public partial class SignPlacementToolSystem : ToolBaseSystem
     {
@@ -43,6 +43,14 @@ namespace SignBuilder.Tools
         private LayoutOptions m_Options = new();
         private float m_Angle;
         private int m_LaneCount;
+        // Right mouse button in free placement: a drag rotates, a click without dragging cancels.
+        private bool m_RightDown;
+        private bool m_RightDragged;
+        private float m_RightStartX;
+        private float m_RightLastX;
+
+        /// <summary>New placements start with signs at this fraction of full MUTCD size, to suit the game's 4 m lanes.</summary>
+        public const float kDefaultSignScale = 0.75f;
 
         // Placement preview: the design is baked once when placement starts; the support + panel mesh
         // is rebuilt only when the hovered position or the options change, and drawn every frame.
@@ -75,12 +83,14 @@ namespace SignBuilder.Tools
                 : "Click a placed Sign Builder sign to edit it, or design one and press Place.");
         }
 
-        public void BeginPlace(IReadOnlyList<JObject> designs, string support, bool reverse = false, bool free = false)
+        public void BeginPlace(IReadOnlyList<JObject> designs, string support, bool reverse = false, bool free = false, LayoutOptions start = null)
         {
             m_Designs = designs.ToList();
             m_Support = support;
             m_Reverse = reverse;
-            m_Options = new LayoutOptions { Free = free, FreeWidth = m_Options.FreeWidth };
+            m_Options = start?.Clone() ?? new LayoutOptions { FreeWidth = m_Options.FreeWidth, SignScale = kDefaultSignScale };
+            m_Options.Free = free;
+            m_Options.EnsureSigns(m_Designs.Count);
             m_PreviewFaces = null;
             m_PreviewKey = null;
             SignBuilderRuntime.Run(AssemblyBuilder.BakeAll(m_Designs, faces =>
@@ -108,11 +118,25 @@ namespace SignBuilder.Tools
         /// <summary>Stops editing a placed sign: the next placement is a new sign.</summary>
         public void ForgetReplacing() => m_Replacing = Entity.Null;
 
-        /// <summary>Placement adjustments from the placement bar and keyboard.</summary>
+        /// <summary>Placement adjustments from the placement bar and keyboard ("action" or "action:signIndex").</summary>
         public void Adjust(string action)
         {
+            var sign = 0;
+            var colon = action.IndexOf(':');
+            if (colon > 0)
+            {
+                int.TryParse(action.Substring(colon + 1), out sign);
+                action = action.Substring(0, colon);
+            }
+            m_Options.EnsureSigns(math.max(m_Designs.Count, sign + 1));
             switch (action)
             {
+                case "signLaneLeft": m_Options.SignLanes[sign] = m_Options.SignLanes[sign] < 0 ? m_LaneCount - 1 : m_Options.SignLanes[sign] - 1; break;
+                case "signLaneRight": m_Options.SignLanes[sign] = m_Options.SignLanes[sign] >= m_LaneCount - 1 ? -1 : m_Options.SignLanes[sign] + 1; break;
+                case "signShiftLeft": m_Options.SignShifts[sign] -= 0.25f; break;
+                case "signShiftRight": m_Options.SignShifts[sign] += 0.25f; break;
+                case "smaller": m_Options.SignScale = math.max(0.4f, math.round((m_Options.SignScale - 0.05f) * 100f) / 100f); break;
+                case "larger": m_Options.SignScale = math.min(1.2f, math.round((m_Options.SignScale + 0.05f) * 100f) / 100f); break;
                 case "free": m_Options.Free = true; break;
                 case "road": m_Options.Free = false; break;
                 case "laneLeft": m_Options.Lane = m_Options.Lane < 0 ? m_LaneCount - 1 : m_Options.Lane - 1; m_Options.Shift = 0; break;
@@ -125,9 +149,10 @@ namespace SignBuilder.Tools
                 case "lower": m_Options.Elevation = math.max(m_Options.Elevation - 0.5f, 0f); break;
                 case "wider": m_Options.FreeWidth = math.min(m_Options.FreeWidth + 1f, 60f); break;
                 case "narrower": m_Options.FreeWidth = math.max(m_Options.FreeWidth - 1f, 4f); break;
-                case "reset": m_Options = new LayoutOptions { Free = m_Options.Free, FreeWidth = m_Options.FreeWidth }; m_Angle = 0; break;
+                case "reset": m_Options = new LayoutOptions { Free = m_Options.Free, FreeWidth = m_Options.FreeWidth, SignScale = m_Options.SignScale }; m_Angle = 0; break;
             }
             if (m_Options.Lane >= m_LaneCount) m_Options.Lane = -1;
+            for (var i = 0; i < m_Options.SignLanes.Length; i++) if (m_Options.SignLanes[i] >= m_LaneCount) m_Options.SignLanes[i] = -1;
             PlacingStatus();
         }
 
@@ -136,6 +161,9 @@ namespace SignBuilder.Tools
         {
             ["free"] = m_Options.Free, ["lane"] = m_Options.Lane, ["laneCount"] = m_LaneCount, ["shift"] = m_Options.Shift,
             ["angle"] = m_Angle, ["elevation"] = m_Options.Elevation, ["width"] = m_Options.FreeWidth, ["support"] = m_Support,
+            ["scale"] = m_Options.SignScale, ["signs"] = m_Designs.Count,
+            ["signLanes"] = new JArray(Enumerable.Range(0, m_Designs.Count).Select(m_Options.LaneOf)),
+            ["signShifts"] = new JArray(Enumerable.Range(0, m_Designs.Count).Select(m_Options.ShiftOf)),
         }.ToString(Formatting.None);
 
         public override void InitializeRaycast()
@@ -152,7 +180,16 @@ namespace SignBuilder.Tools
             applyAction.shouldBeEnabled = !m_Busy;
             cancelAction.shouldBeEnabled = true;
 
-            if (cancelAction.WasPressedThisFrame())
+            // Free placement: right-drag rotates like vanilla prop placement; a right click without a drag
+            // still cancels (on release). Other cancel inputs (Escape) work as usual.
+            var mouse = UnityEngine.InputSystem.Mouse.current;
+            var freePlacing = m_Mode == Mode.Place && m_Options.Free && mouse != null;
+            if (freePlacing && TrackRightDrag(mouse))
+            {
+                BeginPick();
+                return base.OnUpdate(inputDeps);
+            }
+            if (cancelAction.WasPressedThisFrame() && !(freePlacing && (mouse.rightButton.isPressed || mouse.rightButton.wasReleasedThisFrame)))
             {
                 if (m_Mode == Mode.Place) BeginPick();
                 else Deactivate();
@@ -194,10 +231,31 @@ namespace SignBuilder.Tools
         {
             var keyboard = UnityEngine.InputSystem.Keyboard.current;
             if (keyboard == null) return;
-            if (keyboard.commaKey.wasPressedThisFrame) Adjust(m_Options.Free ? "rotateLeft" : "laneLeft");
-            if (keyboard.periodKey.wasPressedThisFrame) Adjust(m_Options.Free ? "rotateRight" : "laneRight");
             if (keyboard.pageUpKey.wasPressedThisFrame) Adjust("raise");
             if (keyboard.pageDownKey.wasPressedThisFrame) Adjust("lower");
+        }
+
+        /// <summary>Right-button handling in free placement; returns true when a plain right click asks to cancel.</summary>
+        private bool TrackRightDrag(UnityEngine.InputSystem.Mouse mouse)
+        {
+            var x = mouse.position.ReadValue().x;
+            if (mouse.rightButton.wasPressedThisFrame)
+            {
+                m_RightDown = true;
+                m_RightDragged = false;
+                m_RightStartX = m_RightLastX = x;
+                return false;
+            }
+            if (!m_RightDown) return false;
+            if (mouse.rightButton.isPressed)
+            {
+                if (math.abs(x - m_RightStartX) > 4f) m_RightDragged = true;
+                if (m_RightDragged) m_Angle = ((m_Angle + (x - m_RightLastX) * 0.5f) % 360f + 360f) % 360f;
+                m_RightLastX = x;
+                return false;
+            }
+            m_RightDown = false;
+            return !m_RightDragged;
         }
 
         private string OptionsKey => $"{m_Support}|{m_Reverse}|{m_Angle}|{m_Options.Free}|{m_Options.Lane}|{m_Options.Shift}|{m_Options.Elevation}|{m_Options.FreeWidth}";
@@ -208,10 +266,10 @@ namespace SignBuilder.Tools
             key += OptionsKey;
             if (key != m_PreviewKey || m_PreviewMesh == null)
             {
-                var placement = AssemblyBuilder.Layout(m_Support, snap, AssemblyBuilder.Sizes(m_PreviewFaces), m_Reverse, m_Options);
+                var placement = AssemblyBuilder.Layout(m_Support, snap, AssemblyBuilder.Sizes(m_PreviewFaces, m_Options.SignScale), m_Reverse, m_Options);
                 m_LaneCount = placement.LaneCount;
                 if (m_PreviewMesh != null) UnityEngine.Object.Destroy(m_PreviewMesh);
-                m_PreviewMesh = AssemblyBuilder.Merge(placement.Support, m_PreviewFaces, placement.SignCentres);
+                m_PreviewMesh = AssemblyBuilder.Merge(placement.Support, m_PreviewFaces, placement.SignCentres, m_Options.SignScale);
                 UnityEngine.Object.Destroy(placement.Support);
                 m_PreviewOrigin = placement.Origin;
                 m_PreviewRotation = placement.Rotation;
@@ -311,6 +369,7 @@ namespace SignBuilder.Tools
             m_Support = support;
             m_Reverse = reverse;
             var options = record.Context.Options.Clone();
+            options.EnsureSigns(m_Designs.Count);
             m_Options = options.Clone();
             if (m_ToolSystem.activeTool != this) BeginPick();
             Build(record.Context.ToSnap(), options, "Saved.");
@@ -326,7 +385,8 @@ namespace SignBuilder.Tools
             m_Designs = designs.ToList();
             m_Support = support;
             m_Reverse = reverse;
-            m_Options = options ?? new LayoutOptions();
+            m_Options = options ?? new LayoutOptions { SignScale = kDefaultSignScale };
+            m_Options.EnsureSigns(m_Designs.Count);
             Place(new RoadProbe(EntityManager, m_PrefabSystem).SnapAt(edge, t));
         }
 
@@ -338,6 +398,7 @@ namespace SignBuilder.Tools
             m_Reverse = false;
             m_Options = options;
             m_Options.Free = true;
+            m_Options.EnsureSigns(m_Designs.Count);
             Place(PlacementContext.FreeSnap(point, angle, m_Options));
         }
 
@@ -354,6 +415,22 @@ namespace SignBuilder.Tools
             if (m_ToolSystem.activeTool != this || m_Mode != Mode.Pick) BeginPick();
             m_UI.OpenForEdit(record);
             m_UI.SetStatus("Editing a placed sign: change it and press Save.");
+            return true;
+        }
+
+        /// <summary>
+        /// Picks up a placed assembly to put it somewhere else (<paramref name="move"/>: the original is removed
+        /// when it is placed) or to place a copy, keeping its design, structure and sign arrangement.
+        /// </summary>
+        public bool PlaceAgain(Entity entity, bool move)
+        {
+            if (!EntityManager.TryGetComponent(entity, out PrefabRef prefabRef) || !m_PrefabSystem.TryGetPrefab(prefabRef, out PrefabBase prefab)) return false;
+            var record = AssemblyLibrary.FromPrefabName(prefab.name);
+            if (record == null) return false;
+            m_UI.OpenForEdit(record);
+            m_Replacing = move ? entity : Entity.Null;
+            var start = record.Context?.Options?.Clone() ?? new LayoutOptions { SignScale = 1f };
+            BeginPlace(record.Designs, record.Support, record.Reverse, start.Free, start);
             return true;
         }
 

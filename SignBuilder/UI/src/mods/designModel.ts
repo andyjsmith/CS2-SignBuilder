@@ -13,20 +13,42 @@ export type Design = {
   [key: string]: any;
 };
 
-export const SUPPORTS = [
-  { id: "truss", label: "Overhead truss" },
-  { id: "curvedSpan", label: "Curved tube span" },
-  { id: "monotube", label: "Straight tube span" },
-  { id: "curvedCantilever", label: "Curved tube cantilever" },
-  { id: "cantilever", label: "Straight cantilever" },
+/** Structure types and spans; a support id (C# AssemblyBuilder.Supports) is one combination of the two. */
+export const STRUCTURES = [
+  { id: "truss", label: "Truss" },
+  { id: "curved", label: "Curved tube" },
+  { id: "straight", label: "Straight tube" },
   { id: "ground", label: "Roadside posts" },
 ];
+export const SPANS = [
+  { id: "full", label: "Full span", hint: "Across every carriageway" },
+  { id: "single", label: "Single span", hint: "Across one carriageway" },
+  { id: "cantilever", label: "Cantilever", hint: "One post at the roadside" },
+];
+const SUPPORT_IDS: Record<string, Record<string, string>> = {
+  truss: { full: "truss", single: "trussSingle", cantilever: "trussCantilever" },
+  curved: { full: "curvedFull", single: "curvedSpan", cantilever: "curvedCantilever" },
+  straight: { full: "monotubeFull", single: "monotube", cantilever: "cantilever" },
+  ground: { full: "ground", single: "ground", cantilever: "ground" },
+};
+export const supportId = (structure: string, span: string) => SUPPORT_IDS[structure]?.[span] ?? "truss";
+export function parseSupport(id: string): { structure: string; span: string } {
+  for (const structure of Object.keys(SUPPORT_IDS)) {
+    for (const span of Object.keys(SUPPORT_IDS[structure])) {
+      if (SUPPORT_IDS[structure][span] === id) return { structure, span };
+    }
+  }
+  return { structure: "truss", span: "full" };
+}
+export function supportLabel(id: string): string {
+  const { structure, span } = parseSupport(id);
+  const s = STRUCTURES.find((x) => x.id === structure)?.label ?? structure;
+  return structure === "ground" ? s : `${s}, ${SPANS.find((x) => x.id === span)?.label.toLowerCase() ?? span}`;
+}
 
 export const PALETTE: { label: string; make: () => Item }[] = [
   { label: "Text", make: () => ({ type: "text", text: "Destination", height: 16 }) },
-  { label: "Interstate", make: () => ({ type: "shield", network: "I", number: "95", height: 36 }) },
-  { label: "US route", make: () => ({ type: "shield", network: "US", number: "1", height: 36 }) },
-  { label: "State route", make: () => ({ type: "shield", network: "STATE", number: "2", height: 36 }) },
+  { label: "Shield", make: () => ({ type: "shield", network: "I", number: "95", height: 36 }) },
   { label: "Cardinal", make: () => ({ type: "text", text: "NORTH", height: 15, font: "RG2014D" }) },
   { label: "Arrow", make: () => ({ type: "arrow", direction: "up", height: 24 }) },
   { label: "Distance", make: () => ({ type: "text", text: "1 MILE", height: 12, font: "RG2014D" }) },

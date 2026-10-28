@@ -18,8 +18,39 @@ namespace SignBuilder.Assemblies
         public float Elevation;
         /// <summary>Free placement: width of the (imaginary) roadway the structure spans.</summary>
         public float FreeWidth = 14f;
+        /// <summary>Physical size of the signs relative to full MUTCD size (stored placements default to full size).</summary>
+        public float SignScale = 1f;
+        /// <summary>Per sign: lane index to centre it over (-1 = with the others), and its own sideways shift.</summary>
+        public int[] SignLanes = System.Array.Empty<int>();
+        public float[] SignShifts = System.Array.Empty<float>();
 
-        public LayoutOptions Clone() => (LayoutOptions)MemberwiseClone();
+        public int LaneOf(int sign) => sign < SignLanes.Length ? SignLanes[sign] : -1;
+        public float ShiftOf(int sign) => sign < SignShifts.Length ? SignShifts[sign] : 0f;
+
+        /// <summary>Makes the per-sign arrays cover <paramref name="count"/> signs.</summary>
+        public void EnsureSigns(int count)
+        {
+            if (SignLanes.Length < count)
+            {
+                var lanes = Enumerable.Repeat(-1, count).ToArray();
+                SignLanes.CopyTo(lanes, 0);
+                SignLanes = lanes;
+            }
+            if (SignShifts.Length < count)
+            {
+                var shifts = new float[count];
+                SignShifts.CopyTo(shifts, 0);
+                SignShifts = shifts;
+            }
+        }
+
+        public LayoutOptions Clone()
+        {
+            var copy = (LayoutOptions)MemberwiseClone();
+            copy.SignLanes = (int[])SignLanes.Clone();
+            copy.SignShifts = (float[])SignShifts.Clone();
+            return copy;
+        }
     }
 
     /// <summary>

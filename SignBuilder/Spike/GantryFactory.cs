@@ -31,15 +31,22 @@ namespace SignBuilder.Spike
                 "curvedSpan" => CurvedSpan(Arg(0), Arg(1), ground: Arg(2)),
                 "curvedCantilever" => CurvedCantilever(Arg(0), Arg(1), ground: Arg(2)),
                 "cantilever" => Cantilever(Arg(0), Arg(1)),
+                "trussCantilever" => TrussCantilever(Arg(0), Arg(1)),
                 "ground" => GroundPosts(Arg(0), Arg(1), out _, Arg(2)),
                 _ => Truss(Arg(0), Arg(1)),
             };
         }
 
-        public static Mesh Truss(float span, float ground = 0f)
+        public static Mesh Truss(float span, float ground = 0f) => TrussBeam(-span * 0.5f, span * 0.5f, new[] { -span * 0.5f, span * 0.5f }, ground, "SignBuilder.Truss");
+
+        /// <summary>Truss cantilever: one column pair at X = 0, the truss reaching -X.</summary>
+        public static Mesh TrussCantilever(float armLength, float ground = 0f) => TrussBeam(-armLength, 0.3f, new[] { 0f }, ground, "SignBuilder.TrussCantilever");
+
+        /// <summary>A box truss from <paramref name="x0"/> to <paramref name="x1"/> on column pairs at <paramref name="columns"/>.</summary>
+        private static Mesh TrussBeam(float x0, float x1, float[] columns, float ground, string name)
         {
             var b = new MeshBuilder();
-            var half = span * 0.5f;
+            var span = x1 - x0;
             const float depth = kTrussDepth;
             var y0 = kClearance;
             var y1 = kClearance + depth;
@@ -50,13 +57,13 @@ namespace SignBuilder.Spike
             foreach (var y in new[] { y0, y1 })
             foreach (var z in new[] { z0, z1 })
             {
-                b.AddTube(new Vector3(-half, y, z), new Vector3(half, y, z), 0.09f, 10);
+                b.AddTube(new Vector3(x0, y, z), new Vector3(x1, y, z), 0.09f, 10);
             }
             var panels = Mathf.Max(2, Mathf.RoundToInt(span / depth));
             var step = span / panels;
             for (var i = 0; i < panels; i++)
             {
-                var xa = -half + i * step;
+                var xa = x0 + i * step;
                 var xb = xa + step;
                 var flip = (i & 1) == 0;
                 foreach (var z in new[] { z0, z1 })
@@ -71,13 +78,12 @@ namespace SignBuilder.Spike
                 b.AddTube(new Vector3(xa, y0, z1), new Vector3(xa, y1, z1), 0.04f, 8);
             }
 
-            // End supports: a pair of pipe columns per side with horizontal and diagonal bracing.
-            foreach (var x in new[] { -half, half })
+            // Supports: a pair of pipe columns with horizontal and diagonal bracing.
+            foreach (var x in columns)
             {
                 foreach (var z in new[] { z0, z1 })
                 {
                     b.AddTube(new Vector3(x, -ground - kFooting, z), new Vector3(x, y1 + 0.2f, z), 0.2f, 14);
-                    b.AddBox(new Vector3(x, 0.03f - ground, z), new Vector3(0.8f, 0.06f, 0.8f), Quaternion.identity);
                 }
                 for (var y = 1.0f; y < y0; y += 1.6f)
                 {
@@ -85,7 +91,7 @@ namespace SignBuilder.Spike
                     b.AddTube(new Vector3(x, y, z0), new Vector3(x, Mathf.Min(y + 1.6f, y0), z1), 0.04f, 8);
                 }
             }
-            return b.Build("SignBuilder.Truss");
+            return b.Build(name);
         }
 
         public static Mesh Monotube(float span, float ground = 0f)
@@ -97,7 +103,6 @@ namespace SignBuilder.Spike
             foreach (var x in new[] { -half, half })
             {
                 b.AddTube(new Vector3(x, -ground - kFooting, 0), new Vector3(x, y + 0.5f, 0), 0.36f, 20);
-                b.AddBox(new Vector3(x, 0.03f - ground, 0), new Vector3(1.0f, 0.06f, 1.0f), Quaternion.identity);
             }
             return b.Build("SignBuilder.Monotube");
         }
@@ -108,7 +113,6 @@ namespace SignBuilder.Spike
             var y = kMountHeight;
             b.AddTube(new Vector3(0, -ground - kFooting, 0), new Vector3(0, y + 0.6f, 0), 0.38f, 20);
             b.AddTube(new Vector3(-0.3f * Mathf.Sign(armLength), y, 0), new Vector3(armLength, y, 0), 0.28f, 20);
-            b.AddBox(new Vector3(0, 0.03f - ground, 0), new Vector3(1.1f, 0.06f, 1.1f), Quaternion.identity);
             return b.Build("SignBuilder.Cantilever");
         }
 
@@ -133,7 +137,6 @@ namespace SignBuilder.Spike
             {
                 AddFlange(b, new Vector3(x, 1.4f - ground, 0), Vector3.up);
                 AddFlange(b, new Vector3(x, height - bendRadius, 0), Vector3.up);
-                b.AddBox(new Vector3(x, 0.04f - ground, 0), new Vector3(1.1f, 0.08f, 1.1f), Quaternion.identity);
             }
             AddFlange(b, new Vector3(-half + bendRadius, height, 0), Vector3.right);
             AddFlange(b, new Vector3(half - bendRadius, height, 0), Vector3.right);
@@ -151,7 +154,6 @@ namespace SignBuilder.Spike
             AddFlange(b, new Vector3(0, 1.4f - ground, 0), Vector3.up);
             AddFlange(b, new Vector3(0, height - bendRadius, 0), Vector3.up);
             AddFlange(b, new Vector3(-bendRadius, height, 0), Vector3.right);
-            b.AddBox(new Vector3(0, 0.04f - ground, 0), new Vector3(1.1f, 0.08f, 1.1f), Quaternion.identity);
             return b.Build("SignBuilder.CurvedCantilever");
         }
 
@@ -182,7 +184,6 @@ namespace SignBuilder.Spike
                 b.AddBox(centre + new Vector3(0, 0, -depth * 0.5f + t * 0.5f), new Vector3(flange, h, t), Quaternion.identity);
                 b.AddBox(centre + new Vector3(0, 0, depth * 0.5f - t * 0.5f), new Vector3(flange, h, t), Quaternion.identity);
                 b.AddBox(centre, new Vector3(t, h, depth - t * 2), Quaternion.identity);
-                b.AddBox(new Vector3(x, 0.05f - extraDepth, z), new Vector3(0.6f, 0.1f, 0.6f), Quaternion.identity);
             }
             return b.Build("SignBuilder.GroundPosts");
         }

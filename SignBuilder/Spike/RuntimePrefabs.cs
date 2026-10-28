@@ -86,6 +86,7 @@ namespace SignBuilder.Spike
         /// </summary>
         public StaticObjectPrefab Register(string name, GeometryAsset geometry, SurfaceAsset[] surfaces, Bounds3 bounds, int indexCount, int vertexCount)
         {
+            if (name.StartsWith("SignBuilder_A_")) Core.AssetNames.Add(name);
             if (m_PrefabSystem.TryGetPrefab(new PrefabID(nameof(StaticObjectPrefab), name), out var existing)) return existing as StaticObjectPrefab;
             var renderPrefab = ScriptableObject.CreateInstance<RenderPrefab>();
             renderPrefab.name = name + "_Mesh";

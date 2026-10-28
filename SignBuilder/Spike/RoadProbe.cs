@@ -182,10 +182,15 @@ namespace SignBuilder.Spike
                 var pos = MathUtils.Position(curve, lt);
                 var laneTangent = MathUtils.Tangent(curve, lt);
                 var prefab = m_EM.GetComponentData<PrefabRef>(lane).m_Prefab;
+                var offset = math.dot(pos - snap.Point, snap.Right);
+                var direction = math.dot(laneTangent, snap.Tangent) >= 0 ? 1 : -1;
+                // Some roads carry more than one car lane entity per physical lane (e.g. per vehicle class);
+                // keep one per position so lane choices step through real lanes.
+                if (snap.Lanes.Any(l => l.Direction == direction && math.abs(l.Offset - offset) < 0.5f)) continue;
                 snap.Lanes.Add(new LaneInfo
                 {
-                    Offset = math.dot(pos - snap.Point, snap.Right),
-                    Direction = math.dot(laneTangent, snap.Tangent) >= 0 ? 1 : -1,
+                    Offset = offset,
+                    Direction = direction,
                     Width = m_EM.HasComponent<NetLaneData>(prefab) ? m_EM.GetComponentData<NetLaneData>(prefab).m_Width : 0f,
                     OnPairedEdge = paired,
                 });

@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using Colossal.Entities;
 using Colossal.IO.AssetDatabase;
 using Game.Assets;
 using Game.Net;
@@ -35,6 +36,7 @@ namespace SignBuilder.Spike
         {
             ("truss", "guide-exit-tab"), ("curvedSpan", "guide-exit-only"), ("monotube", "services-blue"),
             ("curvedCantilever", "attraction-brown"), ("cantilever", "advance-guide"), ("ground", "gore-exit"),
+            ("trussSingle", "guide-exit-tab"), ("trussCantilever", "guide-exit-only"), ("curvedFull", "guide-exit-tab"), ("monotubeFull", "services-blue"),
         };
 
         private readonly List<(string support, AssemblyRecord record, Entity edge, float t)> m_Placed = new();
@@ -321,16 +323,25 @@ namespace SignBuilder.Spike
             var cant = m_Placed.First(p => p.support == "cantilever");
             var t2 = math.clamp(cant.t + 0.3f, 0.05f, 0.95f);
             var exitOnly = Template("guide-exit-only");
-            yield return PlaceAndWait(() => tool.PlaceForTest(cant.edge, t2, new List<JObject> { exitOnly }, "cantilever", false, new LayoutOptions { Lane = 9 }));
+            yield return PlaceAndWait(() => tool.PlaceForTest(cant.edge, t2, new List<JObject> { exitOnly }, "cantilever", false, new LayoutOptions { SignScale = 0.75f, SignLanes = new[] { 9 } }));
             var rightLane = SignPlacementToolSystem.LastPlaced;
             SpikeReport.Set("e2e.options.rightLane", Describe(rightLane) + $" lanes={rightLane.Context?.Lanes.Count}");
             yield return Shoot(rightLane, "e2e_right_lane.png");
 
             var truss = m_Placed.First(p => p.support == "truss");
             var t3 = math.clamp(truss.t + 0.3f, 0.05f, 0.95f);
-            yield return PlaceAndWait(() => tool.PlaceForTest(truss.edge, t3, new List<JObject> { exitOnly }, "truss", false, new LayoutOptions { Shift = 4f }));
+            yield return PlaceAndWait(() => tool.PlaceForTest(truss.edge, t3, new List<JObject> { exitOnly }, "truss", false, new LayoutOptions { SignScale = 0.75f, SignShifts = new[] { 4f } }));
             SpikeReport.Set("e2e.options.shifted", Describe(SignPlacementToolSystem.LastPlaced));
             yield return Shoot(SignPlacementToolSystem.LastPlaced, "e2e_shifted.png");
+
+            // Two signs on a single-span truss, each over its own lane; lanes counted once per position.
+            var snap = new RoadProbe(World.DefaultGameObjectInjectionWorld.EntityManager, m_Runtime.PrefabSystem).SnapAt(truss.edge, math.clamp(truss.t - 0.3f, 0.05f, 0.95f));
+            SpikeReport.Set("e2e.options.lanes", string.Join(" ", snap.Lanes.Select(l => $"{l.Offset:F1}/{l.Direction}")));
+            var perLane = new LayoutOptions { SignScale = 0.75f, SignLanes = new[] { 0, 1 } };
+            yield return PlaceAndWait(() => tool.PlaceForTest(truss.edge, math.clamp(truss.t - 0.3f, 0.05f, 0.95f),
+                new List<JObject> { Template("guide-exit-tab"), exitOnly }, "trussSingle", false, perLane));
+            SpikeReport.Set("e2e.options.perLane", Describe(SignPlacementToolSystem.LastPlaced));
+            yield return Shoot(SignPlacementToolSystem.LastPlaced, "e2e_per_lane.png", 0f, 40f);
         }
 
         /// <summary>Free placement on open ground: a truss rotated 30 degrees and a raised roadside sign.</summary>
@@ -445,7 +456,7 @@ namespace SignBuilder.Spike
         private IEnumerator TestInfoPanelEdit(SignBuilderUISystem ui, SignPlacementToolSystem tool)
         {
             var world = World.DefaultGameObjectInjectionWorld;
-            var entity = FirstInstance("curvedSpan");
+            var entity = FirstInstance("monotube");
             if (entity == Entity.Null) yield break;
             LookAt(entity);
             var info = world.GetOrCreateSystemManaged<Game.UI.InGame.SelectedInfoUISystem>();
@@ -455,6 +466,24 @@ namespace SignBuilder.Spike
             SpikeReport.Set("e2e.infopanel.visible", section.visible);
             SpikeReport.Screenshot("e2e_infopanel.png");
             yield return new WaitForSecondsRealtime(0.5f);
+            var name = World.DefaultGameObjectInjectionWorld.EntityManager.TryGetComponent(entity, out PrefabRef pr) && m_Runtime.PrefabSystem.TryGetPrefab(pr, out PrefabBase pb) ? pb.name : "";
+            GameManager.instance.localizationManager.activeDictionary.TryGetValue($"Assets.NAME[{name}]", out var displayName);
+            GameManager.instance.localizationManager.activeDictionary.TryGetValue($"Assets.DESCRIPTION[{name}]", out var description);
+            SpikeReport.Set("e2e.infopanel.name", $"{displayName} | {description}");
+            section.PlaceSelectedAgain(move: false);
+            yield return new WaitForSecondsRealtime(2f);
+            SpikeReport.Set("e2e.infopanel.duplicate", $"mode={ui.ToolMode} replacing={tool.IsReplacing}");
+            tool.BeginPick();
+            info.SetSelection(entity);
+            yield return new WaitForSecondsRealtime(1.5f);
+            section.PlaceSelectedAgain(move: true);
+            yield return new WaitForSecondsRealtime(2f);
+            SpikeReport.Set("e2e.infopanel.move", $"mode={ui.ToolMode} replacing={tool.IsReplacing}");
+            SpikeReport.Screenshot("e2e_infopanel_move.png");
+            yield return new WaitForSecondsRealtime(0.5f);
+            tool.Deactivate();
+            info.SetSelection(entity);
+            yield return new WaitForSecondsRealtime(1.5f);
             section.EditSelected();
             yield return new WaitForSecondsRealtime(2.5f);
             SpikeReport.Set("e2e.infopanel.edit", $"editorOpen={ui.EditorOpen} replacing={tool.IsReplacing} mode={ui.ToolMode}");
@@ -500,7 +529,7 @@ namespace SignBuilder.Spike
             yield return new WaitForSecondsRealtime(0.5f);
             File.WriteAllText(Path.Combine(SpikeReport.OutputDir, "ui-ready.flag"), "");
             var end = Time.realtimeSinceStartup + 120f;
-            while (File.Exists(Path.Combine(SpikeReport.OutputDir, "ui-wait.flag")) && Time.realtimeSinceStartup < end
+            while (File.Exists(Path.Combine(SignBuilderRuntime.DataDir, "ui-wait.flag")) && Time.realtimeSinceStartup < end
                    && !File.Exists(Path.Combine(SpikeReport.OutputDir, "ui-done.flag")))
             {
                 foreach (var flag in Directory.GetFiles(SpikeReport.OutputDir, "shot-*.flag"))

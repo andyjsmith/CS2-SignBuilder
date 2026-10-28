@@ -1,7 +1,7 @@
 import { getModule } from "cs2/modding";
 import { Button } from "cs2/ui";
-import { editSelected } from "./bindings";
-import { SUPPORTS } from "./designModel";
+import { duplicateSelected, editSelected, moveSelected } from "./bindings";
+import { supportLabel } from "./designModel";
 
 // Vanilla selected-info building blocks; plain divs if a game update moves them.
 const load = (path: string, name: string): any => {
@@ -12,13 +12,18 @@ const InfoRow = load("game-ui/game/components/selected-info-panel/shared-compone
 
 /** Selected-object panel section for placed Sign Builder structures (C#: Systems/SignInfoSection.cs). */
 export const SignInfoSection = (props: { support?: string; signs?: number }) => {
-  const mounting = SUPPORTS.find((s) => s.id === props.support)?.label ?? props.support ?? "";
+  const mounting = props.support ? supportLabel(props.support) : "";
   const summary = `${mounting}${props.signs && props.signs > 1 ? `, ${props.signs} signs` : ""}`;
+  const Action = (p: { label: string; onSelect: () => void }) => (
+    <div style={{ marginRight: "6rem" }}>
+      <Button variant="flat" onSelect={p.onSelect}><div style={{ padding: "4rem 10rem", fontSize: "14rem" }}>{p.label}</div></Button>
+    </div>
+  );
   const button = (
-    <div style={{ padding: "6rem 0" }}>
-      <Button variant="flat" onSelect={() => editSelected()}>
-        <div style={{ padding: "4rem 12rem", fontSize: "14rem" }}>Edit in Sign Builder</div>
-      </Button>
+    <div style={{ padding: "6rem 0", display: "flex", flexDirection: "row" }}>
+      <Action label="Edit" onSelect={() => editSelected()} />
+      <Action label="Move" onSelect={() => moveSelected()} />
+      <Action label="Duplicate" onSelect={() => duplicateSelected()} />
     </div>
   );
   if (!InfoSection || !InfoRow) {

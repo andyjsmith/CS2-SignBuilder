@@ -7,7 +7,8 @@ import {
   templates$, toolMode$, toolStatus$,
 } from "./bindings";
 import {
-  Design, Item, PALETTE, SUPPORTS, clone, describe, getItem, insertItem, joinWithNext, moveItem, outline, removeItem, updateItem,
+  Design, Item, PALETTE, SPANS, STRUCTURES, clone, describe, getItem, insertItem, joinWithNext, moveItem, outline, parseSupport, removeItem,
+  supportId, updateItem,
 } from "./designModel";
 import { AlignIcon, ArrowIcon, ExitOnlyIcon, ExitTabIcon, SCHEME_COLOURS, ShieldIcon } from "./Icons";
 import { SignPreview } from "./SignPreview";
@@ -121,7 +122,10 @@ function ItemProperties(props: { item: Item; onChange: (patch: Partial<Item>) =>
   }
 }
 
-type PlaceInfo = { free?: boolean; lane?: number; laneCount?: number; shift?: number; angle?: number; elevation?: number; width?: number; support?: string };
+type PlaceInfo = {
+  free?: boolean; lane?: number; laneCount?: number; shift?: number; angle?: number; elevation?: number; width?: number; support?: string;
+  scale?: number; signs?: number; signLanes?: number[]; signShifts?: number[];
+};
 
 /** The small bar shown at the top of the screen while placing (or picking a sign to edit). */
 const PlacementBar = (props: { picking: boolean; status: string; onBack: () => void; onClose: () => void }) => {
@@ -130,44 +134,54 @@ const PlacementBar = (props: { picking: boolean; status: string; onBack: () => v
   const Step = (p: { action: string; children: any; title?: string }) => (
     <div className={styles.step} title={p.title} onClick={() => adjust(p.action)}>{p.children}</div>
   );
-  const laneLabel = !info.laneCount ? "No lanes" : (info.lane ?? -1) < 0 ? "All lanes" : `Lane ${(info.lane ?? 0) + 1} of ${info.laneCount}`;
+  const laneName = (lane: number, count: number) => (lane < 0 ? "With others" : `Over lane ${lane + 1} of ${count}`);
   const overhead = info.support !== "ground";
+  const hint = info.free ? "Right-drag to rotate, Page Up / Page Down to raise and lower." : "";
   const PanelAny: any = Panel;
   return (
     <PanelAny draggable initialPosition={{ x: 0.5, y: 0.06 }} header="Sign Builder" className={styles.compact} onClose={props.onClose}>
       <div className={styles.compactBody}>
         <div className={styles.status}>{props.picking ? "Click a placed Sign Builder sign to edit it. Right-click to go back." : props.status}</div>
+        {!props.picking && hint && <div className={styles.hint}>{hint}</div>}
         {!props.picking && (
           <>
             <div className={styles.barRow}>
               <Choice options={[{ value: "road", label: "Snap to road" }, { value: "free", label: "Free placement" }]}
                 value={info.free ? "free" : "road"} onChange={(v) => adjust(v)} />
             </div>
-            {!info.free && (
-              <div className={styles.barRow}>
-                <div className={styles.barLabel}>Signs over</div>
-                <Step action="laneLeft" title="Previous lane (,)"><ArrowIcon direction="left" size={12} /></Step>
-                <div className={styles.barValue}>{laneLabel}</div>
-                <Step action="laneRight" title="Next lane (.)"><ArrowIcon direction="right" size={12} /></Step>
-              </div>
-            )}
             {info.free && (
               <div className={styles.barRow}>
                 <div className={styles.barLabel}>Rotate</div>
-                <Step action="rotateLeft" title="Rotate left (,)">-15°</Step>
+                <Step action="rotateLeft" title="Rotate left (or right-drag)">-15°</Step>
                 <div className={styles.barValue}>{`${Math.round(info.angle ?? 0)}°`}</div>
-                <Step action="rotateRight" title="Rotate right (.)">+15°</Step>
+                <Step action="rotateRight" title="Rotate right (or right-drag)">+15°</Step>
                 <div className={styles.barLabel} style={{ marginLeft: "16rem" }}>Height</div>
                 <Step action="lower" title="Lower (Page Down)"><ArrowIcon direction="down" size={12} /></Step>
                 <div className={styles.barValue}>{`${(info.elevation ?? 0).toFixed(1)} m`}</div>
                 <Step action="raise" title="Raise (Page Up)"><ArrowIcon direction="up" size={12} /></Step>
               </div>
             )}
+            {Array.from({ length: info.signs ?? 0 }, (_, i) => (
+              <div key={i} className={styles.barRow}>
+                <div className={styles.barLabel}>{(info.signs ?? 0) > 1 ? `Sign ${i + 1}` : "Sign"}</div>
+                {!info.free && (info.laneCount ?? 0) > 0 && (
+                  <>
+                    <Step action={`signLaneLeft:${i}`} title="Previous lane"><ArrowIcon direction="left" size={12} /></Step>
+                    <div className={styles.barValue}>{laneName(info.signLanes?.[i] ?? -1, info.laneCount ?? 0)}</div>
+                    <Step action={`signLaneRight:${i}`} title="Next lane"><ArrowIcon direction="right" size={12} /></Step>
+                  </>
+                )}
+                <div className={styles.barLabel} style={{ marginLeft: "12rem" }}>Nudge</div>
+                <Step action={`signShiftLeft:${i}`} title="Move 0.25 m left"><ArrowIcon direction="left" size={12} /></Step>
+                <div className={styles.barValue}>{`${(info.signShifts?.[i] ?? 0) >= 0 ? "+" : ""}${(info.signShifts?.[i] ?? 0).toFixed(2)} m`}</div>
+                <Step action={`signShiftRight:${i}`} title="Move 0.25 m right"><ArrowIcon direction="right" size={12} /></Step>
+              </div>
+            ))}
             <div className={styles.barRow}>
-              <div className={styles.barLabel}>Shift signs</div>
-              <Step action="shiftLeft"><ArrowIcon direction="left" size={12} /></Step>
-              <div className={styles.barValue}>{`${(info.shift ?? 0).toFixed(1)} m`}</div>
-              <Step action="shiftRight"><ArrowIcon direction="right" size={12} /></Step>
+              <div className={styles.barLabel}>Sign size</div>
+              <Step action="smaller">-</Step>
+              <div className={styles.barValue}>{`${Math.round((info.scale ?? 1) * 100)}%`}</div>
+              <Step action="larger">+</Step>
               {info.free && overhead && (
                 <>
                   <div className={styles.barLabel} style={{ marginLeft: "16rem" }}>Span</div>
@@ -245,7 +259,7 @@ export const SignEditor = () => {
   const update = (patch: Partial<Item>) => { if (selected != null) setDesign(updateItem(design, selected, patch)); };
   const apply = (r: { design: Design; path: string }) => { setDesign(r.design); setSelected(r.path); };
   const editTab = selected === "exitTab";
-  const supportLabel = SUPPORTS.find((s) => s.id === support)?.label ?? "";
+  const { structure, span } = parseSupport(support);
 
   return (
     <Panel draggable header="Sign Builder" className={styles.panel} onClose={close}>
@@ -257,13 +271,6 @@ export const SignEditor = () => {
               onClick={() => { setDesign(clone(t.design)); if (t.support) setSupport(t.support); setSelected(null); }}>{t.name}</div>
           ))}
           <div className={styles.listItem} onClick={() => { setDesign(clone(BLANK)); setSelected(null); }}>Blank sign</div>
-
-          <div className={styles.heading}>Add part</div>
-          <div className={styles.palette}>
-            {PALETTE.map((p) => (
-              <div key={p.label} className={styles.chip} onClick={() => apply(insertItem(design, selected, p.make()))}>{p.label}</div>
-            ))}
-          </div>
 
           <div className={styles.heading}>Sign</div>
           <Field label="Colour"><Swatches value={design.scheme ?? "green"} onChange={(scheme) => setDesign({ ...design, scheme })} /></Field>
@@ -296,9 +303,22 @@ export const SignEditor = () => {
             <SignPreview design={design} selected={selected} onSelect={setSelected} maxWidth={560} maxHeight={330} />
           </div>
           <div className={styles.hint}>Click any part of the sign to edit it.</div>
-          <div className={styles.heading}>Mounting</div>
-          <Choice options={SUPPORTS.map((s) => s.label)} value={supportLabel}
-            onChange={(label) => setSupport(SUPPORTS.find((s) => s.label === label)!.id)} />
+          <div className={styles.optionRow}>
+            <div className={styles.optionGroup}>
+              <div className={styles.heading}>Structure</div>
+              <Choice options={STRUCTURES.map((x) => ({ value: x.id, label: x.label }))} value={structure}
+                onChange={(v) => setSupport(supportId(v, span))} />
+            </div>
+          </div>
+          {structure !== "ground" && (
+            <div className={styles.optionRow}>
+              <div className={styles.optionGroup}>
+                <div className={styles.heading}>Span</div>
+                <Choice options={SPANS.map((x) => ({ value: x.id, label: x.label, title: x.hint }))} value={span}
+                  onChange={(v) => setSupport(supportId(structure, v))} />
+              </div>
+            </div>
+          )}
           <div className={styles.optionRow}>
             <div className={styles.optionGroup}>
               <div className={styles.heading}>Placement</div>
@@ -308,8 +328,9 @@ export const SignEditor = () => {
             {!free && (
               <div className={styles.optionGroup}>
                 <div className={styles.heading}>Facing</div>
-                <Choice options={["Clicked road's traffic", "Opposite direction"]} value={reverse ? "Opposite direction" : "Clicked road's traffic"}
-                  onChange={(v) => setReverse(v === "Opposite direction")} />
+                <Choice options={[{ value: "forward", label: "Forward", title: "Faces the traffic on the clicked road" },
+                  { value: "reverse", label: "Reverse", title: "Faces the opposite direction" }]}
+                  value={reverse ? "reverse" : "forward"} onChange={(v) => setReverse(v === "reverse")} />
               </div>
             )}
           </div>
@@ -317,8 +338,8 @@ export const SignEditor = () => {
             {replacing ? (
               <>
                 <Button variant="primary" onSelect={() => saveEdit(payload())}>Save</Button>
-                <div className={styles.chip} style={{ marginLeft: "12rem", alignSelf: "center" }} onClick={() => startPlacement(payload())}>Move</div>
-                <div className={styles.chip} style={{ alignSelf: "center" }} onClick={() => { forgetEdit(); startPlacement(payload()); }}>Place as new sign</div>
+                <div className={styles.chip} style={{ marginLeft: "12rem", alignSelf: "center" }} title="Keep the placed sign as it is; the next placement is a new sign"
+                  onClick={() => forgetEdit()}>Stop editing</div>
               </>
             ) : (
               <>
@@ -331,6 +352,12 @@ export const SignEditor = () => {
         </div>
 
         <div className={styles.column}>
+          <div className={styles.heading}>Add part</div>
+          <div className={styles.palette}>
+            {PALETTE.map((p) => (
+              <div key={p.label} className={styles.chip} onClick={() => apply(insertItem(design, selected, p.make()))}>{p.label}</div>
+            ))}
+          </div>
           <div className={styles.heading}>Parts</div>
           {design.exitTab && (
             <div className={editTab ? styles.listItemOn : styles.listItem} onClick={() => setSelected("exitTab")}>{`Exit tab "${design.exitTab.text}"`}</div>
