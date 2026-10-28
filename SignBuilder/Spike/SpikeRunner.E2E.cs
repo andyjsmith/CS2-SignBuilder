@@ -400,6 +400,12 @@ namespace SignBuilder.Spike
 
         private IEnumerator ReloadChecks()
         {
+            // Shared-save path: assemblies missing on this PC are rebuilt from the save after loading.
+            var wait = Time.realtimeSinceStartup + 120f;
+            while ((AssemblyRestoreSystem.Running || AssemblyRestoreSystem.LastRestored < 0 && File.Exists(Path.Combine(SpikeReport.OutputDir, "..", "portable.flag")))
+                   && Time.realtimeSinceStartup < wait) yield return null;
+            yield return new WaitForSecondsRealtime(3f);
+            SpikeReport.Set("reload.restored", $"objects={AssemblyRestoreSystem.LastRestored} failedAssemblies={AssemblyRestoreSystem.LastFailed}");
             var em = World.DefaultGameObjectInjectionWorld.EntityManager;
             var expectedFile = Path.Combine(Application.persistentDataPath, "ModsData", "SignBuilder", "e2e_expected.txt");
             var expected = File.Exists(expectedFile) ? File.ReadAllLines(expectedFile) : Array.Empty<string>();

@@ -13,6 +13,22 @@ namespace SignBuilder.Spike
         public const float kTrussDepth = 1.5f;
         public const float kMountHeight = kClearance + kTrussDepth * 0.5f;
 
+        /// <summary>Builds the support described by a spec (layout output, stored in records and saves).</summary>
+        public static Mesh FromSpec(Assemblies.SupportSpec spec)
+        {
+            var a = spec.Args ?? System.Array.Empty<float>();
+            float Arg(int i) => i < a.Length ? a[i] : 0f;
+            return spec.Kind switch
+            {
+                "monotube" => Monotube(Arg(0)),
+                "curvedSpan" => CurvedSpan(Arg(0), Arg(1)),
+                "curvedCantilever" => CurvedCantilever(Arg(0), Arg(1)),
+                "cantilever" => Cantilever(Arg(0)),
+                "ground" => GroundPosts(Arg(0), Arg(1), out _, Arg(2)),
+                _ => Truss(Arg(0)),
+            };
+        }
+
         public static Mesh Truss(float span)
         {
             var b = new MeshBuilder();

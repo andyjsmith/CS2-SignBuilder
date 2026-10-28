@@ -20,7 +20,9 @@ state route shields, exit tabs and EXIT ONLY panels); other countries are planne
    editor; press **Place on road** and click a road to replace it.
 
 Placed signs are ordinary props: they save with the city, can be bulldozed, and render through the
-game's own batching (shadows, distance culling).
+game's own batching (shadows, distance culling). Saves are shareable: each structure's recipe (sign
+designs, support shape, sign positions) is stored inside the save, and a player who loads the city
+without your local sign cache gets the signs rebuilt automatically (they need Sign Builder installed).
 
 ## How it works
 
@@ -40,7 +42,9 @@ Each placed structure becomes one prop prefab (`SignBuilder_A_<id>`): the suppor
 are merged into one mesh with a steel material and one material per sign face. The meshes and
 materials are stored in a mod-owned asset database (`ModsData/SignBuilder/Cache`), and
 `ModsData/SignBuilder/assemblies.json` lists every structure so its prefab can be re-created before a
-save is deserialised.
+save is deserialised. Recipes also travel in the save (`AssemblySaveData.cs`); after loading, any
+structure this PC lacks is rebuilt from its recipe and its objects (kept by the game with a missing
+prefab) are respawned in place.
 
 ## Building
 
@@ -82,3 +86,4 @@ and open `Renderer/preview.html`.
   templates as data
 - Diagrammatic and lane-arrow signs aligned to detected lanes
 - Library cleanup for structures no longer used by any save
+- Structures placed before the save-recipe change cannot be rebuilt on other PCs (re-place them)

@@ -24,6 +24,10 @@ namespace SignBuilder
             });
             updateSystem.UpdateAt<Spike.SpikeBootstrapSystem>(SystemUpdatePhase.MainLoop);
             updateSystem.UpdateAt<Assemblies.AssemblyBootstrapSystem>(SystemUpdatePhase.MainLoop);
+            // Sign recipes travel inside saves so shared cities rebuild their signs on other PCs.
+            updateSystem.UpdateBefore<Assemblies.AssemblySaveSystem>(SystemUpdatePhase.Serialize);
+            updateSystem.UpdateAt<Assemblies.AssemblySaveCleanupSystem>(SystemUpdatePhase.MainLoop);
+            updateSystem.UpdateAt<Assemblies.AssemblyRestoreSystem>(SystemUpdatePhase.MainLoop);
             updateSystem.UpdateAt<Tools.SignPlacementToolSystem>(SystemUpdatePhase.ToolUpdate);
             updateSystem.UpdateAt<Systems.SignBuilderUISystem>(SystemUpdatePhase.UIUpdate);
             updateSystem.UpdateAt<Systems.SignInfoSection>(SystemUpdatePhase.UIUpdate);

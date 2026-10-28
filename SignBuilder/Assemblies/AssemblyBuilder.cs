@@ -18,6 +18,7 @@ namespace SignBuilder.Assemblies
     {
         public float3 Origin;
         public quaternion Rotation;
+        public SupportSpec Spec;
         public Mesh Support;
         public Vector3[] SignCentres; // assembly-local, one per sign
     }
@@ -37,6 +38,13 @@ namespace SignBuilder.Assemblies
         /// y = height) at a road snap. Several signs sit side by side, centred over the lanes they face.
         /// </summary>
         public static AssemblyPlacement Layout(string support, RoadProbe.Snap s, IReadOnlyList<Vector2> sizes, bool reverse = false)
+        {
+            var placement = LayoutSpec(support, s, sizes, reverse);
+            placement.Support = GantryFactory.FromSpec(placement.Spec);
+            return placement;
+        }
+
+        private static AssemblyPlacement LayoutSpec(string support, RoadProbe.Snap s, IReadOnlyList<Vector2> sizes, bool reverse)
         {
             // Signs face the traffic of the clicked carriageway; reverse aims them at the other direction
             // (the paired carriageway of a divided highway, or the opposing lanes of a two-way road).
@@ -80,13 +88,13 @@ namespace SignBuilder.Assemblies
                 case "monotube":
                     return new AssemblyPlacement
                     {
-                        Origin = basePoint, Rotation = rotation, Support = GantryFactory.Monotube(math.max(baseWidth, total) + 5f),
+                        Origin = basePoint, Rotation = rotation, Spec = SupportSpec.Of("monotube", math.max(baseWidth, total) + 5f),
                         SignCentres = Row(laneCentre * dir, -0.45f, standing(overheadBottom)),
                     };
                 case "curvedSpan":
                     return new AssemblyPlacement
                     {
-                        Origin = basePoint, Rotation = rotation, Support = GantryFactory.CurvedSpan(math.max(baseWidth + 5f, total + 7f), curvedHeight),
+                        Origin = basePoint, Rotation = rotation, Spec = SupportSpec.Of("curvedSpan", math.max(baseWidth + 5f, total + 7f), curvedHeight),
                         SignCentres = Row(laneCentre * dir, -0.4f, onPipe(curvedHeight)),
                     };
                 case "cantilever":
@@ -102,7 +110,7 @@ namespace SignBuilder.Assemblies
                     return new AssemblyPlacement
                     {
                         Origin = basePoint + s.Right * postOffset, Rotation = rotation,
-                        Support = curved ? GantryFactory.CurvedCantilever(arm, curvedHeight) : GantryFactory.Cantilever(-arm),
+                        Spec = curved ? SupportSpec.Of("curvedCantilever", arm, curvedHeight) : SupportSpec.Of("cantilever", -arm),
                         SignCentres = curved ? Row(centreX, -0.4f, onPipe(curvedHeight)) : Row(centreX, -0.45f, standing(overheadBottom)),
                     };
                 }
@@ -114,7 +122,7 @@ namespace SignBuilder.Assemblies
                     var drop = math.clamp(origin.y - TerrainHeight(origin), 0f, 20f);
                     return new AssemblyPlacement
                     {
-                        Origin = origin, Rotation = rotation, Support = GantryFactory.GroundPosts(total, maxH, out _, drop),
+                        Origin = origin, Rotation = rotation, Spec = SupportSpec.Of("ground", total, maxH, drop),
                         SignCentres = Row(0f, 0f, standing(GantryFactory.kGroundClearance)),
                     };
                 }
@@ -126,7 +134,7 @@ namespace SignBuilder.Assemblies
                     var span = math.max(extent.y - extent.x, total) + 5f;
                     return new AssemblyPlacement
                     {
-                        Origin = s.Point + s.Right * centre, Rotation = rotation, Support = GantryFactory.Truss(span),
+                        Origin = s.Point + s.Right * centre, Rotation = rotation, Spec = SupportSpec.Of("truss", span),
                         SignCentres = Row((laneAbsolute - centre) * dir, -(GantryFactory.kTrussDepth * 0.5f + 0.15f), standing(overheadBottom)),
                     };
                 }
@@ -179,36 +187,18 @@ namespace SignBuilder.Assemblies
             AssemblyPlacement placement;
             try
             {
-                var prefabs = new RuntimePrefabs();
                 placement = layout(Sizes(faces));
-                var mesh = Merge(placement.Support, faces, placement.SignCentres);
-                var id = Guid.NewGuid().ToString("N").Substring(0, 12);
-                var db = SignBuilderRuntime.Database;
-                var donor = SignBuilderRuntime.Donor(prefabs);
-                var steel = SignBuilderRuntime.Steel(prefabs);
-                var surfaces = new List<Colossal.IO.AssetDatabase.SurfaceAsset> { steel };
-                surfaces.AddRange(faces.Select(f => SurfaceFactory.SignFace(db, SignBuilderRuntime.SurfaceFolder, donor, f.Texture, f.Key)));
-                var bounds = new Bounds3(mesh.bounds.min, mesh.bounds.max);
-                var indexCount = 0;
-                for (var i = 0; i < mesh.subMeshCount; i++) indexCount += (int)mesh.GetIndexCount(i);
-                var vertexCount = mesh.vertexCount;
-                var geometry = RuntimePrefabs.SaveGeometry(mesh, db, SignBuilderRuntime.MeshFolder, "SignBuilder_A_" + id);
                 record = new AssemblyRecord
                 {
-                    Id = id,
+                    Id = Guid.NewGuid().ToString("N").Substring(0, 12),
                     Support = support,
                     Reverse = reverse,
                     Designs = designs.ToList(),
-                    GeometryId = geometry.id.guid.ToString(),
-                    SurfaceIds = surfaces.Select(x => x.id.guid.ToString()).ToList(),
-                    Bounds = new[] { bounds.min.x, bounds.min.y, bounds.min.z, bounds.max.x, bounds.max.y, bounds.max.z },
-                    IndexCount = indexCount,
-                    VertexCount = vertexCount,
+                    SupportSpec = placement.Spec,
+                    SignCentres = placement.SignCentres.SelectMany(c => new[] { c.x, c.y, c.z }).ToArray(),
                     Created = DateTime.UtcNow,
                 };
-                var prefab = prefabs.Register(record.PrefabName, geometry, surfaces.ToArray(), bounds, indexCount, vertexCount);
-                AssemblyLibrary.Add(record);
-                AssemblyBootstrapSystem.TrackNewPrefab(prefab);
+                CreateAssets(record, placement.Support, faces);
             }
             catch (Exception e)
             {
@@ -226,6 +216,68 @@ namespace SignBuilder.Assemblies
                 runtime.Spawn((StaticObjectPrefab)created, placement.Origin, placement.Rotation);
             }
             onDone(record, placement);
+        }
+
+        /// <summary>
+        /// Creates the mesh and materials of <paramref name="record"/> in the mod's asset database, registers
+        /// its prefab and stores the record (asset ids filled in) in the library.
+        /// </summary>
+        private static void CreateAssets(AssemblyRecord record, Mesh support, IReadOnlyList<BakedFace> faces)
+        {
+            var prefabs = new RuntimePrefabs();
+            var mesh = Merge(support, faces, record.Centres);
+            var db = SignBuilderRuntime.Database;
+            var donor = SignBuilderRuntime.Donor(prefabs);
+            var steel = SignBuilderRuntime.Steel(prefabs);
+            var surfaces = new List<Colossal.IO.AssetDatabase.SurfaceAsset> { steel };
+            surfaces.AddRange(faces.Select(f => SurfaceFactory.SignFace(db, SignBuilderRuntime.SurfaceFolder, donor, f.Texture, f.Key)));
+            var bounds = new Bounds3(mesh.bounds.min, mesh.bounds.max);
+            var indexCount = 0;
+            for (var i = 0; i < mesh.subMeshCount; i++) indexCount += (int)mesh.GetIndexCount(i);
+            var geometry = RuntimePrefabs.SaveGeometry(mesh, db, SignBuilderRuntime.MeshFolder, record.PrefabName);
+            record.GeometryId = geometry.id.guid.ToString();
+            record.SurfaceIds = surfaces.Select(x => x.id.guid.ToString()).ToList();
+            record.Bounds = new[] { bounds.min.x, bounds.min.y, bounds.min.z, bounds.max.x, bounds.max.y, bounds.max.z };
+            record.IndexCount = indexCount;
+            record.VertexCount = mesh.vertexCount;
+            var prefab = prefabs.Register(record.PrefabName, geometry, surfaces.ToArray(), bounds, indexCount, mesh.vertexCount);
+            AssemblyLibrary.Add(record);
+            AssemblyBootstrapSystem.TrackNewPrefab(prefab);
+        }
+
+        /// <summary>
+        /// Re-creates an assembly from the recipe stored in a save (designs, support spec, sign positions),
+        /// for cities shared from another PC. The prefab gets the same name, so the save's objects match it.
+        /// </summary>
+        public static IEnumerator Rebuild(AssemblyRecord record, Action<bool> onDone)
+        {
+            if (record.SupportSpec == null || record.SignCentres == null || record.Designs.Count == 0)
+            {
+                Mod.log.Warn($"{record.PrefabName}: no recipe in the save, cannot rebuild");
+                onDone(false);
+                yield break;
+            }
+            List<BakedFace> faces = null;
+            yield return BakeAll(record.Designs, f => faces = f);
+            if (faces == null || faces.Count != record.Centres.Length)
+            {
+                Mod.log.Warn($"{record.PrefabName}: could not render its signs ({SignBuilderRuntime.Baker.LastError})");
+                onDone(false);
+                yield break;
+            }
+            try
+            {
+                var support = GantryFactory.FromSpec(record.SupportSpec);
+                CreateAssets(record, support, faces);
+                UnityEngine.Object.Destroy(support);
+            }
+            catch (Exception e)
+            {
+                Mod.log.Error(e, $"Rebuilding {record.PrefabName} failed");
+                onDone(false);
+                yield break;
+            }
+            onDone(true);
         }
 
         /// <summary>

@@ -31,6 +31,32 @@ namespace SignBuilder.Assemblies
                 if (value != null && Designs.Count == 0) Designs.Add(value);
             }
         }
+        /// <summary>How to rebuild the support mesh (see <see cref="GantryFactory.FromSpec"/>).</summary>
+        public SupportSpec SupportSpec;
+        /// <summary>Sign panel centres in assembly space, x y z per sign.</summary>
+        public float[] SignCentres;
+
+        [JsonIgnore]
+        public UnityEngine.Vector3[] Centres
+        {
+            get
+            {
+                var result = new UnityEngine.Vector3[(SignCentres?.Length ?? 0) / 3];
+                for (var i = 0; i < result.Length; i++) result[i] = new UnityEngine.Vector3(SignCentres[i * 3], SignCentres[i * 3 + 1], SignCentres[i * 3 + 2]);
+                return result;
+            }
+        }
+
+        /// <summary>The part of the record that travels inside a save: everything needed to rebuild it.</summary>
+        public JObject ToPortable() => new JObject
+        {
+            ["Id"] = Id, ["Support"] = Support, ["Reverse"] = Reverse, ["Designs"] = new JArray(Designs),
+            ["SupportSpec"] = SupportSpec == null ? null : JObject.FromObject(SupportSpec), ["SignCentres"] = SignCentres == null ? null : new JArray(SignCentres),
+        };
+
+        public static AssemblyRecord FromPortable(JObject json) => json.ToObject<AssemblyRecord>();
+
+        // Local asset ids (this PC's cache database).
         public string GeometryId;
         public List<string> SurfaceIds = new();
         public float[] Bounds; // min xyz, max xyz in assembly-local space
