@@ -26,7 +26,7 @@ namespace SignBuilder.Core
         public const string MeshFolder = "Meshes";
         public const string SurfaceFolder = "Surfaces";
 
-        public static void Initialise(string modDir)
+        public static void Initialize(string modDir)
         {
             ModDir = modDir;
             Directory.CreateDirectory(DataDir);

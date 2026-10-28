@@ -69,6 +69,7 @@ namespace SignBuilder.Spike
             yield return Test("e2e.editposts", TestEditPosts(ui, tool));
             yield return Test("e2e.infopanel", TestInfoPanel(ui, tool));
             yield return Test("e2e.free", TestFreePlacement(tool));
+            yield return Test("e2e.standalone", TestStandalone(tool));
             yield return Test("e2e.templates", TestTemplates(ui));
             yield return Test("e2e.uipause", TestDesignerPause(ui));
             yield return Test("e2e.save", TestSaveForReload());
@@ -155,12 +156,12 @@ namespace SignBuilder.Spike
             var cases = new[] { Options("singleTruss", "single"), Options("curved", "cantilever"), Options("curved", "single") };
             for (var i = 0; i < spots.Count && i < cases.Length; i++)
             {
-                // A sign over the outermost lane: it must stay centred over it (overlapping the bend if needed).
+                // A sign over the outermost lane: it must stay centered over it (overlapping the bend if needed).
                 cases[i].Signs.Add(new SignSlot { Mode = "lane", Lane = 0, FromRight = true });
                 yield return PlaceAndWait(() => tool.PlaceForTest(spots[i].edge, spots[i].t, new List<JObject> { Template("guide-exit-only") }, cases[i]));
                 var r = SignPlacementToolSystem.LastPlaced;
                 var snap = r.Context.ToSnap();
-                var placement = AssemblyBuilder.Layout(snap, new List<Vector2> { new Vector2(r.Centres.Length > 0 ? 3f : 3f, 2f) }, r.Context.Options);
+                var placement = AssemblyBuilder.Layout(snap, new List<Vector2> { new Vector2(r.Centers.Length > 0 ? 3f : 3f, 2f) }, r.Context.Options);
                 UnityEngine.Object.Destroy(placement.Support);
                 SpikeReport.Set($"e2e.elevated.{cases[i].Type}-{cases[i].Span}", $"{Describe(r)} lanes=[{string.Join(" ", placement.LaneXs.Select(x => x.ToString("F1")))}]");
                 yield return Shoot(r, $"e2e_elevated_{cases[i].Type}_{cases[i].Span}.png", 35f, 40f);
@@ -210,6 +211,13 @@ namespace SignBuilder.Spike
                 tool.Arrange(new JObject { ["op"] = "moveSign", ["index"] = 1, ["x"] = lanes[^1] + 0.3f, ["snap"] = true }.ToString());
                 tool.Arrange(new JObject { ["op"] = "moveSign", ["index"] = 0, ["x"] = lanes[0] - 0.2f, ["snap"] = true }.ToString());
             }
+            if (lanes.Length == 3)
+            {
+                tool.Arrange(new JObject { ["op"] = "moveSign", ["index"] = 1, ["x"] = lanes[1], ["snap"] = true }.ToString());
+                yield return null;
+                SpikeReport.Set("e2e.arrange.middleLane", Arrangement(ui));
+                tool.Arrange(new JObject { ["op"] = "moveSign", ["index"] = 1, ["x"] = lanes[^1], ["snap"] = true }.ToString());
+            }
             tool.Arrange(new JObject { ["op"] = "addSign", ["design"] = Template("services-blue") }.ToString());
             yield return WaitArrange(tool, ui);
             yield return new WaitForSecondsRealtime(0.5f);
@@ -225,7 +233,20 @@ namespace SignBuilder.Spike
             SpikeReport.Screenshot("e2e_arrange_left.png");
             yield return new WaitForSecondsRealtime(0.5f);
             tool.Arrange("{\"op\":\"span\",\"value\":\"single\"}");
+            tool.Arrange("{\"op\":\"side\",\"value\":\"right\"}");
             tool.Arrange("{\"op\":\"removeSign\",\"index\":2}");
+            // Full span across every parallel carriageway, raised 1 m, with a sign on the back for the other direction.
+            tool.Arrange("{\"op\":\"span\",\"value\":\"full\"}");
+            tool.Arrange("{\"op\":\"lift\",\"value\":1}");
+            tool.Arrange("{\"op\":\"view\",\"value\":\"back\"}");
+            tool.Arrange(new JObject { ["op"] = "addSign", ["design"] = Template("guide-exit-only") }.ToString());
+            yield return WaitArrange(tool, ui);
+            yield return new WaitForSecondsRealtime(1f);
+            SpikeReport.Set("e2e.arrange.back", Arrangement(ui));
+            SpikeReport.Set("e2e.arrange.carriageways", new RoadProbe(World.DefaultGameObjectInjectionWorld.EntityManager, m_Runtime.PrefabSystem).SnapAt(spot.edge, t).Carriageways.Count);
+            SpikeReport.Screenshot("e2e_arrange_back.png");
+            yield return new WaitForSecondsRealtime(0.5f);
+            tool.Arrange("{\"op\":\"view\",\"value\":\"front\"}");
             yield return new WaitForSecondsRealtime(1f);
 
             var before = SignPlacementToolSystem.LastPlaced;
@@ -252,7 +273,8 @@ namespace SignBuilder.Spike
             var pos = em.GetComponentData<Game.Objects.Transform>(entity).m_Position;
             tool.EditPlaced(entity);
             yield return WaitArrange(tool, ui);
-            SpikeReport.Set("e2e.editgantry.open", $"mode={ui.ToolMode} replacing={tool.IsReplacing} signs={tool.SignCount} {Arrangement(ui)}");
+            yield return new WaitForSecondsRealtime(1f);
+            SpikeReport.Set("e2e.editgantry.open", $"mode={ui.ToolMode} replacing={tool.IsReplacing} hidden={tool.ReplacingHidden} signs={tool.SignCount} {Arrangement(ui)}");
             SpikeReport.Screenshot("e2e_editgantry.png");
             yield return new WaitForSecondsRealtime(0.5f);
             var edited = (JObject)target.record.Designs[0].DeepClone();
@@ -268,6 +290,8 @@ namespace SignBuilder.Spike
             var newEntity = saved == before ? Entity.Null : InstancesOf(saved.PrefabName).FirstOrDefault();
             SpikeReport.Set("e2e.editgantry.saved", saved == before ? "FAILED: " + ui.Status
                 : $"old remaining={InstancesOf(target.record.PrefabName).Count} moved={(newEntity == Entity.Null ? -1 : math.distance(em.GetComponentData<Game.Objects.Transform>(newEntity).m_Position, pos)):F2}m mode={ui.ToolMode}");
+            yield return new WaitForSecondsRealtime(2f);
+            SpikeReport.Set("e2e.editgantry.cleanup", $"old record kept={AssemblyLibrary.FromPrefabName(target.record.PrefabName) != null}");
             if (saved != before) yield return Shoot(saved, "e2e_editgantry_saved.png", 180f, 40f);
         }
 
@@ -351,6 +375,20 @@ namespace SignBuilder.Spike
             SpikeReport.Set("e2e.free.ground", Describe(SignPlacementToolSystem.LastPlaced));
         }
 
+        /// <summary>Standalone signs: an exit-tab sign on two posts (posts stop under the tab edge) and a short sign at least a lane wide.</summary>
+        private IEnumerator TestStandalone(SignPlacementToolSystem tool)
+        {
+            var spot = m_Placed.FirstOrDefault(p => p.support == "straight-full");
+            if (spot.record == null) yield break;
+            var t = math.clamp(spot.t + 0.3f, 0.05f, 0.95f);
+            yield return PlaceAndWait(() => tool.PlaceForTest(spot.edge, t, new List<JObject> { Template("guide-exit-tab") }, Options("ground", "single")));
+            SpikeReport.Set("e2e.standalone.tab", Describe(SignPlacementToolSystem.LastPlaced));
+            yield return Shoot(SignPlacementToolSystem.LastPlaced, "e2e_standalone_tab.png", 25f, 22f);
+            var small = new JObject { ["scheme"] = "green", ["minWidth"] = 213, ["items"] = new JArray(new JObject { ["type"] = "text", ["text"] = "EXIT", ["height"] = 16 }) };
+            yield return PlaceAndWait(() => tool.PlaceForTest(spot.edge, math.clamp(t - 0.15f, 0.05f, 0.95f), new List<JObject> { small }, Options("ground", "single")));
+            SpikeReport.Set("e2e.standalone.minWidth", Describe(SignPlacementToolSystem.LastPlaced));
+        }
+
         /// <summary>Templates on disk: save, rename, hide a built-in, delete.</summary>
         private IEnumerator TestTemplates(SignBuilderUISystem ui)
         {
@@ -431,7 +469,7 @@ namespace SignBuilder.Spike
         }
 
         private static string Describe(AssemblyRecord r) =>
-            $"spec={r.SupportSpec?.Kind}{(r.SupportSpec?.Mirror == true ? "(mirrored)" : "")}({string.Join(",", r.SupportSpec?.Args?.Select(a => a.ToString("F2")) ?? Array.Empty<string>())}) centres=[{string.Join(" ", r.Centres.Select(c => $"({c.x:F2},{c.y:F2})"))}]";
+            $"spec={r.SupportSpec?.Kind}{(r.SupportSpec?.Mirror == true ? "(mirrored)" : "")}({string.Join(",", r.SupportSpec?.Args?.Select(a => a.ToString("F2")) ?? Array.Empty<string>())}) centers=[{string.Join(" ", r.Centers.Select(c => $"({c.x:F2},{c.y:F2})"))}]";
 
         private static void LookAt(Entity entity, float distance = 55f)
         {

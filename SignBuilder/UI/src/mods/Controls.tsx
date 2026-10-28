@@ -1,6 +1,6 @@
 import { getModule } from "cs2/modding";
 import { useEffect, useRef } from "react";
-import { SCHEME_COLOURS } from "./Icons";
+import { SCHEME_COLORS } from "./Icons";
 import styles from "./SignEditor.module.scss";
 
 export type Option = { value: string; label?: string; icon?: any; title?: string; style?: any };
@@ -82,7 +82,7 @@ const hexToColor = (hex: string) => {
 const colorToHex = (c: { r: number; g: number; b: number }) =>
   "#" + [c.r, c.g, c.b].map((v) => Math.round(Math.max(0, Math.min(1, v)) * 255).toString(16).padStart(2, "0")).join("");
 
-/** A colour value edited with the game's colour field (wheel + hex), or a hex box if it is unavailable. */
+/** A color value edited with the game's color field (wheel + hex), or a hex box if it is unavailable. */
 export const ColorBox = (props: { value: string; onChange: (hex: string) => void }) =>
   VanillaColorField ? (
     <VanillaColorField value={hexToColor(props.value)} colorWheel hexInput onChange={(c: any) => props.onChange(colorToHex(c))} />
@@ -90,14 +90,14 @@ export const ColorBox = (props: { value: string; onChange: (hex: string) => void
     <TextBox value={props.value} onChange={props.onChange} />
   );
 
-/** Standard sign colours as swatches, plus Custom (any background and legend colour). */
+/** Standard sign colors as swatches, plus Custom (any background and legend color). */
 export const Swatches = (props: { scheme: string; custom: boolean; onScheme: (s: string) => void; onCustom: () => void }) => (
   <div className={styles.choices}>
     {["green", "blue", "brown", "yellow", "white"].map((s) => (
       <div key={s} title={s} className={!props.custom && s === props.scheme ? styles.swatchOn : styles.swatch}
-        style={{ backgroundColor: SCHEME_COLOURS[s] }} onClick={() => props.onScheme(s)} />
+        style={{ backgroundColor: SCHEME_COLORS[s] }} onClick={() => props.onScheme(s)} />
     ))}
-    <div title="Custom colours" className={props.custom ? styles.swatchOn : styles.swatch} onClick={props.onCustom}
+    <div title="Custom colors" className={props.custom ? styles.swatchOn : styles.swatch} onClick={props.onCustom}
       style={{ backgroundImage: "linear-gradient(90deg, #e53935, #fdd835, #43a047, #1e88e5, #8e24aa)" }} />
   </div>
 );

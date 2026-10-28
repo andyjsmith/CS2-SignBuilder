@@ -1,4 +1,4 @@
-import { Button, Panel } from "cs2/ui";
+import { Panel } from "cs2/ui";
 import { useState } from "react";
 import { ArrowIcon, AlignIcon, ExitOnlyIcon, ExitTabIcon, ShieldIcon } from "./Icons";
 import { Choice, ColorBox, Field, NumberBox, Option, Swatches, TextBox } from "./Controls";
@@ -7,6 +7,10 @@ import { PartsList } from "./PartsList";
 import { SignPreview } from "./SignPreview";
 import { Template, TemplateLibrary } from "./TemplateLibrary";
 import styles from "./SignEditor.module.scss";
+
+/** A 4 m lane at the default sign size (70% of full size, shown as 100%), less a little clearance, in sign inches. */
+const LANE_INCHES = Math.round((4 / 0.0254 / 0.7) * 0.92);
+const widthMode = (d: Design) => (!d.minWidth ? "auto" : d.minWidth === LANE_INCHES ? "lane" : "custom");
 
 export const BLANK: Design = { scheme: "green", items: [{ type: "text", text: "Destination", height: 16 }] };
 
@@ -22,8 +26,16 @@ const NETWORKS: Option[] = [
 ];
 const ALIGN: Option[] = ["start", "center", "end"].map((a) => ({ value: a, icon: <AlignIcon align={a} />, title: a }));
 
-function ItemProperties(props: { item: Item; onChange: (patch: Partial<Item>) => void; focusToken: number }) {
+const PLACE: Option[] = [{ value: "", label: "Sign default" }, ...["start", "center", "end"].map((a) => ({ value: a, icon: <AlignIcon align={a} />, title: a }))];
+
+/** Alignment of one part within its column, overriding the sign's "Align lines". */
+const PlaceField = (props: { item: Item; onChange: (patch: Partial<Item>) => void }) => (
+  <Field label="Align this part"><Choice options={PLACE} value={props.item.place ?? ""} onChange={(place) => props.onChange({ place: place || undefined })} /></Field>
+);
+
+function ItemProperties(props: { item: Item; onChange: (patch: Partial<Item>) => void; focusToken: number; inRow: boolean }) {
   const { item, onChange } = props;
+  const place = props.inRow ? null : <PlaceField item={item} onChange={onChange} />;
   switch (item.type) {
     case "text":
       return (
@@ -31,6 +43,7 @@ function ItemProperties(props: { item: Item; onChange: (patch: Partial<Item>) =>
           <Field label="Text"><TextBox value={item.text ?? ""} focusToken={props.focusToken} onChange={(text) => onChange({ text })} /></Field>
           <Field label="Letter height"><NumberBox value={item.height ?? 16} onChange={(height) => onChange({ height })} /></Field>
           <Field label="Font"><Choice options={FONTS} value={item.font ?? "RG2014EM"} onChange={(font) => onChange({ font })} /></Field>
+          {place}
         </>
       );
     case "shield":
@@ -39,6 +52,7 @@ function ItemProperties(props: { item: Item; onChange: (patch: Partial<Item>) =>
           <Field label="Route"><Choice options={NETWORKS} value={item.network} onChange={(network) => onChange({ network })} /></Field>
           <Field label="Number"><TextBox value={String(item.number ?? "")} focusToken={props.focusToken} onChange={(number) => onChange({ number })} /></Field>
           <Field label="Size"><NumberBox value={item.height ?? 36} step={6} onChange={(height) => onChange({ height })} /></Field>
+          {place}
         </>
       );
     case "arrow":
@@ -49,12 +63,18 @@ function ItemProperties(props: { item: Item; onChange: (patch: Partial<Item>) =>
               value={item.direction ?? "up"} onChange={(direction) => onChange({ direction })} />
           </Field>
           <Field label="Size"><NumberBox value={item.height ?? 24} step={2} onChange={(height) => onChange({ height })} /></Field>
+          {place}
         </>
       );
     case "row":
-      return <Field label="Align"><Choice options={ALIGN} value={item.align ?? "center"} onChange={(align) => onChange({ align })} /></Field>;
+      return (
+        <>
+          <Field label="Align within the row"><Choice options={ALIGN} value={item.align ?? "center"} onChange={(align) => onChange({ align })} /></Field>
+          {place}
+        </>
+      );
     default:
-      return null;
+      return place;
   }
 }
 
@@ -96,20 +116,20 @@ export const Designer = (props: {
             onPick={(t) => { setDesign(clone(t.design)); setSelected(null); }} />
         </div>
 
-        <div className={styles.centre}>
+        <div className={styles.center}>
           <div className={styles.preview}>
             <SignPreview design={design} selected={selected}
               onSelect={(p) => { setSelected(p); if (p) setFocusToken(focusToken + 1); }} maxWidth={560} maxHeight={300} />
           </div>
           <div className={styles.hint}>Click any part of the sign to edit it.</div>
           <div className={styles.signOptions}>
-            <Field label="Colour">
+            <Field label="Color">
               <Swatches scheme={design.scheme ?? "green"} custom={custom}
                 onScheme={(scheme) => { const d: Design = { ...design, scheme }; delete d.background; delete d.foreground; setDesign(d); }}
                 onCustom={() => setDesign({ ...design, background: design.background ?? "#2d6a4f", foreground: design.foreground ?? "#ffffff" })} />
             </Field>
             {custom && (
-              <div className={styles.customColours}>
+              <div className={styles.customColors}>
                 <Field label="Background"><ColorBox value={design.background} onChange={(background) => setDesign({ ...design, background })} /></Field>
                 <Field label="Legend"><ColorBox value={design.foreground ?? "#ffffff"} onChange={(foreground) => setDesign({ ...design, foreground })} /></Field>
               </div>
@@ -124,11 +144,21 @@ export const Designer = (props: {
                 value={design.bottomBar ? String(design.bottomBar.arrows ?? 1) : "0"}
                 onChange={(v) => setDesign({ ...design, bottomBar: v === "0" ? null : { type: "exitOnly", arrows: Number(v), height: 15 } })} />
             </Field>
+            <Field label="Width">
+              <div className={styles.inlineRow}>
+                <Choice options={[{ value: "auto", label: "Fit text" }, { value: "lane", label: "At least a lane", title: "Never narrower than a 4 m lane at 100% size" },
+                  { value: "custom", label: "At least" }]} value={widthMode(design)}
+                  onChange={(v) => setDesign({ ...design, minWidth: v === "auto" ? undefined : v === "lane" ? LANE_INCHES : design.minWidth && design.minWidth !== LANE_INCHES ? design.minWidth : 120 })} />
+                {widthMode(design) === "custom" && (
+                  <NumberBox value={design.minWidth} step={12} onChange={(minWidth) => setDesign({ ...design, minWidth })} />
+                )}
+              </div>
+            </Field>
             <Field label="Align lines"><Choice options={ALIGN} value={design.align ?? "start"} onChange={(align) => setDesign({ ...design, align })} /></Field>
           </div>
           <div className={styles.actions}>
             {props.actions.map((a, i) => a.primary ? (
-              <div key={a.label} style={{ marginRight: "10rem" }}><Button variant="primary" onSelect={a.onSelect}>{a.label}</Button></div>
+              <div key={a.label} className={styles.primaryButton} title={a.title} onClick={a.onSelect}>{a.label}</div>
             ) : (
               <div key={a.label} className={styles.chip} title={a.title} style={{ alignSelf: "center", marginLeft: i === 0 ? "0rem" : "6rem" }} onClick={a.onSelect}>{a.label}</div>
             ))}
@@ -150,12 +180,16 @@ export const Designer = (props: {
               <Field label="Text">
                 <TextBox value={design.exitTab.text} focusToken={focusToken} onChange={(text) => setDesign({ ...design, exitTab: { ...design.exitTab!, text } })} />
               </Field>
+              <Field label="Letter height">
+                <NumberBox value={design.exitTab.height ?? 12} onChange={(height) => setDesign({ ...design, exitTab: { ...design.exitTab!, height } })} />
+              </Field>
             </>
           )}
           {item && (
             <>
               <div className={styles.heading}>{describe(item)}</div>
-              <ItemProperties item={item} onChange={update} focusToken={focusToken} />
+              <ItemProperties item={item} onChange={update} focusToken={focusToken}
+                inRow={selected!.includes(".") && getItem(design, selected!.split(".").slice(0, -1).join("."))?.type === "row"} />
               <div className={styles.palette}>
                 <div className={styles.chip} onClick={() => { setDesign(removeItem(design, selected!)); setSelected(null); }}>Delete part</div>
               </div>

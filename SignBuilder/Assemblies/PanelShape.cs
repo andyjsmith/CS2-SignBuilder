@@ -40,7 +40,7 @@ namespace SignBuilder.Assemblies
                 else bands.Add((y, y + 1, mask));
             }
 
-            // Fold thin bands (anti-aliased or rounded edges) into a neighbour, keeping the union of both.
+            // Fold thin bands (anti-aliased or rounded edges) into a neighbor, keeping the union of both.
             var minRows = Mathf.Max(2, Mathf.RoundToInt(h * kMinBand));
             bool merged;
             do
@@ -58,7 +58,7 @@ namespace SignBuilder.Assemblies
                     merged = true;
                     break;
                 }
-                // Neighbouring bands that now match become one.
+                // Neighboring bands that now match become one.
                 for (var i = bands.Count - 1; i > 0; i--)
                 {
                     if (!bands[i].mask.SequenceEqual(bands[i - 1].mask)) continue;

@@ -20,10 +20,18 @@ namespace SignBuilder.Spike
     {
         public struct LaneInfo
         {
-            public float Offset;     // metres to the right of the edge centre line (relative to edge tangent)
-            public int Direction;    // +1 = traffic along the edge tangent, -1 = against it
+            public float Offset;     // meters to the right of the clicked edge's center line (relative to its tangent)
+            public int Direction;    // +1 = traffic along the clicked edge's tangent, -1 = against it
             public float Width;
-            public bool OnPairedEdge;
+            public int Carriageway;  // index into Snap.Carriageways (0 = the clicked edge)
+        }
+
+        /// <summary>A road running alongside the clicked one (the clicked edge itself is number 0).</summary>
+        public struct Carriageway
+        {
+            public Entity Edge;
+            public float Offset;     // center, meters along Right
+            public float Width;
         }
 
         public sealed class Snap
@@ -31,30 +39,25 @@ namespace SignBuilder.Spike
             public Entity Edge;
             public string PrefabName;
             public float EdgeLength;
-            public float EdgeWidth;
             public float T;
             public float3 Point;
-            public float3 Tangent;        // flat, normalised
-            public float3 Right;          // flat, normalised, right of Tangent
-            public Entity PairedEdge;
-            public float PairedOffset;    // paired edge centre, metres along Right
-            public float PairedWidth;
+            public float3 Tangent;        // flat, normalized
+            public float3 Right;          // flat, normalized, right of Tangent
+            /// <summary>The clicked edge and every parallel road within reach (other carriageway, parallel roads).</summary>
+            public readonly List<Carriageway> Carriageways = new();
             public readonly List<LaneInfo> Lanes = new();
 
-            /// <summary>Lateral extent (min, max along Right) of all carriageways covered.</summary>
-            /// <summary>Set for snaps rebuilt from a stored context, which have no live paired edge entity.</summary>
-            public bool StoredPaired;
-            public bool IsPaired => StoredPaired || PairedEdge != Entity.Null;
+            public float EdgeWidth => Carriageways.Count > 0 ? Carriageways[0].Width : 0f;
 
-            public float2 Extent => !IsPaired
-                ? new float2(-EdgeWidth * 0.5f, EdgeWidth * 0.5f)
-                : new float2(math.min(-EdgeWidth * 0.5f, PairedOffset - PairedWidth * 0.5f), math.max(EdgeWidth * 0.5f, PairedOffset + PairedWidth * 0.5f));
+            /// <summary>Lateral extent (min, max along Right) of all carriageways.</summary>
+            public float2 Extent => Carriageways.Count == 0 ? float2.zero
+                : new float2(Carriageways.Min(c => c.Offset - c.Width * 0.5f), Carriageways.Max(c => c.Offset + c.Width * 0.5f));
 
-            /// <summary>Direction most lanes of the main edge flow (+1 along Tangent, -1 against).</summary>
-            public int MainDirection => Lanes.Where(l => !l.OnPairedEdge).Sum(l => l.Direction) >= 0 ? 1 : -1;
+            /// <summary>Direction most lanes of the clicked edge flow (+1 along Tangent, -1 against).</summary>
+            public int MainDirection => Lanes.Where(l => l.Carriageway == 0).Sum(l => l.Direction) >= 0 ? 1 : -1;
 
             public override string ToString() =>
-                $"{PrefabName} len={EdgeLength:F0} width={EdgeWidth:F1} t={T:F2} at {Point} tan={Tangent} paired={(PairedEdge != Entity.Null ? $"offset {PairedOffset:F1} width {PairedWidth:F1}" : "none")} extent={Extent}";
+                $"{PrefabName} len={EdgeLength:F0} width={EdgeWidth:F1} t={T:F2} at {Point} carriageways={Carriageways.Count} extent={Extent}";
         }
 
         private readonly EntityManager m_EM;
@@ -137,38 +140,39 @@ namespace SignBuilder.Spike
                 Edge = edge.Entity,
                 PrefabName = edge.Name,
                 EdgeLength = edge.Curve.m_Length,
-                EdgeWidth = edge.Width,
                 T = t,
                 Point = point,
                 Tangent = tangent,
                 Right = right,
             };
+            snap.Carriageways.Add(new Carriageway { Edge = edge.Entity, Offset = 0f, Width = edge.Width });
 
-            // Divided highway: nearest other road edge running parallel within 45 m.
-            var best = float.MaxValue;
+            // Every other road running parallel within reach: the other carriageway of a divided highway,
+            // collector-distributor roads, parallel ramps. One edge per lateral position.
             foreach (var other in all)
             {
                 if (other.Entity == edge.Entity) continue;
                 var d = MathUtils.Distance(other.Curve.m_Bezier.xz, point.xz, out var ot);
-                if (d > 45f || d >= best) continue;
+                if (d > kParallelReach) continue;
                 var otherTangent = MathUtils.Tangent(other.Curve.m_Bezier, ot);
                 otherTangent.y = 0;
                 if (math.abs(math.dot(math.normalizesafe(otherTangent), tangent)) < 0.95f) continue;
                 var otherPoint = MathUtils.Position(other.Curve.m_Bezier, ot);
                 var offset = math.dot(otherPoint - point, right);
                 if (math.abs(offset) < (edge.Width + other.Width) * 0.45f) continue; // same carriageway continuation
-                best = d;
-                snap.PairedEdge = other.Entity;
-                snap.PairedOffset = offset;
-                snap.PairedWidth = other.Width;
+                if (math.abs(otherPoint.y - point.y) > 4f) continue; // a road on another level
+                if (snap.Carriageways.Any(c => math.abs(c.Offset - offset) < 1.5f)) continue;
+                snap.Carriageways.Add(new Carriageway { Edge = other.Entity, Offset = offset, Width = other.Width });
             }
 
-            AddLanes(snap, edge.Entity, false);
-            if (snap.PairedEdge != Entity.Null) AddLanes(snap, snap.PairedEdge, true);
+            for (var i = 0; i < snap.Carriageways.Count; i++) AddLanes(snap, snap.Carriageways[i].Edge, i);
             return snap;
         }
 
-        private void AddLanes(Snap snap, Entity edge, bool paired)
+        /// <summary>How far to each side parallel roads count as part of the same crossing.</summary>
+        private const float kParallelReach = 45f;
+
+        private void AddLanes(Snap snap, Entity edge, int carriageway)
         {
             if (!m_EM.HasBuffer<Game.Net.SubLane>(edge)) return;
             var subLanes = m_EM.GetBuffer<Game.Net.SubLane>(edge, true);
@@ -192,7 +196,7 @@ namespace SignBuilder.Spike
                     Offset = offset,
                     Direction = direction,
                     Width = m_EM.HasComponent<NetLaneData>(prefab) ? m_EM.GetComponentData<NetLaneData>(prefab).m_Width : 0f,
-                    OnPairedEdge = paired,
+                    Carriageway = carriageway,
                 });
             }
             snap.Lanes.Sort((a, b) => a.Offset.CompareTo(b.Offset));

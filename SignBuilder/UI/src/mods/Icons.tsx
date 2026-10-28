@@ -17,7 +17,7 @@ export const ArrowIcon = (props: { direction: string; size?: number; color?: str
   );
 };
 
-/** Text-alignment icon: four lines aligned left, centre or right. */
+/** Text-alignment icon: four lines aligned left, center or right. */
 export const AlignIcon = (props: { align: string }) => {
   const widths = [16, 10, 14, 8];
   const x = (w: number) => (props.align === "end" ? 18 - w : props.align === "center" ? (18 - w) / 2 : 0) + 1;
@@ -53,7 +53,7 @@ export const ShieldIcon = (props: { network: string }) => {
   return <div style={{ width: "24rem", height: "18rem", borderRadius: "50%", backgroundColor: "#ffffff", border: "2rem solid #000000" }} />;
 };
 
-/** Sign colour swatch. */
-export const SCHEME_COLOURS: Record<string, string> = {
+/** Sign color swatch. */
+export const SCHEME_COLORS: Record<string, string> = {
   green: "#006b45", blue: "#1f4ea1", brown: "#6b3f1d", yellow: "#ffcc00", white: "#ffffff", black: "#000000",
 };

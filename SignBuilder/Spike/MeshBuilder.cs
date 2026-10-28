@@ -5,7 +5,7 @@ namespace SignBuilder.Spike
 {
     /// <summary>
     /// Minimal mesh builder for boxes and tubes. Every face gets flat/smooth normals and UVs
-    /// measured in metres (times <see cref="UvPerMetre"/>), so a tiling material keeps the same
+    /// measured in meters (times <see cref="UvPerMeter"/>), so a tiling material keeps the same
     /// texel density on a 9 m post and a 0.1 m lacing bar instead of stretching.
     /// </summary>
     public sealed class MeshBuilder
@@ -16,8 +16,8 @@ namespace SignBuilder.Spike
         private readonly List<List<int>> m_Submeshes = new() { new List<int>() };
         private List<int> m_Triangles;
 
-        /// <summary>Texture repeats per metre for metre-mapped faces. 0 = stretch 0..1 over each face (old behaviour).</summary>
-        public float UvPerMetre { get; set; } = 0.5f;
+        /// <summary>Texture repeats per meter for meter-mapped faces. 0 = stretch 0..1 over each face (old behavior).</summary>
+        public float UvPerMeter { get; set; } = 0.5f;
 
         public MeshBuilder() => m_Triangles = m_Submeshes[0];
 
@@ -64,7 +64,7 @@ namespace SignBuilder.Spike
             var side = Vector3.Cross(dir, Mathf.Abs(dir.y) > 0.9f ? Vector3.right : Vector3.up).normalized;
             var up = Vector3.Cross(side, dir);
             var circumference = 2 * Mathf.PI * radius;
-            var uvScale = UvPerMetre > 0 ? UvPerMetre : 1f / Mathf.Max(circumference, length);
+            var uvScale = UvPerMeter > 0 ? UvPerMeter : 1f / Mathf.Max(circumference, length);
 
             var start = m_Vertices.Count;
             for (var i = 0; i <= segments; i++)
@@ -92,7 +92,7 @@ namespace SignBuilder.Spike
         {
             if (path.Count < 2) return;
             var circumference = 2 * Mathf.PI * radius;
-            var uvScale = UvPerMetre > 0 ? UvPerMetre : 1f;
+            var uvScale = UvPerMeter > 0 ? UvPerMeter : 1f;
             var tangent0 = (path[1] - path[0]).normalized;
             var side = Vector3.Cross(tangent0, Mathf.Abs(tangent0.y) > 0.9f ? Vector3.forward : Vector3.up).normalized;
             var start = m_Vertices.Count;
@@ -164,7 +164,7 @@ namespace SignBuilder.Spike
 
             Rect uv;
             if (uvRect.HasValue) uv = uvRect.Value;
-            else if (UvPerMetre > 0) uv = new Rect(0, 0, right.magnitude * UvPerMetre, up.magnitude * UvPerMetre);
+            else if (UvPerMeter > 0) uv = new Rect(0, 0, right.magnitude * UvPerMeter, up.magnitude * UvPerMeter);
             else uv = new Rect(0, 0, 1, 1);
             m_Uvs.Add(new Vector2(uv.xMin, uv.yMin));
             m_Uvs.Add(new Vector2(uv.xMax, uv.yMin));

@@ -1,131 +1,94 @@
-﻿using Colossal;
+﻿using System.Collections.Generic;
+using System.IO;
+using Colossal;
 using Colossal.IO.AssetDatabase;
 using Game.Modding;
 using Game.Settings;
-using Game.UI;
-using Game.UI.Widgets;
-using System.Collections.Generic;
 
 namespace SignBuilder
 {
+    /// <summary>Sign Builder's page in the game's Options.</summary>
     [FileLocation(nameof(SignBuilder))]
-    [SettingsUIGroupOrder(kButtonGroup, kToggleGroup, kSliderGroup, kDropdownGroup)]
-    [SettingsUIShowGroupName(kButtonGroup, kToggleGroup, kSliderGroup, kDropdownGroup)]
+    [SettingsUIGroupOrder(kMaintenanceGroup, kFoldersGroup)]
+    [SettingsUIShowGroupName(kMaintenanceGroup, kFoldersGroup)]
     public class Setting : ModSetting
     {
         public const string kSection = "Main";
-
-        public const string kButtonGroup = "Button";
-        public const string kToggleGroup = "Toggle";
-        public const string kSliderGroup = "Slider";
-        public const string kDropdownGroup = "Dropdown";
+        public const string kMaintenanceGroup = "Maintenance";
+        public const string kFoldersGroup = "Folders";
 
         public Setting(IMod mod) : base(mod)
         {
-
         }
 
-        [SettingsUISection(kSection, kButtonGroup)]
-        public bool Button { set { Mod.log.Info("Button clicked"); } }
-
+        /// <summary>Deletes sign structures not used in the open city (their meshes, materials and library entries).</summary>
         [SettingsUIButton]
         [SettingsUIConfirmation]
-        [SettingsUISection(kSection, kButtonGroup)]
-        public bool ButtonWithConfirmation { set { Mod.log.Info("ButtonWithConfirmation clicked"); } }
-
-        [SettingsUISection(kSection, kToggleGroup)]
-        public bool Toggle { get; set; }
-
-        [SettingsUISlider(min = 0, max = 100, step = 1, scalarMultiplier = 1, unit = Unit.kDataMegabytes)]
-        [SettingsUISection(kSection, kSliderGroup)]
-        public int IntSlider { get; set; }
-
-        [SettingsUIDropdown(typeof(Setting), nameof(GetIntDropdownItems))]
-        [SettingsUISection(kSection, kDropdownGroup)]
-        public int IntDropdown { get; set; }
-
-        [SettingsUISection(kSection, kDropdownGroup)]
-        public SomeEnum EnumDropdown { get; set; } = SomeEnum.Value1;
-
-
-
-        public DropdownItem<int>[] GetIntDropdownItems()
+        [SettingsUISection(kSection, kMaintenanceGroup)]
+        public bool CleanUpUnused
         {
-            var items = new List<DropdownItem<int>>();
+            set => Assemblies.AssemblyCleanup.RemoveUnusedInCity();
+        }
 
-            for (var i = 0; i < 3; i += 1)
-            {
-                items.Add(new DropdownItem<int>()
-                {
-                    value = i,
-                    displayName = i.ToString(),
-                });
-            }
+        [SettingsUIButton]
+        [SettingsUISection(kSection, kFoldersGroup)]
+        public bool OpenTemplatesFolder
+        {
+            set => OpenFolder(Systems.SignBuilderUISystem.UserTemplatesDir);
+        }
 
-            return items.ToArray();
+        [SettingsUIButton]
+        [SettingsUISection(kSection, kFoldersGroup)]
+        public bool OpenThemesFolder
+        {
+            set => OpenFolder(Core.Themes.UserThemesDir);
+        }
+
+        public static void OpenFolder(string dir)
+        {
+            Directory.CreateDirectory(dir);
+            UnityEngine.Application.OpenURL("file:///" + dir.Replace('\\', '/'));
         }
 
         public override void SetDefaults()
         {
-            throw new System.NotImplementedException();
-        }
-
-        public enum SomeEnum
-        {
-            Value1,
-            Value2,
-            Value3,
         }
     }
 
     public class LocaleEN : IDictionarySource
     {
         private readonly Setting m_Setting;
+
         public LocaleEN(Setting setting)
         {
             m_Setting = setting;
         }
+
         public IEnumerable<KeyValuePair<string, string>> ReadEntries(IList<IDictionaryEntryError> errors, Dictionary<string, int> indexCounts)
         {
             return new Dictionary<string, string>
             {
                 { m_Setting.GetSettingsLocaleID(), "Sign Builder" },
                 { m_Setting.GetOptionTabLocaleID(Setting.kSection), "Main" },
+                { m_Setting.GetOptionGroupLocaleID(Setting.kMaintenanceGroup), "Maintenance" },
+                { m_Setting.GetOptionGroupLocaleID(Setting.kFoldersGroup), "Folders" },
 
-                { m_Setting.GetOptionGroupLocaleID(Setting.kButtonGroup), "Buttons" },
-                { m_Setting.GetOptionGroupLocaleID(Setting.kToggleGroup), "Toggle" },
-                { m_Setting.GetOptionGroupLocaleID(Setting.kSliderGroup), "Sliders" },
-                { m_Setting.GetOptionGroupLocaleID(Setting.kDropdownGroup), "Dropdowns" },
+                { m_Setting.GetOptionLabelLocaleID(nameof(Setting.CleanUpUnused)), "Delete unused sign structures" },
+                { m_Setting.GetOptionDescLocaleID(nameof(Setting.CleanUpUnused)),
+                    "Deletes the generated meshes and materials of sign structures that are not placed in the open city. " +
+                    "Other cities still have their signs: they are rebuilt from the save when that city is loaded." },
+                { m_Setting.GetOptionWarningLocaleID(nameof(Setting.CleanUpUnused)),
+                    "Delete every sign structure that is not used in this city? Other saved cities rebuild theirs when loaded." },
 
-                { m_Setting.GetOptionLabelLocaleID(nameof(Setting.Button)), "Button" },
-                { m_Setting.GetOptionDescLocaleID(nameof(Setting.Button)), $"Simple single button. It should be bool property with only setter or use [{nameof(SettingsUIButtonAttribute)}] to make button from bool property with setter and getter" },
-
-                { m_Setting.GetOptionLabelLocaleID(nameof(Setting.ButtonWithConfirmation)), "Button with confirmation" },
-                { m_Setting.GetOptionDescLocaleID(nameof(Setting.ButtonWithConfirmation)), $"Button can show confirmation message. Use [{nameof(SettingsUIConfirmationAttribute)}]" },
-                { m_Setting.GetOptionWarningLocaleID(nameof(Setting.ButtonWithConfirmation)), "is it confirmation text which you want to show here?" },
-
-                { m_Setting.GetOptionLabelLocaleID(nameof(Setting.Toggle)), "Toggle" },
-                { m_Setting.GetOptionDescLocaleID(nameof(Setting.Toggle)), $"Use bool property with setter and getter to get toggable option" },
-
-                { m_Setting.GetOptionLabelLocaleID(nameof(Setting.IntSlider)), "Int slider" },
-                { m_Setting.GetOptionDescLocaleID(nameof(Setting.IntSlider)), $"Use int property with getter and setter and [{nameof(SettingsUISliderAttribute)}] to get int slider" },
-
-                { m_Setting.GetOptionLabelLocaleID(nameof(Setting.IntDropdown)), "Int dropdown" },
-                { m_Setting.GetOptionDescLocaleID(nameof(Setting.IntDropdown)), $"Use int property with getter and setter and [{nameof(SettingsUIDropdownAttribute)}(typeof(SomeType), nameof(SomeMethod))] to get int dropdown: Method must be static or instance of your setting class with 0 parameters and returns {typeof(DropdownItem<int>).Name}" },
-
-                { m_Setting.GetOptionLabelLocaleID(nameof(Setting.EnumDropdown)), "Simple enum dropdown" },
-                { m_Setting.GetOptionDescLocaleID(nameof(Setting.EnumDropdown)), $"Use any enum property with getter and setter to get enum dropdown" },
-
-                { m_Setting.GetEnumValueLocaleID(Setting.SomeEnum.Value1), "Value 1" },
-                { m_Setting.GetEnumValueLocaleID(Setting.SomeEnum.Value2), "Value 2" },
-                { m_Setting.GetEnumValueLocaleID(Setting.SomeEnum.Value3), "Value 3" },
-
+                { m_Setting.GetOptionLabelLocaleID(nameof(Setting.OpenTemplatesFolder)), "Open templates folder" },
+                { m_Setting.GetOptionDescLocaleID(nameof(Setting.OpenTemplatesFolder)), "Your saved sign templates, one JSON file each. Share them by copying the files." },
+                { m_Setting.GetOptionLabelLocaleID(nameof(Setting.OpenThemesFolder)), "Open themes folder" },
+                { m_Setting.GetOptionDescLocaleID(nameof(Setting.OpenThemesFolder)), "Sign themes (countries or styles), one folder each with theme.json, fonts, shields and templates." },
             };
         }
 
         public void Unload()
         {
-
         }
     }
 }

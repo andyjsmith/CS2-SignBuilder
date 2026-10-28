@@ -17,7 +17,7 @@ export const PlacementBar = (props: { status: string; onBack: () => void; onClos
   );
   const PanelAny: any = Panel;
   return (
-    <PanelAny draggable initialPosition={{ x: 0.5, y: 0.05 }} header={info.posts ? "Place roadside sign" : "Place gantry"} className={styles.compact} onClose={props.onClose}>
+    <PanelAny draggable initialPosition={{ x: 0.5, y: 0.05 }} header={info.posts ? "Place standalone sign" : "Place gantry"} className={styles.compact} onClose={props.onClose}>
       <div className={styles.compactBody}>
         <div className={styles.status}>{props.status}</div>
         {info.free && <div className={styles.hint}>Right-drag to rotate, Page Up / Page Down to raise and lower.</div>}

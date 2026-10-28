@@ -9,7 +9,7 @@
 // out at the top-left of the page on a transparent background; the C# side measures its pixel
 // bounding box to learn the physical size, so no data needs to flow back to C#.
 //
-// Roadgeek 2014 fonts are normalised to a cap height of 1000 units in a 1750-unit em, so a CSS
+// Roadgeek 2014 fonts are normalized to a cap height of 1000 units in a 1750-unit em, so a CSS
 // font-size of 1.75 x the letter height gives exact MUTCD capital heights.
 
 (function () {
@@ -98,7 +98,7 @@
   }
 
   var SHIELDS = {
-    // network: image, aspect (w/h), number colour, number height as fraction of shield height, number top
+    // network: image, aspect (w/h), number color, number height as fraction of shield height, number top
     I: { img: "shields/interstate.svg", aspect: 1.0, color: "#ffffff", num: 0.40, top: 0.36, font: "RG2014D" },
     US: { img: "shields/us_route.svg", aspect: 1.0, color: "#000000", num: 0.45, top: 0.27, font: "RG2014D" },
     STATE: { circle: true, aspect: 1.0, color: "#000000", num: 0.45, top: 0.27, font: "RG2014D" },
@@ -184,8 +184,10 @@
     items.forEach(function (child, i) {
       var c = renderItem(child, ctx, path == null ? null : (path === "" ? String(i) : path + "." + i));
       if (!c) return;
+      // A part in a column can override the column's alignment ("place": start, center or end).
+      if (!horizontal && child.place) c.style.alignSelf = { start: "flex-start", center: "center", end: "flex-end" }[child.place] || "auto";
       if (i > 0) {
-        // Gap between neighbours, scaled from the larger legend height of the pair.
+        // Gap between neighbors, scaled from the larger legend height of the pair.
         var ref = Math.max(spacingHeight(items[i - 1]), spacingHeight(child));
         var gap = child.gapBefore != null ? child.gapBefore
           : item.gap != null ? item.gap
@@ -240,7 +242,7 @@
   }
 
   function renderSign(doc) {
-    // Custom colours ("background" / "foreground" as CSS colours) override the scheme.
+    // Custom colors ("background" / "foreground" as CSS colors) override the scheme.
     var base = scheme(doc.scheme);
     var s = { bg: doc.background || base.bg, fg: doc.foreground || base.fg };
     var border = doc.border != null ? doc.border : DEFAULTS.border;
@@ -254,7 +256,8 @@
     var sign = el("div", "sb-sign");
 
     if (tab) {
-      var th = tab.height || 15;
+      // MUTCD exit plaques use 12" capitals on most guide signs (15" on the largest freeway signs).
+      var th = tab.height || 12;
       var tabRow = el("div", "sb-tab-row", { justifyContent: { left: "flex-start", center: "center", right: "flex-end" }[tabSide] });
       var tabBox = el("div", "sb-tab", {
         backgroundColor: s.bg, padding: px(border) + " " + px(border) + " 0px " + px(border),

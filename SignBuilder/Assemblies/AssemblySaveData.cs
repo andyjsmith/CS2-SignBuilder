@@ -184,7 +184,7 @@ namespace SignBuilder.Assemblies
                     s_Unresolved[record.PrefabName] = record;
                 }
             }
-            // Let the new prefabs initialise before spawning their objects.
+            // Let the new prefabs initialize before spawning their objects.
             for (var i = 0; i < 10; i++) yield return null;
             var runtime = new RuntimePrefabs();
             foreach (var record in built)

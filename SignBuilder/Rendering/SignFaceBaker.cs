@@ -93,7 +93,7 @@ namespace SignBuilder.Rendering
                 yield break;
             }
 
-            if (m_View == null) yield return Initialise();
+            if (m_View == null) yield return Initialize();
             if (!m_Loaded)
             {
                 onDone(null);
@@ -165,7 +165,7 @@ namespace SignBuilder.Rendering
             onDone(null);
         }
 
-        private IEnumerator Initialise()
+        private IEnumerator Initialize()
         {
             m_UISystem = GameManager.instance.userInterface.view.uiSystem;
             m_UISystem.AddHostLocation(kHost, m_ResourcesDir, shouldWatch: false);

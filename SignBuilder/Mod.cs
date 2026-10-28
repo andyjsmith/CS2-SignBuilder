@@ -35,7 +35,7 @@ namespace SignBuilder
             if (GameManager.instance.modManager.TryGetExecutableAsset(this, out var asset))
             {
                 log.Info($"Current mod asset at {asset.path}");
-                Core.SignBuilderRuntime.Initialise(System.IO.Path.GetDirectoryName(asset.path));
+                Core.SignBuilderRuntime.Initialize(System.IO.Path.GetDirectoryName(asset.path));
                 Spike.SpikeRunner.StartIfFlagged(System.IO.Path.GetDirectoryName(asset.path));
             }
 

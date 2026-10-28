@@ -9,7 +9,7 @@ namespace SignBuilder.Rendering
 {
     /// <summary>
     /// Draws baked sign faces as thin panels with the game's default lit shader: the face on the front,
-    /// plain aluminium on the back and edges. Real signs are retroreflective; at night the face gets an
+    /// plain aluminum on the back and edges. Real signs are retroreflective; at night the face gets an
     /// emissive copy of itself (<see cref="NightGlow"/>) so it stays readable.
     /// </summary>
     public sealed class SignPanelRenderer

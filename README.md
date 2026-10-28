@@ -9,7 +9,7 @@ state route shields, exit tabs and EXIT ONLY panels); other countries are planne
 1. Click **SB** in the top-left toolbar to open the editor.
 2. Start from a template or a blank sign. Click any part of the preview to select it, edit it on
    the right, and add parts (text, shields, cardinal directions, arrows, distances, dividers) from
-   the left. Toggle an exit tab or an EXIT ONLY panel and pick the sign colour.
+   the left. Toggle an exit tab or an EXIT ONLY panel and pick the sign color.
 3. Use the sign tabs to put up to four signs on one structure.
 4. Choose the mounting: overhead truss, curved or straight tube span, curved or straight
    cantilever, or roadside posts. Choose whether the signs face the clicked road's traffic or the
@@ -42,7 +42,7 @@ Each placed structure becomes one prop prefab (`SignBuilder_A_<id>`): the suppor
 are merged into one mesh with a steel material and one material per sign face. The meshes and
 materials are stored in a mod-owned asset database (`ModsData/SignBuilder/Cache`), and
 `ModsData/SignBuilder/assemblies.json` lists every structure so its prefab can be re-created before a
-save is deserialised. Recipes also travel in the save (`AssemblySaveData.cs`); after loading, any
+save is deserialized. Recipes also travel in the save (`AssemblySaveData.cs`); after loading, any
 structure this PC lacks is rebuilt from its recipe and its objects (kept by the game with a missing
 prefab) are respawned in place.
 

@@ -20,13 +20,17 @@ namespace SignBuilder.Assemblies
         public quaternion Rotation;
         public SupportSpec Spec;
         public Mesh Support;
-        public Vector3[] SignCentres; // assembly-local, one per sign
-        /// <summary>Lanes the signs can be centred over (for the lane picker).</summary>
+        public Vector3[] SignCenters; // assembly-local, one per sign
+        /// <summary>Lanes the signs can be centered over (for the lane picker).</summary>
         public int LaneCount;
         // Structure-space X (drivers' right = +) of signs, faced lanes, posts, the structure and the deck,
         // for the arrangement view.
         public float[] SignXs;
         public float[] LaneXs;
+        /// <summary>Lanes on the structure's back side, in those drivers' view (their right = -X).</summary>
+        public float[] BackLaneXs;
+        /// <summary>Per sign: mounted on the back, facing the other way.</summary>
+        public bool[] SignBack;
         public float[] PostXs;
         public float2 StructureX;
         public float2 DeckX;
@@ -34,7 +38,7 @@ namespace SignBuilder.Assemblies
 
     /// <summary>
     /// Builds a sign assembly: bakes its sign designs, lays out the chosen support for the road it was
-    /// placed on, merges support and sign panels into one mesh (submesh 0 steel/aluminium, submesh
+    /// placed on, merges support and sign panels into one mesh (submesh 0 steel/aluminum, submesh
     /// i + 1 the face of sign i), creates its materials and prefab, records it and spawns it.
     /// </summary>
     public static class AssemblyBuilder
@@ -44,43 +48,52 @@ namespace SignBuilder.Assemblies
         private const float kSignGap = 0.3f;
         /// <summary>Road surface this far above the terrain counts as elevated (bridge, viaduct, embankment).</summary>
         private const float kElevatedDrop = 2f;
-        /// <summary>Post centre distance inside the deck edge on elevated roads (on the shoulder, inside the barrier).</summary>
+        /// <summary>Post center distance inside the deck edge on elevated roads (on the shoulder, inside the barrier).</summary>
         private const float kDeckInset = 0.7f;
         /// <summary>Lowest bottom edge for overhead signs (about 17.5 ft).</summary>
         private const float kMinClearance = 5.3f;
 
         /// <summary>
-        /// Lays out a structure for signs of the given sizes (metres, x = width, y = height, already scaled)
+        /// Lays out a structure for signs of the given sizes (meters, x = width, y = height, already scaled)
         /// at a road snap (or a synthetic one for free placement). Each sign follows its slot in
-        /// <paramref name="o"/> (side by side over the lanes, over one lane, or at an offset); overlapping
-        /// signs are pushed apart, and the structure is sized to carry them all.
+        /// <paramref name="o"/>: front or back, side by side over the lanes, over one lane, or at an offset.
+        /// Overlapping signs on the same side are pushed apart, and the structure is sized to carry them all.
+        /// <paramref name="shapes"/> (each face's outline, UV rects) lets roadside posts stop at the sign's top edge.
         /// </summary>
-        public static AssemblyPlacement Layout(RoadProbe.Snap s, IReadOnlyList<Vector2> sizes, LayoutOptions o)
+        public static AssemblyPlacement Layout(RoadProbe.Snap s, IReadOnlyList<Vector2> sizes, LayoutOptions o, IReadOnlyList<List<Rect>> shapes = null)
         {
-            var placement = LayoutSpec(s, sizes, o);
+            var placement = LayoutSpec(s, sizes, o, shapes);
             placement.Support = GantryFactory.FromSpec(placement.Spec);
             return placement;
         }
 
-        private static AssemblyPlacement LayoutSpec(RoadProbe.Snap s, IReadOnlyList<Vector2> sizes, LayoutOptions o)
+        private static AssemblyPlacement LayoutSpec(RoadProbe.Snap s, IReadOnlyList<Vector2> sizes, LayoutOptions o, IReadOnlyList<List<Rect>> shapes)
         {
             var type = o.Type;
             var spanKind = type == "ground" ? "single" : o.Span;
-            // Signs face the traffic of the clicked carriageway; reverse aims them at the other direction
-            // (the paired carriageway of a divided highway, or the opposing lanes of a two-way road).
+            var n = sizes.Count;
+            // Signs face the traffic of the clicked carriageway; reverse aims them at the other direction.
             var dir = s.MainDirection * (o.Reverse ? -1 : 1);
             var fwd = s.Tangent * dir;
             var rotation = quaternion.LookRotationSafe(fwd, new float3(0, 1, 0));
-            // Lanes this structure's signs face, left to right as drivers see them.
-            var lanes = s.Lanes.Where(l => l.Direction == dir).OrderBy(l => l.Offset * dir).ToList();
-            var lanesCentre = lanes.Count > 0 ? lanes.Average(l => l.Offset) : 0f;
-            // Single-carriageway structures stand on the carriageway whose traffic they face: when reversing
-            // on a divided highway that is the paired carriageway, not the one that was clicked.
-            var onPaired = o.Reverse && s.IsPaired && lanes.Count > 0 && lanes.All(l => l.OnPairedEdge);
-            var baseOffset = onPaired ? s.PairedOffset : 0f;
+
+            // The carriageway single spans and cantilevers stand on: the clicked one if it carries traffic the signs
+            // face, else the nearest one that does (reversing on a divided highway picks the other carriageway).
+            var faced = s.Lanes.Where(l => l.Direction == dir).ToList();
+            var baseIndex = faced.Any(l => l.Carriageway == 0) || faced.Count == 0 ? 0
+                : faced.OrderBy(l => math.abs(s.Carriageways[l.Carriageway].Offset)).First().Carriageway;
+            var baseCw = s.Carriageways.Count > 0 ? s.Carriageways[baseIndex] : new RoadProbe.Carriageway { Width = 10f };
+            var baseOffset = baseCw.Offset;
             var basePoint = s.Point + s.Right * baseOffset;
-            var baseWidth = onPaired ? s.PairedWidth : s.EdgeWidth;
-            var maxH = sizes.Count > 0 ? sizes.Max(z => z.y) : 2f;
+            var baseWidth = baseCw.Width;
+            // Lanes per side, left to right as each side's drivers see them. Full spans cover every carriageway.
+            List<RoadProbe.LaneInfo> LanesFor(int d) => s.Lanes
+                .Where(l => l.Direction == d && (spanKind == "full" || l.Carriageway == baseIndex))
+                .OrderBy(l => l.Offset * d).ToList();
+            var frontLanes = LanesFor(dir);
+            var backLanes = LanesFor(-dir);
+            bool IsBack(int i) => type != "ground" && o.Slot(i).Back;
+            var maxH = n > 0 ? sizes.Max(z => z.y) : 2f;
 
             var elevated = false;
             // On elevated roads and bridges there is no ground beside the deck: posts that would stand off it
@@ -95,80 +108,98 @@ namespace SignBuilder.Assemblies
                 return math.clamp(posts.Max(p => p.y - TerrainHeight(p)), 0f, kElevatedDrop);
             }
 
-            // Sign x positions in structure space, measured from a reference lateral offset (along Right).
+            // Sign x positions in structure space (+X = front drivers' right), measured from a reference lateral
+            // offset (along Right). Each side is laid out in its own drivers' view, then mapped to structure space.
             float[] SignXs(float reference)
             {
-                float Local(float absolute) => (absolute - reference) * dir;
-                var xs = new float[sizes.Count];
-                var auto = Enumerable.Range(0, sizes.Count).Where(i => o.Slot(i).Mode == "auto" || (o.Slot(i).Mode == "lane" && lanes.Count == 0)).ToList();
-                var groupWidth = auto.Sum(i => sizes[i].x) + kSignGap * Math.Max(0, auto.Count - 1);
-                var x = Local(lanesCentre) - groupWidth * 0.5f;
-                foreach (var i in auto)
+                var xs = new float[n];
+                foreach (var back in new[] { false, true })
                 {
-                    xs[i] = x + sizes[i].x * 0.5f;
-                    x += sizes[i].x + kSignGap;
-                }
-                for (var i = 0; i < sizes.Count; i++)
-                {
-                    var slot = o.Slot(i);
-                    if (slot.Mode == "lane" && lanes.Count > 0)
+                    var d = back ? -dir : dir;
+                    var lanes = back ? backLanes : frontLanes;
+                    float View(float absolute) => (absolute - reference) * d;
+                    var side = Enumerable.Range(0, n).Where(i => IsBack(i) == back).ToList();
+                    if (side.Count == 0) continue;
+                    var lanesCenter = lanes.Count > 0 ? lanes.Average(l => l.Offset) : reference;
+                    var auto = side.Where(i => o.Slot(i).Mode == "auto" || (o.Slot(i).Mode == "lane" && lanes.Count == 0)).ToList();
+                    var groupWidth = auto.Sum(i => sizes[i].x) + kSignGap * Math.Max(0, auto.Count - 1);
+                    var view = new float[n];
+                    var x = View(lanesCenter) - groupWidth * 0.5f;
+                    foreach (var i in auto)
                     {
-                        var index = math.clamp(slot.FromRight ? lanes.Count - 1 - slot.Lane : slot.Lane, 0, lanes.Count - 1);
-                        xs[i] = Local(lanes[index].Offset) + slot.Offset;
+                        view[i] = x + sizes[i].x * 0.5f;
+                        x += sizes[i].x + kSignGap;
                     }
-                    else if (slot.Mode == "free") xs[i] = Local(lanesCentre) + slot.Offset;
-                    else xs[i] += slot.Offset;
+                    foreach (var i in side)
+                    {
+                        var slot = o.Slot(i);
+                        if (slot.Mode == "lane" && lanes.Count > 0)
+                        {
+                            var index = math.clamp(slot.FromRight ? lanes.Count - 1 - slot.Lane : slot.Lane, 0, lanes.Count - 1);
+                            view[i] = View(lanes[index].Offset) + slot.Offset;
+                        }
+                        else if (slot.Mode == "free") view[i] = View(lanesCenter) + slot.Offset;
+                        else view[i] += slot.Offset;
+                    }
+                    SpreadOut(view, sizes, side);
+                    foreach (var i in side) xs[i] = back ? -view[i] : view[i];
                 }
-                SpreadOut(xs, sizes);
                 return xs;
             }
-            Vector3[] Centres(float[] xs, float z, Func<float, float> centreY) =>
-                Enumerable.Range(0, sizes.Count).Select(i => new Vector3(xs[i], centreY(sizes[i].y), z)).ToArray();
-            float Reach(float[] xs) => sizes.Count == 0 ? 0f : Enumerable.Range(0, sizes.Count).Max(i => math.abs(xs[i]) + sizes[i].x * 0.5f);
-            float[] LaneXs(float reference) => lanes.Select(l => (l.Offset - reference) * dir).ToArray();
-            float2 Edges(float reference, float centre, float width)
+            float[] LaneXs(List<RoadProbe.LaneInfo> lanes, float reference, int d) => lanes.Select(l => (l.Offset - reference) * d).ToArray();
+            float Reach(float[] xs) => n == 0 ? 0f : Enumerable.Range(0, n).Max(i => math.abs(xs[i]) + sizes[i].x * 0.5f);
+            float2 Edges(float reference, float center, float width)
             {
-                var a = (centre - width * 0.5f - reference) * dir;
-                var b = (centre + width * 0.5f - reference) * dir;
+                var a = (center - width * 0.5f - reference) * dir;
+                var b = (center + width * 0.5f - reference) * dir;
                 return new float2(math.min(a, b), math.max(a, b));
             }
 
-            // Mounting height and depth per structure type. Overhead signs are each centred on the beam (a short
+            // Mounting height and depth per structure type. Overhead signs are each centered on the beam (a short
             // sign beside a tall one still crosses it), raised only as far as their clearance needs; curved tube
-            // structures carry their signs bolted in front of the horizontal pipe.
-            var curvedHeight = math.max(7.0f, kMinClearance + maxH * 0.5f);
-            Func<float, float> centreY = type == "curved" ? (h => curvedHeight) : (h => math.max(GantryFactory.kMountHeight, kMinClearance + h * 0.5f));
-            var z = type switch
+            // structures carry their signs bolted in front of the horizontal pipe. Back signs mirror in Z.
+            var lift = type == "ground" ? 0f : o.Lift;
+            var curvedHeight = math.max(7.0f + lift, kMinClearance + maxH * 0.5f);
+            var beamHeight = GantryFactory.kMountHeight + lift;
+            Func<float, float> centerY = type == "curved" ? (h => curvedHeight) : (h => math.max(beamHeight, kMinClearance + h * 0.5f));
+            var depth = type switch
             {
-                "doubleTruss" => -(GantryFactory.kTrussDepth * 0.5f + 0.15f),
-                "singleTruss" => -0.3f,
-                "curved" => -0.4f,
-                _ => -0.45f,
+                "doubleTruss" => GantryFactory.kTrussDepth * 0.5f + 0.15f,
+                "singleTruss" => 0.3f,
+                "curved" => 0.4f,
+                _ => 0.45f,
             };
+            Vector3[] Centers(float[] xs) =>
+                Enumerable.Range(0, n).Select(i => new Vector3(xs[i], centerY(sizes[i].y), IsBack(i) ? depth : -depth)).ToArray();
             // Clear distance from a post to the nearest sign edge. Signs may overlap a curved tube's bend a little
-            // so they can still sit centred over the outermost lanes.
+            // so they can still sit centered over the outermost lanes.
             var postClear = type switch { "curved" => 1.3f, "doubleTruss" => 1.1f, "singleTruss" => 0.6f, _ => 0.5f };
 
             AssemblyPlacement result;
             if (type == "ground")
             {
-                var total = sizes.Sum(z2 => z2.x) + kSignGap * Math.Max(0, sizes.Count - 1);
+                var total = sizes.Sum(z2 => z2.x) + kSignGap * Math.Max(0, n - 1);
                 var lateral = o.Free ? 0f : dir * (baseWidth * 0.5f + 2.5f + total * 0.5f);
                 var origin = basePoint + s.Right * lateral;
                 // On a raised road the posts reach down to the terrain instead of floating.
                 var drop = o.Free ? o.Elevation : math.clamp(origin.y - TerrainHeight(origin), 0f, 20f);
-                var xs = new float[sizes.Count];
+                var xs = new float[n];
                 var x = -total * 0.5f;
-                for (var i = 0; i < sizes.Count; i++)
+                for (var i = 0; i < n; i++)
                 {
                     xs[i] = x + sizes[i].x * 0.5f + o.Slot(i).Offset;
                     x += sizes[i].x + kSignGap;
                 }
+                var centers = Enumerable.Range(0, n).Select(i => new Vector3(xs[i], GantryFactory.kGroundClearance + sizes[i].y * 0.5f, 0f)).ToArray();
+                // Each post stops at the top of the sign in front of it: an exit tab only covers part of the width.
+                var postXs = GantryFactory.GroundPostXs(total);
+                var tops = postXs.Select(px => PostTop(px, xs, sizes, shapes)).ToArray();
                 result = new AssemblyPlacement
                 {
-                    Origin = origin, Rotation = rotation, Spec = SupportSpec.Of("ground", total, maxH, drop),
-                    SignCentres = Centres(xs, 0f, h => GantryFactory.kGroundClearance + h * 0.5f),
-                    SignXs = xs, LaneXs = LaneXs(baseOffset + lateral), PostXs = new[] { 0f },
+                    Origin = origin, Rotation = rotation,
+                    Spec = SupportSpec.Of("ground", new[] { total, maxH, drop }.Concat(tops).ToArray()),
+                    SignCenters = centers, SignXs = xs, LaneXs = LaneXs(frontLanes, baseOffset + lateral, dir), PostXs = postXs,
+                    StructureX = new float2(-total * 0.5f, total * 0.5f),
                 };
             }
             else if (spanKind == "cantilever")
@@ -187,13 +218,12 @@ namespace SignBuilder.Assemblies
                 var reference = baseOffset + postOffset;
                 var xs = SignXs(reference);
                 // Every sign stays on the arm side of the post, clear of it.
-                for (var i = 0; i < xs.Length; i++)
+                for (var i = 0; i < n; i++)
                 {
                     var limit = postClear + sizes[i].x * 0.5f;
                     xs[i] = o.LeftSide ? math.max(xs[i], limit) : math.min(xs[i], -limit);
                 }
-                var reachOut = xs.Length == 0 ? 0f : Enumerable.Range(0, xs.Length).Max(i => math.abs(xs[i]) + sizes[i].x * 0.5f);
-                var arm = math.max(reachOut + 0.4f, postClear + 1f);
+                var arm = math.max(Reach(xs) + 0.4f, postClear + 1f);
                 var spec = type switch
                 {
                     "curved" => SupportSpec.Of("curvedCantilever", math.max(arm, 3.5f), curvedHeight, ground),
@@ -202,19 +232,19 @@ namespace SignBuilder.Assemblies
                     _ => SupportSpec.Of("cantilever", -arm, ground),
                 };
                 spec.Mirror = o.LeftSide;
+                spec.Lift = type == "curved" ? 0f : lift;
                 result = new AssemblyPlacement
                 {
-                    Origin = post, Rotation = rotation, Spec = spec,
-                    SignCentres = Centres(xs, z, centreY),
-                    SignXs = xs, LaneXs = LaneXs(reference), PostXs = new[] { 0f },
+                    Origin = post, Rotation = rotation, Spec = spec, SignCenters = Centers(xs), SignXs = xs,
+                    LaneXs = LaneXs(frontLanes, reference, dir), BackLaneXs = LaneXs(backLanes, reference, -dir), PostXs = new[] { 0f },
                     StructureX = o.LeftSide ? new float2(-0.4f, arm) : new float2(-arm, 0.4f),
                     DeckX = Edges(reference, baseOffset, baseWidth),
                 };
             }
             else
             {
-                // Full spans cross every carriageway (both sides of a divided highway); single spans only the
-                // carriageway the signs face.
+                // Full spans cross every carriageway (both sides of a divided highway, parallel roads); single spans
+                // only the carriageway the signs face.
                 float reference, deckWidth;
                 if (spanKind == "full")
                 {
@@ -237,31 +267,53 @@ namespace SignBuilder.Assemblies
                     span = math.max(deckWidth - 2f * kDeckInset, needed);
                 }
                 var ground = GroundUnder(origin - s.Right * span * 0.5f, origin + s.Right * span * 0.5f);
+                var spec = type switch
+                {
+                    "curved" => SupportSpec.Of("curvedSpan", span, curvedHeight, ground),
+                    "straight" => SupportSpec.Of("monotube", span, ground),
+                    "singleTruss" => SupportSpec.Of("planarTruss", span, ground),
+                    _ => SupportSpec.Of("truss", span, ground),
+                };
+                spec.Lift = type == "curved" ? 0f : lift;
                 result = new AssemblyPlacement
                 {
-                    Origin = origin, Rotation = rotation,
-                    Spec = type switch
-                    {
-                        "curved" => SupportSpec.Of("curvedSpan", span, curvedHeight, ground),
-                        "straight" => SupportSpec.Of("monotube", span, ground),
-                        "singleTruss" => SupportSpec.Of("planarTruss", span, ground),
-                        _ => SupportSpec.Of("truss", span, ground),
-                    },
-                    SignCentres = Centres(xs, z, centreY),
-                    SignXs = xs, LaneXs = LaneXs(reference), PostXs = new[] { -span * 0.5f, span * 0.5f },
+                    Origin = origin, Rotation = rotation, Spec = spec, SignCenters = Centers(xs), SignXs = xs,
+                    LaneXs = LaneXs(frontLanes, reference, dir), BackLaneXs = LaneXs(backLanes, reference, -dir),
+                    PostXs = new[] { -span * 0.5f, span * 0.5f },
                     StructureX = new float2(-span * 0.5f, span * 0.5f),
-                    DeckX = spanKind == "full" ? Edges(reference, (s.Extent.x + s.Extent.y) * 0.5f, deckWidth) : Edges(reference, baseOffset, baseWidth),
+                    DeckX = spanKind == "full" ? Edges(reference, reference, deckWidth) : Edges(reference, baseOffset, baseWidth),
                 };
             }
-            result.LaneCount = lanes.Count;
+            result.SignBack = Enumerable.Range(0, n).Select(IsBack).ToArray();
+            result.LaneCount = frontLanes.Count;
             return result;
         }
 
-        /// <summary>Pushes overlapping signs apart symmetrically (keeping their order), at least the sign gap apart.</summary>
-        private static void SpreadOut(float[] xs, IReadOnlyList<Vector2> sizes)
+        /// <summary>Height of a roadside post's top at x: the top edge of the sign face in front of it.</summary>
+        private static float PostTop(float x, float[] xs, IReadOnlyList<Vector2> sizes, IReadOnlyList<List<Rect>> shapes)
         {
-            if (xs.Length < 2) return;
-            var order = Enumerable.Range(0, xs.Length).OrderBy(i => xs[i]).ToArray();
+            for (var i = 0; i < xs.Length; i++)
+            {
+                var left = xs[i] - sizes[i].x * 0.5f;
+                if (x < left || x > left + sizes[i].x) continue;
+                var u = (x - left) / sizes[i].x;
+                var top = 1f;
+                if (shapes != null && i < shapes.Count && shapes[i] != null && shapes[i].Count > 0)
+                {
+                    top = 0f;
+                    foreach (var r in shapes[i]) if (u >= r.xMin - 0.02f && u <= r.xMax + 0.02f) top = math.max(top, r.yMax);
+                    if (top <= 0f) top = 1f;
+                }
+                return GantryFactory.kGroundClearance + sizes[i].y * top - 0.1f;
+            }
+            return GantryFactory.kGroundClearance + sizes.DefaultIfEmpty(Vector2.one).Max(z => z.y) - 0.1f;
+        }
+
+        /// <summary>Pushes overlapping signs (of one side) apart symmetrically, keeping their order, at least the sign gap apart.</summary>
+        private static void SpreadOut(float[] xs, IReadOnlyList<Vector2> sizes, IReadOnlyList<int> indices)
+        {
+            if (indices.Count < 2) return;
+            var order = indices.OrderBy(i => xs[i]).ToArray();
             for (var pass = 0; pass < 30; pass++)
             {
                 var moved = false;
@@ -303,13 +355,16 @@ namespace SignBuilder.Assemblies
             onDone(faces);
         }
 
+        /// <summary>Each face's outline (UV rectangles), from its texture's alpha.</summary>
+        public static List<List<Rect>> Shapes(IEnumerable<BakedFace> faces) => faces.Select(f => f == null ? null : PanelShape.Rects(f.Texture)).ToList();
+
         public static List<Vector2> Sizes(IEnumerable<BakedFace> faces, float scale = 1f) => faces.Select(f => new Vector2(f.WidthMeters, f.HeightMeters) * scale).ToList();
 
         /// <summary>
         /// Bakes, builds, registers, records and spawns an assembly. Yields while baking; the record is
         /// passed to <paramref name="onDone"/>, failures to <paramref name="onError"/>.
         /// </summary>
-        public static IEnumerator Build(IReadOnlyList<JObject> designs, Func<IReadOnlyList<Vector2>, AssemblyPlacement> layout,
+        public static IEnumerator Build(IReadOnlyList<JObject> designs, Func<IReadOnlyList<Vector2>, IReadOnlyList<List<Rect>>, AssemblyPlacement> layout,
             Action<AssemblyRecord, AssemblyPlacement> onDone, Action<string> onError, PlacementContext context)
         {
             List<BakedFace> faces = null;
@@ -324,7 +379,7 @@ namespace SignBuilder.Assemblies
             AssemblyPlacement placement;
             try
             {
-                placement = layout(Sizes(faces, context?.Options?.SignScale ?? 1f));
+                placement = layout(Sizes(faces, context?.Options?.SignScale ?? 1f), Shapes(faces));
                 record = new AssemblyRecord
                 {
                     Id = Guid.NewGuid().ToString("N").Substring(0, 12),
@@ -332,7 +387,7 @@ namespace SignBuilder.Assemblies
                     Reverse = context.Options.Reverse,
                     Designs = designs.ToList(),
                     SupportSpec = placement.Spec,
-                    SignCentres = placement.SignCentres.SelectMany(c => new[] { c.x, c.y, c.z }).ToArray(),
+                    SignCenters = placement.SignCenters.SelectMany(c => new[] { c.x, c.y, c.z }).ToArray(),
                     Context = context,
                     Created = DateTime.UtcNow,
                 };
@@ -363,7 +418,9 @@ namespace SignBuilder.Assemblies
         private static void CreateAssets(AssemblyRecord record, Mesh support, IReadOnlyList<BakedFace> faces)
         {
             var prefabs = new RuntimePrefabs();
-            var mesh = Merge(support, faces, record.Centres, record.Context?.Options?.SignScale ?? 1f);
+            var options = record.Context?.Options;
+            var back = Enumerable.Range(0, faces.Count).Select(i => options != null && options.Type != "ground" && options.Slot(i).Back).ToArray();
+            var mesh = Merge(support, faces, record.Centers, options?.SignScale ?? 1f, back);
             var db = SignBuilderRuntime.Database;
             var donor = SignBuilderRuntime.Donor(prefabs);
             var steel = SignBuilderRuntime.Steel(prefabs);
@@ -390,7 +447,7 @@ namespace SignBuilder.Assemblies
         /// </summary>
         public static IEnumerator Rebuild(AssemblyRecord record, Action<bool> onDone)
         {
-            if (record.SupportSpec == null || record.SignCentres == null || record.Designs.Count == 0)
+            if (record.SupportSpec == null || record.SignCenters == null || record.Designs.Count == 0)
             {
                 Mod.log.Warn($"{record.PrefabName}: no recipe in the save, cannot rebuild");
                 onDone(false);
@@ -398,7 +455,7 @@ namespace SignBuilder.Assemblies
             }
             List<BakedFace> faces = null;
             yield return BakeAll(record.Designs, f => faces = f);
-            if (faces == null || faces.Count != record.Centres.Length)
+            if (faces == null || faces.Count != record.Centers.Length)
             {
                 Mod.log.Warn($"{record.PrefabName}: could not render its signs ({SignBuilderRuntime.Baker.LastError})");
                 onDone(false);
@@ -421,21 +478,22 @@ namespace SignBuilder.Assemblies
 
         /// <summary>
         /// Merges the support (one submesh) with a panel per sign (panel submesh 0 = face, 1 = back and
-        /// edges) at <paramref name="centres"/>: output submesh 0 is everything steel/aluminium,
+        /// edges) at <paramref name="centers"/>: output submesh 0 is everything steel/aluminum,
         /// submesh i + 1 the face of sign i.
         /// </summary>
-        public static Mesh Merge(Mesh support, IReadOnlyList<BakedFace> faces, IReadOnlyList<Vector3> centres, float scale = 1f)
+        public static Mesh Merge(Mesh support, IReadOnlyList<BakedFace> faces, IReadOnlyList<Vector3> centers, float scale = 1f, IReadOnlyList<bool> back = null)
         {
             var vertices = new List<Vector3>();
             var normals = new List<Vector3>();
             var uvs = new List<Vector2>();
             var submeshes = new List<List<int>> { new List<int>() };
 
-            void Append(Mesh m, Vector3 offset, int submesh, List<int> into)
+            void Append(Mesh m, Vector3 offset, int submesh, List<int> into, bool turned = false)
             {
+                // Turned: rotated 180 degrees about Y (a sign on the structure's back faces the other way).
                 var start = vertices.Count;
-                foreach (var p in m.vertices) vertices.Add(p + offset);
-                normals.AddRange(m.normals);
+                foreach (var p in m.vertices) vertices.Add((turned ? new Vector3(-p.x, p.y, -p.z) : p) + offset);
+                foreach (var nrm in m.normals) normals.Add(turned ? new Vector3(-nrm.x, nrm.y, -nrm.z) : nrm);
                 uvs.AddRange(m.uv);
                 foreach (var i in m.GetTriangles(submesh)) into.Add(start + i);
             }
@@ -446,9 +504,10 @@ namespace SignBuilder.Assemblies
                 var shape = PanelShape.Rects(faces[i].Texture);
                 if (shape.Count > 1) Mod.log.Debug($"Sign {i} panel shape: {string.Join(", ", shape.Select(r => $"[{r.xMin:F2}-{r.xMax:F2} x {r.yMin:F2}-{r.yMax:F2}]"))}");
                 var panel = GantryFactory.Panel(faces[i].WidthMeters * scale, faces[i].HeightMeters * scale, shape);
-                Append(panel, centres[i], 1, submeshes[0]);
+                var turned = back != null && i < back.Count && back[i];
+                Append(panel, centers[i], 1, submeshes[0], turned);
                 var face = new List<int>();
-                Append(panel, centres[i], 0, face);
+                Append(panel, centers[i], 0, face, turned);
                 submeshes.Add(face);
                 UnityEngine.Object.Destroy(panel);
             }

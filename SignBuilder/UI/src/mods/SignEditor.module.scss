@@ -2,7 +2,7 @@
 .panel { width: 1180rem; }
 .body { display: flex; flex-direction: row; align-items: stretch; padding: 8rem; }
 .column { width: 280rem; display: flex; flex-direction: column; }
-.centre { flex: 1; display: flex; flex-direction: column; align-items: center; margin: 0 12rem; }
+.center { flex: 1; display: flex; flex-direction: column; align-items: center; margin: 0 12rem; }
 .heading { font-size: 14rem; font-weight: bold; color: rgba(255, 255, 255, 0.9); margin: 10rem 0 4rem 0; text-transform: uppercase; }
 .listItem, .listItemOn { padding: 4rem 8rem; margin-bottom: 2rem; font-size: 14rem; color: #fff; background-color: rgba(255, 255, 255, 0.06); border-radius: 3rem; }
 .listItem:hover { background-color: rgba(255, 255, 255, 0.15); }
@@ -37,8 +37,8 @@
 .optionGroup .choices { flex-wrap: nowrap; }
 /* --- designer --- */
 .signOptions { display: flex; flex-direction: column; align-items: flex-start; width: 560rem; margin-top: 6rem; }
-.customColours { display: flex; flex-direction: row; }
-.customColours > div { margin-right: 16rem; }
+.customColors { display: flex; flex-direction: row; }
+.customColors > div { margin-right: 16rem; }
 .library { display: flex; flex-direction: column; }
 .libraryActions, .namingRow { display: flex; flex-direction: row; flex-wrap: wrap; align-items: center; margin-bottom: 6rem; }
 .cards { display: flex; flex-direction: row; flex-wrap: wrap; max-height: 620rem; overflow-y: scroll; }
@@ -69,3 +69,7 @@
 .listItem, .listItemOn { display: flex; flex-direction: row; align-items: center; }
 .barRow .choices { flex-wrap: nowrap; }
 .barRow { flex-wrap: wrap; }
+.primaryButton, .primaryButtonOff { padding: 6rem 18rem; margin-right: 10rem; font-size: 16rem; font-weight: bold; color: #fff; border-radius: 4rem; background-color: #1e9e5a; align-self: center; }
+.primaryButton:hover { background-color: #23b867; }
+.primaryButtonOff { background-color: rgba(255, 255, 255, 0.15); color: rgba(255, 255, 255, 0.5); }
+.inlineRow { display: flex; flex-direction: row; align-items: center; }

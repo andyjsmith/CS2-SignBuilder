@@ -11,9 +11,9 @@ using Unity.Mathematics;
 namespace SignBuilder.Assemblies
 {
     /// <summary>
-    /// Keeps assembly prefabs alive across sessions: before any save is deserialised it re-registers
+    /// Keeps assembly prefabs alive across sessions: before any save is deserialized it re-registers
     /// every recorded assembly from its stored mesh/material asset ids (so saved instances resolve),
-    /// and once prefabs are initialised it clears the Overridable flag (a gantry always overlaps a
+    /// and once prefabs are initialized it clears the Overridable flag (a gantry always overlaps a
     /// road, and Overridable props get hidden by roads).
     /// </summary>
     public partial class AssemblyBootstrapSystem : GameSystemBase
@@ -67,7 +67,7 @@ namespace SignBuilder.Assemblies
             }
         }
 
-        /// <summary>Clears Overridable once the prefab is initialised; returns false if it is not yet.</summary>
+        /// <summary>Clears Overridable once the prefab is initialized; returns false if it is not yet.</summary>
         public static bool ClearOverridableNow(StaticObjectPrefab prefab)
         {
             if (prefab == null) return true;

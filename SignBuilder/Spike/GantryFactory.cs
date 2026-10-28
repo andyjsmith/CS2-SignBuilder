@@ -1,10 +1,11 @@
+using System.Linq;
 using UnityEngine;
 
 namespace SignBuilder.Spike
 {
     /// <summary>
     /// Parametric gantry meshes. Local space: X runs across the road, Z along it (traffic faces -Z),
-    /// Y up from road level. Span gantries are centred on X = 0; the cantilever's post is at X = 0
+    /// Y up from road level. Span gantries are centered on X = 0; the cantilever's post is at X = 0
     /// and its arm reaches +X.
     /// </summary>
     public static class GantryFactory
@@ -21,11 +22,18 @@ namespace SignBuilder.Spike
         public const float kFooting = 0.5f;
 
         /// <summary>Builds the support described by a spec (layout output, stored in records and saves).</summary>
+        /// <summary>Beam height adjustment for the mesh being built (SupportSpec.Lift).</summary>
+        private static float s_Lift;
+
         public static Mesh FromSpec(Assemblies.SupportSpec spec)
         {
             var a = spec.Args ?? System.Array.Empty<float>();
             float Arg(int i) => i < a.Length ? a[i] : 0f;
-            var mesh = spec.Kind switch
+            s_Lift = spec.Lift;
+            Mesh mesh;
+            try
+            {
+            mesh = spec.Kind switch
             {
                 "monotube" => Monotube(Arg(0), Arg(1)),
                 "curvedSpan" => CurvedSpan(Arg(0), Arg(1), ground: Arg(2)),
@@ -34,9 +42,14 @@ namespace SignBuilder.Spike
                 "trussCantilever" => TrussCantilever(Arg(0), Arg(1)),
                 "planarTruss" => PlanarTruss(-Arg(0) * 0.5f, Arg(0) * 0.5f, new[] { -Arg(0) * 0.5f, Arg(0) * 0.5f }, Arg(1)),
                 "planarTrussCantilever" => PlanarTruss(-Arg(0), 0.25f, new[] { 0f }, Arg(1)),
-                "ground" => GroundPosts(Arg(0), Arg(1), out _, Arg(2)),
+                "ground" => GroundPosts(Arg(0), Arg(1), out _, Arg(2), a.Skip(3).ToArray()),
                 _ => Truss(Arg(0), Arg(1)),
             };
+            }
+            finally
+            {
+                s_Lift = 0f;
+            }
             if (spec.Mirror) Mirror(mesh);
             return mesh;
         }
@@ -70,8 +83,8 @@ namespace SignBuilder.Spike
         {
             var b = new MeshBuilder();
             const float depth = 1.2f;
-            var y0 = kMountHeight - depth * 0.5f;
-            var y1 = kMountHeight + depth * 0.5f;
+            var y0 = kMountHeight + s_Lift - depth * 0.5f;
+            var y1 = kMountHeight + s_Lift + depth * 0.5f;
             b.AddTube(new Vector3(x0, y0, 0), new Vector3(x1, y0, 0), 0.08f, 10);
             b.AddTube(new Vector3(x0, y1, 0), new Vector3(x1, y1, 0), 0.08f, 10);
             var panels = Mathf.Max(2, Mathf.RoundToInt((x1 - x0) / depth));
@@ -104,8 +117,8 @@ namespace SignBuilder.Spike
             var b = new MeshBuilder();
             var span = x1 - x0;
             const float depth = kTrussDepth;
-            var y0 = kClearance;
-            var y1 = kClearance + depth;
+            var y0 = kClearance + s_Lift;
+            var y1 = kClearance + s_Lift + depth;
             var z0 = -depth * 0.5f;
             var z1 = depth * 0.5f;
 
@@ -154,7 +167,7 @@ namespace SignBuilder.Spike
         {
             var b = new MeshBuilder();
             var half = span * 0.5f;
-            var y = kMountHeight;
+            var y = kMountHeight + s_Lift;
             b.AddTube(new Vector3(-half - 0.2f, y, 0), new Vector3(half + 0.2f, y, 0), 0.32f, 20);
             foreach (var x in new[] { -half, half })
             {
@@ -166,7 +179,7 @@ namespace SignBuilder.Spike
         public static Mesh Cantilever(float armLength, float ground = 0f)
         {
             var b = new MeshBuilder();
-            var y = kMountHeight;
+            var y = kMountHeight + s_Lift;
             b.AddTube(new Vector3(0, -ground - kFooting, 0), new Vector3(0, y + 0.6f, 0), 0.38f, 20);
             b.AddTube(new Vector3(-0.3f * Mathf.Sign(armLength), y, 0), new Vector3(armLength, y, 0), 0.28f, 20);
             return b.Build("SignBuilder.Cantilever");
@@ -177,7 +190,7 @@ namespace SignBuilder.Spike
         /// <summary>
         /// Curved tubular span: one pipe rising from each base through a large-radius 90° bend into
         /// the horizontal member, with flange rings at the joints. <paramref name="height"/> is the
-        /// centre line of the horizontal pipe; signs hang below it.
+        /// center line of the horizontal pipe; signs hang below it.
         /// </summary>
         public static Mesh CurvedSpan(float span, float height, float bendRadius = 3f, float ground = 0f)
         {
@@ -219,49 +232,54 @@ namespace SignBuilder.Spike
         /// <summary>
         /// Ground-mounted support for a roadside sign: one post for narrow signs, two for wider ones.
         /// Steel W-beam posts (two flanges and a web), with concrete footings. Local space: X across the
-        /// sign, posts behind it (+Z), origin at ground level under the sign's centre.
+        /// sign, posts behind it (+Z), origin at ground level under the sign's center.
         /// </summary>
-        public static Mesh GroundPosts(float signWidth, float signHeight, out int postCount, float extraDepth = 0f)
+        /// <summary>Where roadside posts go under a sign (group) of this width: one post, or two at 30% either side.</summary>
+        public static float[] GroundPostXs(float signWidth) => signWidth < 2.5f ? new[] { 0f } : new[] { -signWidth * 0.3f, signWidth * 0.3f };
+
+        public static Mesh GroundPosts(float signWidth, float signHeight, out int postCount, float extraDepth = 0f, float[] tops = null)
         {
             var b = new MeshBuilder();
-            postCount = signWidth < 2.5f ? 1 : 2;
-            var top = kGroundClearance + signHeight - 0.1f;
-            var xs = postCount == 1 ? new[] { 0f } : new[] { -signWidth * 0.3f, signWidth * 0.3f };
+            var xs = GroundPostXs(signWidth);
+            postCount = xs.Length;
             const float flange = 0.2f;
             const float depth = 0.25f;
             const float t = 0.018f;
             const float z = 0.2f; // behind the sign face
-            foreach (var x in xs)
+            for (var k = 0; k < xs.Length; k++)
             {
+                var x = xs[k];
+                // Each post stops at the top edge of the sign in front of it (an exit tab may not cover it).
+                var top = tops != null && k < tops.Length && tops[k] > 0f ? tops[k] : kGroundClearance + signHeight - 0.1f;
                 // Posts run from below ground (or down to the terrain when the road is raised) to the sign top.
                 var bottom = -0.4f - extraDepth;
                 var h = top - bottom;
-                var centre = new Vector3(x, bottom + h * 0.5f, z);
-                b.AddBox(centre + new Vector3(0, 0, -depth * 0.5f + t * 0.5f), new Vector3(flange, h, t), Quaternion.identity);
-                b.AddBox(centre + new Vector3(0, 0, depth * 0.5f - t * 0.5f), new Vector3(flange, h, t), Quaternion.identity);
-                b.AddBox(centre, new Vector3(t, h, depth - t * 2), Quaternion.identity);
+                var center = new Vector3(x, bottom + h * 0.5f, z);
+                b.AddBox(center + new Vector3(0, 0, -depth * 0.5f + t * 0.5f), new Vector3(flange, h, t), Quaternion.identity);
+                b.AddBox(center + new Vector3(0, 0, depth * 0.5f - t * 0.5f), new Vector3(flange, h, t), Quaternion.identity);
+                b.AddBox(center, new Vector3(t, h, depth - t * 2), Quaternion.identity);
             }
             return b.Build("SignBuilder.GroundPosts");
         }
 
         /// <summary>Appends points of a circular arc in the XY plane (angles in degrees, 0 = +X, 90 = +Y).</summary>
-        private static void AddArc(System.Collections.Generic.List<Vector3> path, Vector3 centre, float radius, float fromDeg, float toDeg, int steps = 12)
+        private static void AddArc(System.Collections.Generic.List<Vector3> path, Vector3 center, float radius, float fromDeg, float toDeg, int steps = 12)
         {
             for (var i = 0; i <= steps; i++)
             {
                 var a = Mathf.Deg2Rad * Mathf.Lerp(fromDeg, toDeg, i / (float)steps);
-                path.Add(centre + new Vector3(Mathf.Cos(a), Mathf.Sin(a), 0) * radius);
+                path.Add(center + new Vector3(Mathf.Cos(a), Mathf.Sin(a), 0) * radius);
             }
         }
 
-        private static void AddFlange(MeshBuilder b, Vector3 centre, Vector3 axis)
+        private static void AddFlange(MeshBuilder b, Vector3 center, Vector3 axis)
         {
-            b.AddTube(centre - axis * 0.04f, centre + axis * 0.04f, kCurvedPipeRadius + 0.09f, 20);
+            b.AddTube(center - axis * 0.04f, center + axis * 0.04f, kCurvedPipeRadius + 0.09f, 20);
         }
 
         /// <summary>
         /// A thin sign panel box: submesh 0 is the -Z face showing the whole sign texture, submesh 1
-        /// the back and edges (plain aluminium).
+        /// the back and edges (plain aluminum).
         /// </summary>
         public static Mesh Panel(float width, float height) => Panel(width, height, new[] { new Rect(0, 0, 1, 1) });
 
@@ -274,8 +292,8 @@ namespace SignBuilder.Spike
             var b = new MeshBuilder();
             foreach (var r in shape)
             {
-                var centre = new Vector3((r.center.x - 0.5f) * width, (r.center.y - 0.5f) * height, 0);
-                b.AddBox(centre, new Vector3(r.width * width, r.height * height, 0.08f), Quaternion.identity, r, otherSubmesh: 1);
+                var center = new Vector3((r.center.x - 0.5f) * width, (r.center.y - 0.5f) * height, 0);
+                b.AddBox(center, new Vector3(r.width * width, r.height * height, 0.08f), Quaternion.identity, r, otherSubmesh: 1);
             }
             return b.Build("SignBuilder.Panel");
         }

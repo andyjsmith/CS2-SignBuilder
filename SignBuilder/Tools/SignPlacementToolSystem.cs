@@ -41,6 +41,9 @@ namespace SignBuilder.Tools
         private Mode m_Mode;
         private readonly List<JObject> m_Designs = new();
         private readonly List<Rendering.BakedFace> m_Faces = new();
+        private readonly List<List<UnityEngine.Rect>> m_Shapes = new();
+        // The arrangement panel shows one side of the structure at a time.
+        private bool m_ViewBack;
         private LayoutOptions m_Options = new();
         private RoadProbe.Snap m_Pinned;
         private Entity m_Replacing;
@@ -108,6 +111,7 @@ namespace SignBuilder.Tools
         /// <summary>Stops the tool (back to the game's default tool) and forgets any edit in progress.</summary>
         public void Deactivate()
         {
+            SetHidden(m_Replacing, false);
             m_Replacing = Entity.Null;
             m_Pinned = null;
             if (m_ToolSystem.activeTool == this) m_ToolSystem.activeTool = m_DefaultTool;
@@ -130,6 +134,8 @@ namespace SignBuilder.Tools
         {
             m_Designs.Clear();
             m_Faces.Clear();
+            m_Shapes.Clear();
+            m_ViewBack = false;
             foreach (var d in designs) AddSign(d, bake: false);
             for (var i = 0; i < m_Designs.Count; i++) Bake(i);
         }
@@ -138,7 +144,9 @@ namespace SignBuilder.Tools
         {
             m_Designs.Add(design);
             m_Faces.Add(null);
+            m_Shapes.Add(null);
             m_Options.EnsureSigns(m_Designs.Count);
+            m_Options.Signs[m_Designs.Count - 1].Back = m_ViewBack;
             if (bake) Bake(m_Designs.Count - 1);
         }
 
@@ -150,6 +158,7 @@ namespace SignBuilder.Tools
                 // The sign may have been removed or replaced meanwhile.
                 if (index >= m_Designs.Count || !ReferenceEquals(m_Designs[index], design)) return;
                 m_Faces[index] = faces?.FirstOrDefault();
+                m_Shapes[index] = m_Faces[index] == null ? null : PanelShape.Rects(m_Faces[index].Texture);
                 m_FacesVersion++;
                 m_PreviewFaceMaterials = null;
             }));
@@ -207,6 +216,8 @@ namespace SignBuilder.Tools
                 case "side": m_Options.LeftSide = (string)a["value"] == "left"; break;
                 case "reverse": m_Options.Reverse = (bool?)a["value"] ?? false; break;
                 case "scale": m_Options.SignScale = Step(m_Options.SignScale, (int?)a["value"] ?? 0); break;
+                case "lift": m_Options.Lift = math.clamp(m_Options.Lift + ((float?)a["value"] ?? 0f), -1f, 6f); break;
+                case "view": m_ViewBack = (string)a["value"] == "back"; break;
                 case "addSign":
                     if (a["design"] is JObject added) AddSign(added);
                     break;
@@ -215,6 +226,7 @@ namespace SignBuilder.Tools
                     {
                         m_Designs.RemoveAt(i);
                         m_Faces.RemoveAt(i);
+                        m_Shapes.RemoveAt(i);
                         if (i < m_Options.Signs.Count) m_Options.Signs.RemoveAt(i);
                         m_PreviewFaceMaterials = null;
                         m_FacesVersion++;
@@ -225,6 +237,7 @@ namespace SignBuilder.Tools
                     {
                         m_Designs[i] = replaced;
                         m_Faces[i] = null;
+                        m_Shapes[i] = null;
                         Bake(i);
                     }
                     break;
@@ -264,7 +277,7 @@ namespace SignBuilder.Tools
         }
 
         /// <summary>
-        /// Drops sign <paramref name="index"/> at structure x: within 0.75 m of a lane centre it snaps to that lane,
+        /// Drops sign <paramref name="index"/> at structure x: within 0.75 m of a lane center it snaps to that lane,
         /// remembered from the nearer edge ("2nd from right"); otherwise it stays where dropped, relative to the lanes.
         /// </summary>
         private void MoveSign(int index, float x, bool snap)
@@ -273,60 +286,75 @@ namespace SignBuilder.Tools
             var p = m_LastPlacement.Value;
             m_Options.EnsureSigns(index + 1);
             var slot = m_Options.Signs[index];
-            var lanes = p.LaneXs ?? System.Array.Empty<float>();
+            var lanes = (m_ViewBack ? p.BackLaneXs : p.LaneXs) ?? System.Array.Empty<float>();
             if (snap && lanes.Length > 0)
             {
                 var nearest = Enumerable.Range(0, lanes.Length).OrderBy(k => math.abs(lanes[k] - x)).First();
                 if (math.abs(lanes[nearest] - x) < 0.75f)
                 {
                     slot.Mode = "lane";
-                    slot.FromRight = nearest > (lanes.Length - 1) * 0.5f;
+                    slot.FromRight = nearest >= (lanes.Length - 1) * 0.5f;
                     slot.Lane = slot.FromRight ? lanes.Length - 1 - nearest : nearest;
                     slot.Offset = 0f;
                     return;
                 }
             }
-            var centre = lanes.Length > 0 ? lanes.Average() : 0f;
+            var center = lanes.Length > 0 ? lanes.Average() : 0f;
             slot.Mode = "free";
-            slot.Offset = x - centre;
+            slot.Offset = x - center;
         }
 
         private void CancelArrange()
         {
             m_Pinned = null;
+            SetHidden(m_Replacing, false);
             m_Replacing = Entity.Null;
             Deactivate();
             m_UI.SetStatus("");
         }
 
-        /// <summary>The arrangement panel's data: lanes, deck, structure, posts and signs in structure space.</summary>
+        /// <summary>
+        /// The arrangement panel's data for the side being viewed, in its drivers' view (their right = +x): lanes,
+        /// deck, structure, posts and that side's signs (with their index among all signs).
+        /// </summary>
         public string ArrangeInfo()
         {
             if (m_Mode != Mode.Arrange || m_LastPlacement == null) return "";
             var p = m_LastPlacement.Value;
             var sizes = Sizes();
+            float V(float x) => m_ViewBack ? -x : x;
+            float2 Span(float2 r) => m_ViewBack ? new float2(-r.y, -r.x) : r;
             var signs = new JArray();
+            var other = 0;
             for (var i = 0; i < m_Designs.Count; i++)
             {
                 var slot = m_Options.Slot(i);
+                if (slot.Back != m_ViewBack)
+                {
+                    other++;
+                    continue;
+                }
                 signs.Add(new JObject
                 {
-                    ["x"] = p.SignXs != null && i < p.SignXs.Length ? p.SignXs[i] : 0f,
+                    ["index"] = i,
+                    ["x"] = V(p.SignXs != null && i < p.SignXs.Length ? p.SignXs[i] : 0f),
                     ["w"] = sizes[i].x, ["h"] = sizes[i].y, ["ready"] = m_Faces[i] != null,
                     ["mode"] = slot.Mode, ["lane"] = slot.Lane, ["fromRight"] = slot.FromRight, ["offset"] = slot.Offset,
                     ["design"] = m_Designs[i],
                 });
             }
+            var structure = Span(p.StructureX);
+            var deck = Span(p.DeckX);
             return new JObject
             {
-                ["lanes"] = new JArray(p.LaneXs ?? System.Array.Empty<float>()),
-                ["deck"] = new JArray(p.DeckX.x, p.DeckX.y),
-                ["structure"] = new JArray(p.StructureX.x, p.StructureX.y),
-                ["posts"] = new JArray(p.PostXs ?? System.Array.Empty<float>()),
-                ["signs"] = signs,
+                ["lanes"] = new JArray((m_ViewBack ? p.BackLaneXs : p.LaneXs) ?? System.Array.Empty<float>()),
+                ["deck"] = new JArray(deck.x, deck.y),
+                ["structure"] = new JArray(structure.x, structure.y),
+                ["posts"] = new JArray((p.PostXs ?? System.Array.Empty<float>()).Select(V)),
+                ["signs"] = signs, ["otherSide"] = other, ["view"] = m_ViewBack ? "back" : "front", ["total"] = m_Designs.Count,
                 ["type"] = m_Options.Type, ["span"] = m_Options.Span, ["side"] = m_Options.LeftSide ? "left" : "right",
                 ["reverse"] = m_Options.Reverse, ["free"] = m_Options.Free, ["scale"] = m_Options.SignScale / LayoutOptions.kDefaultScale,
-                ["angle"] = m_Options.Angle, ["elevation"] = m_Options.Elevation, ["width"] = m_Options.FreeWidth,
+                ["lift"] = m_Options.Lift, ["angle"] = m_Options.Angle, ["elevation"] = m_Options.Elevation, ["width"] = m_Options.FreeWidth,
                 ["replacing"] = m_Replacing != Entity.Null, ["busy"] = m_Busy,
             }.ToString(Formatting.None);
         }
@@ -338,7 +366,7 @@ namespace SignBuilder.Tools
             ["scale"] = m_Options.SignScale / LayoutOptions.kDefaultScale, ["posts"] = m_Mode == Mode.Posts,
         }.ToString(Formatting.None);
 
-        /// <summary>Sign sizes in metres at the current scale; signs still baking use a placeholder size.</summary>
+        /// <summary>Sign sizes in meters at the current scale; signs still baking use a placeholder size.</summary>
         private List<UnityEngine.Vector2> Sizes() =>
             m_Faces.Select(f => f == null ? new UnityEngine.Vector2(3f, 2f) * m_Options.SignScale / LayoutOptions.kDefaultScale * 0.7f
                 : new UnityEngine.Vector2(f.WidthMeters, f.HeightMeters) * m_Options.SignScale).ToList();
@@ -466,13 +494,13 @@ namespace SignBuilder.Tools
             key += OptionsKey;
             if (key != m_PreviewKey)
             {
-                var placement = AssemblyBuilder.Layout(snap, Sizes(), m_Options);
+                var placement = AssemblyBuilder.Layout(snap, Sizes(), m_Options, m_Shapes);
                 m_LastPlacement = placement;
                 m_LaneCount = placement.LaneCount;
                 if (FacesReady)
                 {
                     if (m_PreviewMesh != null) UnityEngine.Object.Destroy(m_PreviewMesh);
-                    m_PreviewMesh = AssemblyBuilder.Merge(placement.Support, m_Faces, placement.SignCentres, m_Options.SignScale);
+                    m_PreviewMesh = AssemblyBuilder.Merge(placement.Support, m_Faces, placement.SignCenters, m_Options.SignScale, placement.SignBack);
                     m_PreviewOrigin = placement.Origin;
                     m_PreviewRotation = placement.Rotation;
                 }
@@ -516,12 +544,13 @@ namespace SignBuilder.Tools
             var options = m_Options.Clone();
             var designs = m_Designs.ToList();
             SignBuilderRuntime.Run(AssemblyBuilder.Build(designs,
-                sizes => AssemblyBuilder.Layout(snap, sizes, options),
+                (sizes, shapes) => AssemblyBuilder.Layout(snap, sizes, options, shapes),
                 (record, placement) =>
                 {
                     m_Busy = false;
                     if (replacing != Entity.Null)
                     {
+                        AssemblyCleanup.AfterReplace(RecordOf(replacing));
                         new RuntimePrefabs().Delete(replacing);
                         m_Replacing = Entity.Null;
                     }
@@ -547,7 +576,7 @@ namespace SignBuilder.Tools
                 ? AssemblyLibrary.FromPrefabName(prefab.name) : null;
 
         private static LayoutOptions OptionsOf(AssemblyRecord record) =>
-            record.Context?.Options?.Type != null && record.Context.Options.Signs != null ? record.Context.Options.Clone() : LayoutOptions.FromLegacy(record.Support);
+            record.Context?.Options != null ? record.Context.Options.Clone() : new LayoutOptions();
 
         /// <summary>
         /// Edit a placed structure: a gantry reopens in the arrangement panel pinned where it stands (Save
@@ -571,6 +600,7 @@ namespace SignBuilder.Tools
             m_Options = options;
             m_Options.EnsureSigns(m_Designs.Count);
             m_Replacing = entity;
+            SetHidden(entity, true);
             m_Pinned = record.Context.ToSnap();
             if (m_Options.Free) m_FreePoint = m_Pinned.Point - new float3(0, m_Options.Elevation, 0);
             m_UI.OpenForEdit(record, "gantry");
@@ -612,7 +642,9 @@ namespace SignBuilder.Tools
             var record = RecordOf(entity);
             if (record == null) return false;
             var options = OptionsOf(record);
+            SetHidden(m_Replacing, false);
             m_Replacing = move ? entity : Entity.Null;
+            SetHidden(m_Replacing, true);
             if (options.Type == "ground") BeginPosts(record.Designs[0], options);
             else BeginGantry(record.Designs, options);
             m_UI.OpenForEdit(record, options.Type == "ground" ? "posts" : "gantry");
@@ -620,6 +652,22 @@ namespace SignBuilder.Tools
         }
 
         public bool IsReplacing => m_Replacing != Entity.Null;
+
+        /// <summary>
+        /// Hides (or shows again) a placed structure while it is being edited or moved, so the live preview does
+        /// not overlap it. It is deleted when the edit is built.
+        /// </summary>
+        private void SetHidden(Entity entity, bool hidden)
+        {
+            if (entity == Entity.Null || !EntityManager.Exists(entity) || EntityManager.HasComponent<Deleted>(entity)) return;
+            if (hidden == EntityManager.HasComponent<Hidden>(entity)) return;
+            if (hidden) EntityManager.AddComponent<Hidden>(entity);
+            else EntityManager.RemoveComponent<Hidden>(entity);
+            EntityManager.AddComponent<BatchesUpdated>(entity);
+        }
+
+        /// <summary>Test hook: whether the structure being edited is hidden.</summary>
+        public bool ReplacingHidden => m_Replacing != Entity.Null && EntityManager.Exists(m_Replacing) && EntityManager.HasComponent<Hidden>(m_Replacing);
 
         /// <summary>Whether the tool is active, and in which mode: "off", "posts", "pickRoad" or "arrange".</summary>
         public string ModeName => !Active ? "off" : m_Mode switch { Mode.Posts => "posts", Mode.PickRoad => "pickRoad", _ => "arrange" };

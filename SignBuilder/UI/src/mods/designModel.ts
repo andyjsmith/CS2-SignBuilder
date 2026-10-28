@@ -7,7 +7,7 @@ export type Design = {
   name?: string;
   scheme?: string;
   align?: string;
-  exitTab?: { text: string; align?: string } | null;
+  exitTab?: { text: string; align?: string; height?: number } | null;
   bottomBar?: { type: string; arrows?: number; height?: number } | null;
   items: Item[];
   [key: string]: any;

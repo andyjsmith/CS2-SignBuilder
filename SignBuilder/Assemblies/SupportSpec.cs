@@ -10,6 +10,8 @@ namespace SignBuilder.Assemblies
         public float[] Args;
         /// <summary>Mirror across X (cantilevers on the drivers' left).</summary>
         public bool Mirror;
+        /// <summary>Raises the beam (and everything on it) by this many meters.</summary>
+        public float Lift;
 
         public static SupportSpec Of(string kind, params float[] args) => new SupportSpec { Kind = kind, Args = args };
     }

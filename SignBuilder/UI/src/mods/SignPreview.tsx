@@ -76,10 +76,10 @@ export const SignPreview = (props: {
     // Fit the sign into the preview box. Layout is not ready on the first frame (offsetWidth 0) and
     // grows when the sign fonts and shield images finish loading, so keep measuring for a while.
     let frames = 0;
-    let cancelled = false;
+    let canceled = false;
     let last = "";
     const measure = () => {
-      if (cancelled) return;
+      if (canceled) return;
       const box = outer.current;
       const w = sign.offsetWidth;
       const h = sign.offsetHeight;
@@ -97,7 +97,7 @@ export const SignPreview = (props: {
       if (frames++ < (interactive ? 180 : 90)) requestAnimationFrame(measure);
     };
     requestAnimationFrame(measure);
-    return () => { cancelled = true; };
+    return () => { canceled = true; };
   }, [ready, props.design, props.selected, props.maxWidth, props.maxHeight]);
 
   return (

@@ -9,7 +9,7 @@ namespace SignBuilder.Spike
     /// <summary>
     /// Fresh-boot reload test: a save holding our gantries references prefabs that only exist once
     /// the mod has created them. This re-creates the spike prefabs (same names) in OnGamePreload,
-    /// i.e. before the save is deserialised, and records them so the runner can count instances.
+    /// i.e. before the save is deserialized, and records them so the runner can count instances.
     /// </summary>
     public partial class SpikeBootstrapSystem : GameSystemBase
     {

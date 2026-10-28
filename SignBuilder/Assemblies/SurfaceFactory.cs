@@ -8,7 +8,7 @@ namespace SignBuilder.Assemblies
 {
     /// <summary>
     /// Creates SurfaceAssets (game materials) from our own textures, using a vanilla surface's material
-    /// template so the batch renderer recognises the shader. Proven with the steel material (Phase 1).
+    /// template so the batch renderer recognizes the shader. Proven with the steel material (Phase 1).
     /// </summary>
     public static class SurfaceFactory
     {

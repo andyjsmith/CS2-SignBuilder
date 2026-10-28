@@ -33,18 +33,18 @@ namespace SignBuilder.Assemblies
         }
         /// <summary>How to rebuild the support mesh (see <see cref="GantryFactory.FromSpec"/>).</summary>
         public SupportSpec SupportSpec;
-        /// <summary>Sign panel centres in assembly space, x y z per sign.</summary>
-        public float[] SignCentres;
+        /// <summary>Sign panel centers in assembly space, x y z per sign.</summary>
+        public float[] SignCenters;
         /// <summary>Where and how it was placed (road snapshot or free position, lane, shift), for Save in place.</summary>
         public PlacementContext Context;
 
         [JsonIgnore]
-        public UnityEngine.Vector3[] Centres
+        public UnityEngine.Vector3[] Centers
         {
             get
             {
-                var result = new UnityEngine.Vector3[(SignCentres?.Length ?? 0) / 3];
-                for (var i = 0; i < result.Length; i++) result[i] = new UnityEngine.Vector3(SignCentres[i * 3], SignCentres[i * 3 + 1], SignCentres[i * 3 + 2]);
+                var result = new UnityEngine.Vector3[(SignCenters?.Length ?? 0) / 3];
+                for (var i = 0; i < result.Length; i++) result[i] = new UnityEngine.Vector3(SignCenters[i * 3], SignCenters[i * 3 + 1], SignCenters[i * 3 + 2]);
                 return result;
             }
         }
@@ -53,7 +53,7 @@ namespace SignBuilder.Assemblies
         public JObject ToPortable() => new JObject
         {
             ["Id"] = Id, ["Support"] = Support, ["Reverse"] = Reverse, ["Designs"] = new JArray(Designs),
-            ["SupportSpec"] = SupportSpec == null ? null : JObject.FromObject(SupportSpec), ["SignCentres"] = SignCentres == null ? null : new JArray(SignCentres),
+            ["SupportSpec"] = SupportSpec == null ? null : JObject.FromObject(SupportSpec), ["SignCenters"] = SignCenters == null ? null : new JArray(SignCenters),
         };
 
         public static AssemblyRecord FromPortable(JObject json) => json.ToObject<AssemblyRecord>();
@@ -97,6 +97,12 @@ namespace SignBuilder.Assemblies
             Load();
             s_Records[record.Id] = record;
             Save();
+        }
+
+        public static void Remove(AssemblyRecord record)
+        {
+            Load();
+            if (s_Records.Remove(record.Id)) Save();
         }
 
         private static void Load()

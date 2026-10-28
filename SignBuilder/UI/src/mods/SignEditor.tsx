@@ -50,7 +50,7 @@ export const SignEditor = () => {
     } catch { /* ignore malformed payloads */ }
   }, [editing]);
 
-  // Leaving the arrangement (built or cancelled) returns any half-finished gantry sign edit to a plain design.
+  // Leaving the arrangement (built or canceled) returns any half-finished gantry sign edit to a plain design.
   useEffect(() => {
     if (mode !== "arrange" && (context.kind === "gantrySign" || context.kind === "gantryAdd")) setContext({ kind: "new" });
   }, [mode]);
@@ -77,7 +77,7 @@ export const SignEditor = () => {
       actions = replacing
         ? [{ label: "Save", primary: true, onSelect: () => savePosts(design) },
           { label: "Stop editing", title: "Keep the placed sign as it is", onSelect: () => { cancelTool(); setContext({ kind: "new" }); } }]
-        : [{ label: "Place on posts", primary: true, onSelect: () => startPosts(design) }];
+        : [{ label: "Place Standalone", primary: true, onSelect: () => startPosts(design) }];
       break;
     case "gantrySign":
       title = `Edit gantry sign ${context.index + 1}`;
@@ -95,7 +95,7 @@ export const SignEditor = () => {
       break;
     default:
       actions = [
-        { label: "Place on posts", primary: true, onSelect: () => startPosts(design) },
+        { label: "Place Standalone", primary: true, onSelect: () => startPosts(design) },
         { label: "Place on gantry", primary: true, onSelect: () => startGantry([design]) },
       ];
   }
