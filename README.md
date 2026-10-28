@@ -1,23 +1,31 @@
 # Sign Builder
 
-A Cities: Skylines II code mod for designing road signs in game and placing them on gantries or
-posts. North American guide signs come first (green, blue and brown signs with Interstate, US and
-state route shields, exit tabs and EXIT ONLY panels); other countries are planned as data packs.
+A Cities: Skylines II code mod for designing road signs in game and placing them standalone or on
+gantries. Signs come in themes (one per country or style): United States (MUTCD guide signs with
+Interstate, US and state shields, exit tabs and EXIT ONLY panels), Germany, United Kingdom and Nordic
+(Norway and Sweden). Players can add their own themes and templates as files.
 
 ## Using it
 
-1. Click **SB** in the top-left toolbar to open the editor.
-2. Start from a template or a blank sign. Click any part of the preview to select it, edit it on
-   the right, and add parts (text, shields, cardinal directions, arrows, distances, dividers) from
-   the left. Toggle an exit tab or an EXIT ONLY panel and pick the sign color.
-3. Use the sign tabs to put up to four signs on one structure.
-4. Choose the mounting: overhead truss, curved or straight tube span, curved or straight
-   cantilever, or roadside posts. Choose whether the signs face the clicked road's traffic or the
-   opposite direction.
-5. Press **Place on road** and hover a road: a preview follows the mouse. Click to build it; it is
-   snapped across the road and sized to the carriageway. Right-click leaves placement.
-6. To change a placed sign, open the editor and click the sign in the world. It loads back into the
-   editor; press **Place on road** and click a road to replace it.
+1. Click **SB** in the top-left toolbar to open the designer.
+2. Pick a theme and start from one of its templates (or a blank sign). Click any part of the preview to
+   select it (its text box takes the caret) and edit it on the right. Add parts from the theme's palette
+   (text, route numbers, arrows, distances, panels, rows); drag parts in the list to reorder them or drop
+   them onto a Row to put them side by side. Set the colors (or custom colors), width, alignment, and for
+   US signs an exit tab or EXIT ONLY panel. **Save current as template** keeps the sign as a JSON file in
+   `ModsData/SignBuilder/Templates`.
+3. **Place Standalone** puts the sign on roadside posts, snapped beside a road or freely placed
+   (right-drag rotates, Page Up / Page Down raise and lower).
+4. **Place on gantry** asks for a road, pins the structure there with a live preview and opens the
+   arrangement panel: a to-scale view of the lanes as drivers see them. Add signs (any theme), drag them
+   sideways (they snap to lane centers, remembered from the nearer edge: "rightmost lane", "2nd lane from
+   left"), choose the structure (double truss, single truss, curved or straight tube), Span or Cantilever
+   (post on the right or left), facing, height and sign size, and signs on the back for the other
+   direction. For a span, click roads alongside in the world to add them to (or remove them from) the
+   span. **Build** makes it.
+5. Click a placed sign with the normal selection tool: its panel has **Edit** (gantries reopen in the
+   arrangement panel in place, standalone signs in the designer; **Save** rebuilds them where they stand),
+   **Move** and **Duplicate**.
 
 Placed signs are ordinary props: they save with the city, can be bulldozed, and render through the
 game's own batching (shadows, distance culling). Saves are shareable: each structure's recipe (sign
@@ -28,7 +36,7 @@ without your local sign cache gets the signs rebuilt automatically (they need Si
 
 | Part | Where |
 | --- | --- |
-| Sign renderer: JSON design to HTML, MUTCD-style layout, Roadgeek fonts, shields | `SignBuilder/Resources/Renderer/renderer.js` |
+| Sign renderer: JSON design to HTML, laid out with the design's theme | `SignBuilder/Resources/Renderer/renderer.js` |
 | Face baker: renders designs off-screen with the game's UI engine, caches PNGs | `SignBuilder/Rendering/SignFaceBaker.cs` |
 | Editor UI (React, built into the mod folder) | `SignBuilder/UI/src/mods/` |
 | UI bindings | `SignBuilder/Systems/SignBuilderUISystem.cs` |
@@ -36,7 +44,7 @@ without your local sign cache gets the signs rebuilt automatically (they need Si
 | Support geometry (truss, tubes, posts) | `SignBuilder/Spike/GantryFactory.cs`, `MeshBuilder.cs` |
 | Assembly build: layout, merged mesh, materials, prefab | `SignBuilder/Assemblies/AssemblyBuilder.cs` |
 | Persistence: assembly library re-registered before saves load | `SignBuilder/Assemblies/AssemblyLibrary.cs`, `AssemblyBootstrapSystem.cs` |
-| Templates | `SignBuilder/Resources/Templates/*.json` |
+| Themes and their templates | `SignBuilder/Resources/Themes/<id>/` (`theme.json`, `fonts/`, `shields/`, `templates/`) |
 
 Each placed structure becomes one prop prefab (`SignBuilder_A_<id>`): the support and sign panels
 are merged into one mesh with a steel material and one material per sign face. The meshes and
@@ -66,24 +74,37 @@ the test harness armed, waits for it to quit, and leaves results and screenshots
 
 | Mode | What it does |
 | --- | --- |
-| `e2e` | Opens the editor, places every mounting type, previews, reverses, re-edits, saves `SignBuilder_E2E` |
-| `reload` | Boots into a save and checks the placed structures came back |
-| `phase1` | Older renderer/gantry batch |
-| `debug` | Bakes one sign and idles with the UI DevTools on `localhost:9444` |
+| `e2e` | Places every structure type, runs the arrangement, edit, template and theme checks, saves `SignBuilder_E2E` |
+| `reload` | Boots into the E2E save and checks the placed structures came back |
+| `reload-e2e` | Both, in one run |
+| `uitest` | Opens the editor and idles for a DevTools script |
 | `smoke` | Loads, screenshots, quits |
 
-For quick renderer work without the game, serve `SignBuilder/Resources` (see `.claude/launch.json`)
-and open `Renderer/preview.html`.
+If the requested save id is stale the harness loads the test save (`ModTest`) by name. Runs quit after
+9 minutes in game, and the script kills the game at 10 minutes, so a run is never left open.
+
+## Themes
+
+A theme is a folder with `theme.json`: its name and units (`in` or `mm`), default sizes, fonts (file,
+label, and `scale`/`offset`: em size and vertical offset per letter height, from the font's cap height),
+color schemes, route plates (`img` artwork, `ellipse`, colored `rect` plates with optional border and
+prefix such as "A " or "E ", or `plain` colored text), the arrow outline, features (exit tab, EXIT ONLY),
+the parts palette and a `templates/` folder. Built-in themes live in `SignBuilder/Resources/Themes`;
+players add theirs in `ModsData/SignBuilder/Themes/<id>`. A player folder with a built-in theme's id and
+no `theme.json` supplies extra files for it, such as fonts that cannot ship with the mod (the Nordic theme
+picks up `Tratex.ttf` or `Trafikkalfabetet.ttf` there). Switching a sign's theme in the designer keeps its
+text and scales its sizes; plates and colors the new theme lacks fall back to its defaults.
 
 ## Credits
 
-- Roadgeek 2014 fonts by Sammi De Guzman (MIT), `SignBuilder/Resources/Fonts/LICENSE-roadgeek.txt`
+- Roadgeek 2014 fonts by Sammi De Guzman (MIT), `Resources/Themes/us/fonts/LICENSE-roadgeek.txt`
 - Interstate and US route shield shapes from OpenStreetMap Americana (CC0)
+- Alte DIN 1451 Mittelschrift by Peter Wiegel (SIL OFL 1.1), Germany theme
+- Transport Medium, Transport Heavy and Motorway Permanent from roads.org.uk: Crown Copyright, Open
+  Government Licence v1.0, United Kingdom theme
+- D-DIN by Datto Inc. (SIL OFL 1.1), Nordic theme stand-in for Tratex / Trafikkalfabetet
 
 ## Roadmap
 
-- Country packs (Norway, Sweden, UK, Germany first): schemes, fonts, route markers, spacing rules and
-  templates as data
-- Diagrammatic and lane-arrow signs aligned to detected lanes
-- Library cleanup for structures no longer used by any save
+- More themes (and per-country spacing rules); diagrammatic and lane-arrow signs aligned to detected lanes
 - Structures placed before the save-recipe change cannot be rebuilt on other PCs (re-place them)

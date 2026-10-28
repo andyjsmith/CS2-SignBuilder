@@ -5,11 +5,11 @@
   "units": "mm",
   "defaults": {
     "font": "TransportMedium",
-    "textHeight": 300,
-    "shieldHeight": 330,
-    "arrowHeight": 420,
-    "border": 30,
-    "cornerRadius": 70,
+    "textHeight": 350,
+    "shieldHeight": 380,
+    "arrowHeight": 490,
+    "border": 40,
+    "cornerRadius": 80,
     "lineGap": 0.6,
     "margin": 0.6,
     "itemGap": 0.45,
@@ -141,7 +141,7 @@
       "item": {
         "type": "text",
         "text": "Destination",
-        "height": 300
+        "height": 350
       }
     },
     {
@@ -150,7 +150,7 @@
         "type": "shield",
         "network": "AP",
         "number": "1",
-        "height": 330
+        "height": 380
       }
     },
     {
@@ -159,7 +159,7 @@
         "type": "shield",
         "network": "J",
         "number": "12",
-        "height": 330
+        "height": 380
       }
     },
     {
@@ -167,7 +167,7 @@
       "item": {
         "type": "arrow",
         "direction": "up",
-        "height": 420
+        "height": 490
       }
     },
     {
@@ -175,7 +175,7 @@
       "item": {
         "type": "text",
         "text": "1 mile",
-        "height": 220
+        "height": 260
       }
     },
     {
@@ -187,7 +187,7 @@
           {
             "type": "text",
             "text": "Destination",
-            "height": 240
+            "height": 280
           }
         ]
       }

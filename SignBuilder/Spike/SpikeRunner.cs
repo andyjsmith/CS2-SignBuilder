@@ -145,7 +145,22 @@ namespace SignBuilder.Spike
 
         private IEnumerator WaitForGame()
         {
-            while (!GameManager.instance.gameMode.IsGame() || GameManager.instance.isGameLoading) yield return null;
+            // The launcher asks for a save by id (-startGame) or "continue"; ids change when a save is overwritten,
+            // so if the game is still at the main menu after a while, load the test save by name instead.
+            var deadline = Time.realtimeSinceStartup + 25f;
+            var requested = false;
+            while (!GameManager.instance.gameMode.IsGame() || GameManager.instance.isGameLoading)
+            {
+                if (!requested && Time.realtimeSinceStartup > deadline && GameManager.instance.gameMode == GameMode.MainMenu && !GameManager.instance.isGameLoading)
+                {
+                    requested = true;
+                    var name = m_Mode == "reload" ? kE2ESave : kContinueSave;
+                    var meta = AssetDatabase.global.GetAssets<SaveGameMetadata>().FirstOrDefault(m => m.name == name);
+                    SpikeReport.Set("game.loadByName", meta != null ? $"{name} ({meta.id.guid})" : $"{name} not found");
+                    if (meta != null) GameManager.instance.Load(GameMode.Game, Purpose.LoadGame, meta);
+                }
+                yield return null;
+            }
             var autoSave = World.DefaultGameObjectInjectionWorld.GetExistingSystemManaged<AutoSaveSystem>();
             if (autoSave != null) autoSave.Enabled = false;
             SpikeReport.Set("game.loaded", true);

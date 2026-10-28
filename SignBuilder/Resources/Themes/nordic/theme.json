@@ -5,11 +5,11 @@
   "units": "mm",
   "defaults": {
     "font": "DDIN",
-    "textHeight": 280,
-    "shieldHeight": 300,
-    "arrowHeight": 420,
-    "border": 22,
-    "cornerRadius": 50,
+    "textHeight": 400,
+    "shieldHeight": 430,
+    "arrowHeight": 600,
+    "border": 30,
+    "cornerRadius": 70,
     "lineGap": 0.55,
     "margin": 0.6,
     "itemGap": 0.45,
@@ -156,7 +156,7 @@
       "item": {
         "type": "text",
         "text": "Destination",
-        "height": 280
+        "height": 400
       }
     },
     {
@@ -165,7 +165,7 @@
         "type": "shield",
         "network": "E",
         "number": "18",
-        "height": 300
+        "height": 430
       }
     },
     {
@@ -174,7 +174,7 @@
         "type": "shield",
         "network": "EXIT",
         "number": "12",
-        "height": 300
+        "height": 430
       }
     },
     {
@@ -182,7 +182,7 @@
       "item": {
         "type": "arrow",
         "direction": "up",
-        "height": 420
+        "height": 600
       }
     },
     {
@@ -190,7 +190,7 @@
       "item": {
         "type": "text",
         "text": "2 km",
-        "height": 200
+        "height": 290
       }
     },
     {
@@ -202,7 +202,7 @@
           {
             "type": "text",
             "text": "Sentrum",
-            "height": 220
+            "height": 310
           }
         ]
       }

@@ -28,30 +28,41 @@
     scheme: "green",
   };
   var DEFAULT_ARROW = "M32 0 H68 V88 H100 L50 150 L0 88 H32 Z";
-  var fontStyle = null;
+  // Families that already have an @font-face rule on this page (rules are never rewritten: re-parsing a style
+  // sheet makes Gameface fetch every font in it again, all at once).
+  var loadedFamilies = {};
 
   function registerTheme(def, base) {
     if (!def || !def.id) return;
+    var json = JSON.stringify(def);
     var known = THEMES[def.id];
-    if (known && known.json === JSON.stringify(def) && known.base === base) return;
+    if (known && known.json === json && known.base === (base || "")) return;
     var fonts = {};
     (def.fonts || []).forEach(function (f) { fonts[f.family] = f; });
-    THEMES[def.id] = { def: def, base: base || "", fonts: fonts, json: JSON.stringify(def) };
-    // Font files load through @font-face rules added to the page.
-    if (!fontStyle) {
-      fontStyle = document.createElement("style");
-      document.head.appendChild(fontStyle);
-    }
+    THEMES[def.id] = { def: def, base: base || "", fonts: fonts, json: json, fontsLoaded: false };
+  }
+
+  // A theme's fonts are added to the page the first time one of its signs is drawn, one style element per theme.
+  function ensureFonts(theme) {
+    if (!theme || theme.fontsLoaded) return;
+    theme.fontsLoaded = true;
     var css = "";
-    (def.fonts || []).forEach(function (f) {
-      if (f.file) css += '@font-face { font-family: "' + f.family + '"; src: url("' + (base || "") + f.file + '"); }\n';
+    (theme.def.fonts || []).forEach(function (f) {
+      if (!f.file || loadedFamilies[f.family]) return;
+      loadedFamilies[f.family] = true;
+      var url = /^[a-z]+:\/\//.test(f.file) ? f.file : theme.base + f.file;
+      css += '@font-face { font-family: "' + f.family + '"; src: url("' + url + '"); }\n';
     });
-    fontStyle.textContent += css;
+    if (!css) return;
+    var style = document.createElement("style");
+    style.textContent = css;
+    document.head.appendChild(style);
   }
 
   function useTheme(doc) {
     if (doc && doc._theme) registerTheme(doc._theme, doc._themeBase);
-    T = THEMES[(doc && doc.theme) || "us"] || THEMES.us || THEMES[Object.keys(THEMES)[0]] || { def: {}, base: "", fonts: {} };
+    T = THEMES[(doc && doc.theme) || "us"] || THEMES.us || THEMES[Object.keys(THEMES)[0]] || { def: {}, base: "", fonts: {}, fontsLoaded: true };
+    ensureFonts(T);
     DEFAULTS = {};
     for (var k in BASE_DEFAULTS) DEFAULTS[k] = BASE_DEFAULTS[k];
     var d = T.def.defaults || {};

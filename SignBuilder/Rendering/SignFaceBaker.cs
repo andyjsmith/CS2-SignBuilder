@@ -82,11 +82,35 @@ namespace SignBuilder.Rendering
         private bool m_UseB;
 
         /// <summary>Bakes <paramref name="design"/> and yields until <paramref name="onDone"/> has been called (with null on failure).</summary>
+        /// <summary>
+        /// Bakes a design. There is one off-screen view, so bakes take turns: several started at once (one per sign
+        /// of a gantry) would otherwise all read back whichever sign the view drew last.
+        /// </summary>
         public IEnumerator Bake(JObject design, float pixelsPerInch, Action<BakedFace> onDone)
+        {
+            while (m_Busy) yield return null;
+            m_Busy = true;
+            var inner = BakeOne(design, pixelsPerInch, onDone);
+            try
+            {
+                while (inner.MoveNext()) yield return inner.Current;
+            }
+            finally
+            {
+                m_Busy = false;
+            }
+        }
+
+        private bool m_Busy;
+
+        /// <summary>Bumped when cached faces must not be reused (v2: faces baked concurrently could be wrong).</summary>
+        private const int kCacheVersion = 2;
+
+        private IEnumerator BakeOne(JObject design, float pixelsPerInch, Action<BakedFace> onDone)
         {
             // The design carries its theme (fonts, colors, plates), so theme changes rebake too.
             var json = Core.Themes.ForRender(design).ToString(Formatting.None);
-            var key = Hash($"{m_RendererVersion}|{pixelsPerInch}|{json}");
+            var key = Hash($"{kCacheVersion}|{m_RendererVersion}|{pixelsPerInch}|{json}");
             var cached = TryLoadCached(key);
             if (cached != null)
             {

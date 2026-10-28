@@ -5,11 +5,11 @@
   "units": "mm",
   "defaults": {
     "font": "DIN1451",
-    "textHeight": 280,
-    "shieldHeight": 300,
-    "arrowHeight": 420,
-    "border": 22,
-    "cornerRadius": 60,
+    "textHeight": 400,
+    "shieldHeight": 430,
+    "arrowHeight": 600,
+    "border": 30,
+    "cornerRadius": 90,
     "lineGap": 0.55,
     "margin": 0.6,
     "itemGap": 0.45,
@@ -108,7 +108,7 @@
       "item": {
         "type": "text",
         "text": "Ziel",
-        "height": 280
+        "height": 400
       }
     },
     {
@@ -117,7 +117,7 @@
         "type": "shield",
         "network": "A",
         "number": "7",
-        "height": 300
+        "height": 430
       }
     },
     {
@@ -126,7 +126,7 @@
         "type": "shield",
         "network": "AS",
         "number": "12",
-        "height": 300
+        "height": 430
       }
     },
     {
@@ -134,7 +134,7 @@
       "item": {
         "type": "arrow",
         "direction": "up",
-        "height": 420
+        "height": 600
       }
     },
     {
@@ -142,7 +142,7 @@
       "item": {
         "type": "text",
         "text": "1000 m",
-        "height": 200
+        "height": 290
       }
     },
     {
@@ -154,7 +154,7 @@
           {
             "type": "text",
             "text": "Ziel",
-            "height": 200
+            "height": 290
           }
         ]
       }
