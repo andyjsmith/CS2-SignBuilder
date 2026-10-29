@@ -145,12 +145,26 @@ export function moveTo(design: Design, from: string, target: string, position: D
 /** A part's name in the parts list; <labels> are the theme's route plate names. */
 export function describe(item: Item, labels?: Record<string, string>): string {
   switch (item.type) {
-    case "text": return `Text "${item.text}"`;
+    case "text": return `"${item.text}"`;
     case "shield": return `${labels?.[item.network] ?? item.network} ${item.number}`;
     case "panel": return `Panel (${item.items?.length ?? 0})`;
     case "arrow": return `Arrow ${String(item.direction ?? "up").replace("-", " ")}`;
     case "row": return `Row (${item.items.length})`;
     case "stack": return `Column (${item.items.length})`;
+    case "divider": return "Divider";
+    default: return item.type;
+  }
+}
+
+/** What kind of part this is, as the heading over its settings. */
+export function kindOf(item: Item, labels?: Record<string, string>): string {
+  switch (item.type) {
+    case "text": return "Text";
+    case "shield": return `${labels?.[item.network] ?? "Route"} plate`;
+    case "panel": return "Panel";
+    case "arrow": return "Arrow";
+    case "row": return "Row";
+    case "stack": return "Column";
     case "divider": return "Divider";
     default: return item.type;
   }

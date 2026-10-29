@@ -11,10 +11,13 @@ import styles from "./SignEditor.module.scss";
 type Sign = { index: number; x: number; w: number; h: number; ready: boolean; mode: string; lane: number; fromRight: boolean; offset: number; design: Design };
 type Info = {
   lanes: number[]; allLanes: [number, boolean][]; deck: number[]; roads: [number, number, boolean][]; structure: number[]; posts: number[]; signs: Sign[];
-  type: string; span: string; side: string; reverse: boolean; free: boolean; scale: number; lift: number; lights: boolean;
+  type: string; span: string; side: string; reverse: boolean; free: boolean; scale: number; lift: number; lights: boolean; gap: number;
   view: string; otherSide: number; total: number;
   angle: number; elevation: number; width: number; replacing: boolean; busy: boolean; dirty: boolean;
 };
+
+/** Height of the game's bottom bar, as a fraction of the screen. */
+const kBottomBar = 0.092;
 
 const nth = (n: number) => (n === 2 ? "2nd" : n === 3 ? "3rd" : `${n}th`);
 /** "Rightmost lane", "2nd lane from left", "+1.25 m from center", "With others". */
@@ -50,12 +53,35 @@ export const Arrange = (props: {
     if (w && Math.abs(w - areaWidth) > 2) setAreaWidth(w);
   });
 
+  // Docked just above the game's bottom bar. The panel's start position is a fraction of the free space, so the full panel is measured once laid out and placed again (remounted) with its bottom edge
+  // where it belongs; again if its height changes (free placement adds controls). Dragging it afterwards sticks.
+  const body = useRef<HTMLDivElement>(null);
+  const [placement, setPlacement] = useState({ y: 0.7, key: 0, height: 0, tries: 0 });
+  useEffect(() => {
+    if (!info || !body.current) return;
+    const timer = setTimeout(() => {
+      let panel: HTMLElement = body.current!;
+      while (panel.parentElement && panel.parentElement.getBoundingClientRect().height < window.innerHeight * 0.95) panel = panel.parentElement;
+      const r = panel.getBoundingClientRect();
+      const H = window.innerHeight;
+      if (r.height <= 0 || H <= 0) return;
+      const changed = Math.abs(r.height - placement.height) > 8;
+      if (!changed && placement.tries >= 3) return;
+      const off = H * (1 - kBottomBar) - 6 - r.bottom;
+      if (Math.abs(off) < 4) { if (changed) setPlacement({ ...placement, height: r.height, tries: 3 }); return; }
+      // initialPosition.y places the panel's top at y * (screen height - panel height).
+      const top = r.top + off;
+      setPlacement({ y: Math.max(0, Math.min(1, top / Math.max(1, H - r.height))), key: placement.key + 1, height: r.height, tries: changed ? 1 : placement.tries + 1 });
+    }, 60);
+    return () => clearTimeout(timer);
+  });
+
   const PanelAny: any = Panel;
-  const position = { x: 0.5, y: 0.995 };
+  const position = { x: 0.5, y: placement.y };
   if (!info) {
     return (
-      <PanelAny draggable initialPosition={position} header="Gantry" className={styles.arrange} onClose={() => props.onClose(true)}>
-        <div className={styles.compactBody}><div className={styles.status}>{status || "Preparing..."}</div></div>
+      <PanelAny key={placement.key} draggable initialPosition={position} header="Gantry" className={styles.arrange} onClose={() => props.onClose(true)}>
+        <div ref={body} className={styles.compactBody}><div className={styles.status}>{status || "Preparing..."}</div></div>
       </PanelAny>
     );
   }
@@ -116,7 +142,7 @@ export const Arrange = (props: {
     arrange({ op: "slot", index: s.index, mode: "lane", lane: fromRight ? n - 1 - next : next, fromRight, offset: 0 });
   };
   const Step = (p: { onClick: () => void; children: any; title?: string }) => <div className={styles.step} title={p.title} onClick={p.onClick}>{p.children}</div>;
-  const Gap = () => <div className={styles.barGap} />;
+  const Label = (p: { children: any }) => <div className={styles.barLabel} style={{ marginLeft: "16rem" }}>{p.children}</div>;
   const laneXs = allLanes.map((l) => l[0]);
   const dragLane = drag ? nearest(laneXs, drag.x) : -1;
   const snapping = drag && dragLane >= 0 && Math.abs(laneXs[dragLane] - drag.x) < 0.75;
@@ -126,63 +152,63 @@ export const Arrange = (props: {
   const ready = info.total > 0 && !info.busy && !signs.some((s) => !s.ready);
 
   return (
-    <PanelAny draggable initialPosition={position} header={info.replacing ? "Edit gantry" : "Gantry"} className={styles.arrange} onClose={() => props.onClose(unsaved)}>
-      <div className={styles.arrangeBody}>
+    <PanelAny key={placement.key} draggable initialPosition={position} header={info.replacing ? "Edit gantry" : "Gantry"} className={styles.arrange} onClose={() => props.onClose(unsaved)}>
+      <div ref={body} className={styles.arrangeBody}>
         <div className={styles.barRow}>
           <div className={ready ? styles.primaryButton : styles.primaryButtonOff} onClick={() => ready && arrange({ op: "build" })}>{info.replacing ? "Save" : "Build"}</div>
-          <div className={styles.chip} style={{ alignSelf: "center" }} onClick={props.onAddSign}>Add sign</div>
           <div className={styles.chip} style={{ alignSelf: "center" }} onClick={() => arrange({ op: "auto" })}>Auto arrange</div>
           <div className={styles.chip} style={{ alignSelf: "center" }} title="Click another spot on a road to move the gantry there" onClick={() => arrange({ op: "repick" })}>Move gantry</div>
           <div className={styles.chip} style={{ alignSelf: "center" }} onClick={() => props.onCancel(unsaved)}>Cancel</div>
-          <Gap />
-          <Choice options={[
-            { value: "front", label: `Front side (${info.view === "back" ? info.otherSide : signs.length})` },
-            { value: "back", label: `Back side (${info.view === "back" ? signs.length : info.otherSide})`, title: "Signs on the other face of the structure, for traffic the other way" },
-          ]} value={info.view} onChange={(value) => { arrange({ op: "view", value }); setSelected(-1); }} />
+          <Label>Structure</Label>
+          <Choice options={STRUCTURES.map((s) => ({ value: s.id, label: s.label }))} value={info.type} onChange={(value) => arrange({ op: "type", value })} />
+          <Label>Type</Label>
+          <Choice options={SPANS.map((s) => ({ value: s.id, label: s.label, title: s.hint }))} value={info.span} onChange={(value) => arrange({ op: "span", value })} />
+          {info.span === "cantilever" && (
+            <Choice options={[{ value: "left", label: "Post left" }, { value: "right", label: "Post right" }]} value={info.side}
+              onChange={(value) => arrange({ op: "side", value })} />
+          )}
+          {!info.free && (
+            <div className={styles.chip} style={{ alignSelf: "center", marginLeft: "12rem" }} title="Face the signs the other way"
+              onClick={() => arrange({ op: "swap" })}>Swap directions</div>
+          )}
           {status && <div className={styles.status} style={{ marginLeft: "12rem" }}>{status}</div>}
         </div>
         <div className={styles.barRow}>
-          <Choice options={STRUCTURES.map((s) => ({ value: s.id, label: s.label }))} value={info.type} onChange={(value) => arrange({ op: "type", value })} />
-          <Gap />
-          <Choice options={SPANS.map((s) => ({ value: s.id, label: s.label, title: s.hint }))} value={info.span} onChange={(value) => arrange({ op: "span", value })} />
-          {info.span === "cantilever" && (
-            <>
-              <Gap />
-              <Choice options={[{ value: "left", label: "Post on left" }, { value: "right", label: "Post on right" }]} value={info.side}
-                onChange={(value) => arrange({ op: "side", value })} />
-            </>
-          )}
+          <div className={styles.barLabel}>Height</div>
+          <Step title="Lower (Ctrl + mouse wheel)" onClick={() => arrange({ op: "lift", value: -0.25 })}><ArrowIcon direction="down" size={12} /></Step>
+          <div className={styles.barValueSmall}>{`${info.lift >= 0 ? "+" : ""}${info.lift.toFixed(2)} m`}</div>
+          <Step title="Raise (Ctrl + mouse wheel)" onClick={() => arrange({ op: "lift", value: 0.25 })}><ArrowIcon direction="up" size={12} /></Step>
           {!info.free && (
             <>
-              <Gap />
-              <Choice options={[{ value: "forward", label: "Forward", title: "Faces the clicked road's traffic" }, { value: "reverse", label: "Reverse", title: "Faces the other direction" }]}
-                value={info.reverse ? "reverse" : "forward"} onChange={(v) => arrange({ op: "reverse", value: v === "reverse" })} />
+              <Label>Posts from road</Label>
+              <Step title="Closer (Shift + mouse wheel)" onClick={() => adjust("closer")}>-</Step>
+              <div className={styles.barValueSmall}>{`${(info.gap ?? 2).toFixed(2)} m`}</div>
+              <Step title="Farther (Shift + mouse wheel)" onClick={() => adjust("farther")}>+</Step>
             </>
           )}
-        </div>
-        <div className={styles.barRow}>
-          <div className={styles.barLabel}>Height</div>
-          <Step onClick={() => arrange({ op: "lift", value: -0.25 })}><ArrowIcon direction="down" size={12} /></Step>
-          <div className={styles.barValueSmall}>{`${info.lift >= 0 ? "+" : ""}${info.lift.toFixed(2)} m`}</div>
-          <Step onClick={() => arrange({ op: "lift", value: 0.25 })}><ArrowIcon direction="up" size={12} /></Step>
-          <div className={styles.barLabel} style={{ marginLeft: "16rem" }}>Sign size</div>
+          <Label>Sign size</Label>
           <Step onClick={() => arrange({ op: "scale", value: -1 })}>-</Step>
           <div className={styles.barValueSmall}>{`${Math.round(info.scale * 100)}%`}</div>
           <Step onClick={() => arrange({ op: "scale", value: 1 })}>+</Step>
-          <Gap />
-          <Choice options={[{ value: "off", label: "No lights" }, { value: "on", label: "Sign lights", title: "Light fixtures on arms below each sign; the signs glow brighter at night" }]}
+          <Label>Lights</Label>
+          <Choice options={[{ value: "off", label: "Off" }, { value: "on", label: "On", title: "Light fixtures on arms below each sign; the signs glow brighter at night" }]}
             value={info.lights ? "on" : "off"} onChange={(v) => arrange({ op: "lights", value: v === "on" })} />
+          <Label>Showing</Label>
+          <Choice options={[
+            { value: "front", label: `Front (${info.view === "back" ? info.otherSide : signs.length})` },
+            { value: "back", label: `Back (${info.view === "back" ? signs.length : info.otherSide})`, title: "Signs on the other face of the structure, for traffic the other way" },
+          ]} value={info.view} onChange={(value) => { arrange({ op: "view", value }); setSelected(-1); }} />
           {info.free && (
             <>
-              <div className={styles.barLabel} style={{ marginLeft: "16rem" }}>Rotate</div>
+              <Label>Rotate</Label>
               <Step onClick={() => adjust("rotateLeft")}>-15°</Step>
               <div className={styles.barValueSmall}>{`${Math.round(info.angle)}°`}</div>
               <Step onClick={() => adjust("rotateRight")}>+15°</Step>
-              <div className={styles.barLabel} style={{ marginLeft: "16rem" }}>Base</div>
+              <Label>Base</Label>
               <Step onClick={() => adjust("lower")}><ArrowIcon direction="down" size={12} /></Step>
               <div className={styles.barValueSmall}>{`${info.elevation >= 0 ? "+" : ""}${info.elevation.toFixed(2)} m`}</div>
               <Step onClick={() => adjust("raise")}><ArrowIcon direction="up" size={12} /></Step>
-              <div className={styles.barLabel} style={{ marginLeft: "16rem" }}>Road width</div>
+              <Label>Road width</Label>
               <Step onClick={() => adjust("narrower")}>-</Step>
               <div className={styles.barValueSmall}>{`${info.width.toFixed(0)} m`}</div>
               <Step onClick={() => adjust("wider")}>+</Step>
@@ -222,14 +248,12 @@ export const Arrange = (props: {
             </div>
           ))}
         </div>
-        {info.span !== "cantilever" && info.roads.length > 1 && (
-          <div className={styles.hint}>
-            {`The span crosses ${info.roads.filter((r) => r[2]).length} of ${info.roads.length} roads here: click a road alongside in the world to add or remove it.`}
-          </div>
-        )}
+        {info.span !== "cantilever" && <div className={styles.hint}>Click a road to add it to the gantry's span, or click it again to remove it.</div>}
 
-        {signs.length > 0 && (
-          <div className={styles.barRow}>
+        <div className={styles.barRow}>
+          <div className={styles.chip} style={{ alignSelf: "center", marginRight: "14rem" }} onClick={props.onAddSign}>Add sign</div>
+          {signs.length > 0 && (
+          <>
             <div className={styles.barLabel}>{`Sign ${sel + 1} of ${signs.length}${info.view === "back" ? " (back)" : ""}:`}</div>
             <div className={styles.barValue}>{anchorLabel(signs[sel])}</div>
             <div className={styles.chip} onClick={() => arrange({ op: "slot", index: signs[sel].index, mode: "auto", offset: 0 })}>With others</div>
@@ -246,8 +270,9 @@ export const Arrange = (props: {
             <div className={styles.chip} style={{ marginLeft: "12rem" }} onClick={() => props.onEditSign(signs[sel].index, signs[sel].design)}>Edit sign</div>
             <div className={styles.chip} onClick={() => arrange({ op: "duplicateSign", index: signs[sel].index })}>Duplicate</div>
             <div className={styles.chip} onClick={() => { arrange({ op: "removeSign", index: signs[sel].index }); setSelected(0); }}>Remove</div>
-          </div>
-        )}
+          </>
+          )}
+        </div>
         {props.overlay}
       </div>
     </PanelAny>

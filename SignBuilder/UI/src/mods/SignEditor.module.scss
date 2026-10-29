@@ -1,6 +1,6 @@
 // Gameface supports a subset of CSS: flexbox works but `gap` does not, so spacing uses margins.
 .panel { width: 1180rem; }
-.body { position: relative; display: flex; flex-direction: row; align-items: stretch; padding: 8rem; }
+.body { position: relative; display: flex; flex-direction: row; align-items: stretch; padding: 8rem; height: 650rem; }
 .column { width: 280rem; display: flex; flex-direction: column; }
 .center { flex: 1; display: flex; flex-direction: column; align-items: center; margin: 0 12rem; }
 .heading { font-size: 14rem; font-weight: bold; color: rgba(255, 255, 255, 0.9); margin: 10rem 0 4rem 0; text-transform: uppercase; }
@@ -17,7 +17,7 @@
 .stepper { display: flex; flex-direction: row; align-items: center; }
 .step { width: 26rem; height: 22rem; line-height: 22rem; text-align: center; color: #fff; background-color: rgba(255, 255, 255, 0.12); border-radius: 3rem; }
 .stepValue { width: 72rem; text-align: center; color: #fff; font-size: 14rem; white-space: nowrap; }
-.preview { width: 560rem; height: 330rem; background-color: rgba(120, 140, 110, 0.6); border-radius: 4rem; display: flex; align-items: center; justify-content: center; }
+.preview { width: 560rem; height: 290rem; background-color: rgba(120, 140, 110, 0.6); border-radius: 4rem; display: flex; align-items: center; justify-content: center; }
 .hint { font-size: 12rem; color: rgba(255, 255, 255, 0.7); margin: 4rem 0; }
 .status { font-size: 13rem; color: #ffd400; margin: 6rem 0; }
 .actions { margin-top: 10rem; display: flex; flex-direction: row; }
@@ -37,11 +37,13 @@
 .optionGroup .choices { flex-wrap: nowrap; }
 /* --- designer --- */
 .signOptions { display: flex; flex-direction: column; align-items: flex-start; width: 560rem; margin-top: 6rem; }
+.optionsScroll { width: 580rem; height: 262rem; }
+.partsScroll { height: 500rem; }
 .customColors { display: flex; flex-direction: row; }
 .customColors > div { margin-right: 16rem; }
 .library { display: flex; flex-direction: column; }
 .libraryActions, .namingRow { display: flex; flex-direction: row; flex-wrap: wrap; align-items: center; margin-bottom: 6rem; }
-.cards { height: 440rem; }
+.cards { height: 430rem; }
 .cardRow { display: flex; flex-direction: row; align-items: flex-start; }
 .card { position: relative; width: 134rem; margin: 0 6rem 6rem 0; padding: 4rem; border-radius: 4rem; background-color: rgba(255, 255, 255, 0.06); }
 .card:hover { background-color: rgba(255, 255, 255, 0.16); }
@@ -54,7 +56,7 @@
 .dragging { opacity: 0.5; }
 .hintInline { font-size: 11rem; color: rgba(255, 255, 255, 0.5); }
 /* --- arrangement --- */
-.arrange { width: 1240rem; }
+.arrange { width: 1360rem; }
 .arrangeBody { position: relative; padding: 6rem 12rem; display: flex; flex-direction: column; align-items: stretch; }
 .barGap { width: 18rem; }
 .barValueSmall { min-width: 60rem; text-align: center; font-size: 14rem; color: #fff; white-space: nowrap; }
@@ -78,11 +80,11 @@
 .inlineRow { display: flex; flex-direction: row; align-items: center; }
 .deckOther { position: absolute; height: 26px; background-color: rgba(60, 62, 66, 0.35); }
 .choiceRows { display: flex; flex-direction: column; align-items: flex-start; }
-.select { position: relative; width: 240rem; }
+.select { position: relative; width: 200rem; }
 .selectToggle { display: flex; flex-direction: row; align-items: center; padding: 4rem 8rem; font-size: 14rem; color: #fff; background-color: rgba(0, 0, 0, 0.35); border: 1rem solid rgba(255, 255, 255, 0.3); border-radius: 3rem; }
 .selectToggle:hover { background-color: rgba(255, 255, 255, 0.12); }
 .selectCaret { margin-left: 6rem; font-size: 12rem; }
-.selectMenu { position: absolute; left: 0; right: 0; top: 30rem; padding: 3rem; background-color: rgba(24, 28, 34, 0.98); border: 1rem solid rgba(255, 255, 255, 0.25); border-radius: 3rem; z-index: 10; }
+.selectMenu { margin-top: 2rem; padding: 3rem; background-color: rgba(24, 28, 34, 0.98); border: 1rem solid rgba(255, 255, 255, 0.25); border-radius: 3rem; z-index: 10; }
 .selectItem, .selectItemOn { padding: 4rem 8rem; font-size: 14rem; color: #fff; border-radius: 2rem; }
 .selectItem:hover { background-color: rgba(255, 255, 255, 0.15); }
 .selectItemOn { background-color: rgba(80, 160, 255, 0.5); }
@@ -95,3 +97,6 @@
 .confirmText { font-size: 15rem; color: #fff; margin-bottom: 12rem; }
 .dangerButton { padding: 5rem 14rem; margin-right: 10rem; font-size: 14rem; font-weight: bold; color: #fff; border-radius: 4rem; background-color: #b23a3a; }
 .dangerButton:hover { background-color: #cc4545; }
+.marginGrid { display: flex; flex-direction: column; }
+.marginSide { display: flex; flex-direction: row; align-items: center; margin: 0 10rem 3rem 0; }
+.marginLabel { width: 46rem; font-size: 12rem; color: rgba(255, 255, 255, 0.7); }

@@ -1,8 +1,9 @@
-import { Panel } from "cs2/ui";
+import { Panel, Scrollable } from "cs2/ui";
+import { openThemesFolder } from "./bindings";
 import { ReactNode, useState } from "react";
 import { ArrowIcon, AlignIcon, ExitOnlyIcon, ExitTabIcon, ThemeShieldIcon } from "./Icons";
 import { Choice, ColorBox, Field, NumberBox, Option, Select, Swatches, TextBox } from "./Controls";
-import { Design, Item, clone, describe, getItem, insertItem, removeItem, updateItem } from "./designModel";
+import { Design, Item, clone, getItem, insertItem, kindOf, removeItem, updateItem } from "./designModel";
 import { PartsList } from "./PartsList";
 import { SignPreview } from "./SignPreview";
 import { Template, TemplateLibrary } from "./TemplateLibrary";
@@ -21,10 +22,37 @@ const PlaceField = (props: { item: Item; onChange: (patch: Partial<Item>) => voi
   <Field label="Align this part"><Choice options={PLACE} value={props.item.place ?? ""} onChange={(place) => props.onChange({ place: place || undefined })} /></Field>
 );
 
+/** Extra space around a part (sign units), added to the usual spacing: top, bottom, left, right. */
+const MarginField = (props: { item: Item; onChange: (patch: Partial<Item>) => void }) => {
+  const m = props.item.margin ?? {};
+  const side = (key: string, label: string) => (
+    <div className={styles.marginSide}>
+      <div className={styles.marginLabel}>{label}</div>
+      <NumberBox value={m[key] ?? 0} min={-40} onChange={(v) => {
+        const next = { ...m, [key]: v || undefined };
+        props.onChange({ margin: Object.values(next).some((x) => x) ? next : undefined });
+      }} />
+    </div>
+  );
+  return (
+    <Field label="Margin">
+      <div className={styles.marginGrid}>
+        <div className={styles.inlineRow}>{side("top", "Top")}{side("bottom", "Bottom")}</div>
+        <div className={styles.inlineRow}>{side("left", "Left")}{side("right", "Right")}</div>
+      </div>
+    </Field>
+  );
+};
+
 function ItemProperties(props: { item: Item; onChange: (patch: Partial<Item>) => void; focusToken: number; inRow: boolean; theme?: Theme }) {
   const { item, onChange, theme } = props;
   const def = theme?.def;
-  const place = props.inRow ? null : <PlaceField item={item} onChange={onChange} />;
+  const place = (
+    <>
+      {!props.inRow && <PlaceField item={item} onChange={onChange} />}
+      <MarginField item={item} onChange={onChange} />
+    </>
+  );
   const fonts: Option[] = (def?.fonts ?? []).filter((f) => !f.hidden).map((f) => ({ value: f.family, label: f.label ?? f.family, style: { fontFamily: f.family } }));
   const networks: Option[] = Object.entries(def?.shields ?? {}).map(([id, s]) => ({ value: id, icon: <ThemeShieldIcon theme={theme} network={id} />, title: s.label ?? id }));
   const schemes: Option[] = Object.entries(def?.schemes ?? {}).map(([id, s]) => ({
@@ -37,7 +65,7 @@ function ItemProperties(props: { item: Item; onChange: (patch: Partial<Item>) =>
           <Field label="Text"><TextBox value={item.text ?? ""} focusToken={props.focusToken} onChange={(text) => onChange({ text })} /></Field>
           <Field label="Letter height"><NumberBox value={item.height ?? def?.defaults?.textHeight ?? 16} onChange={(height) => onChange({ height })} /></Field>
           <Field label="Letter spacing"><NumberBox value={item.tracking ?? 0} step={2} min={-20} onChange={(tracking) => onChange({ tracking: tracking || undefined })} /></Field>
-          {fonts.length > 1 && <Field label="Font"><Choice options={fonts} perRow={3} value={item.font ?? def?.defaults?.font ?? ""} onChange={(font) => onChange({ font })} /></Field>}
+          {fonts.length > 1 && <Field label="Font"><Select options={fonts} value={item.font ?? def?.defaults?.font ?? ""} onChange={(font) => onChange({ font })} /></Field>}
           {place}
         </>
       );
@@ -137,8 +165,12 @@ export const Designer = (props: {
       <div className={styles.body}>
         <div className={styles.column}>
           <div className={styles.heading}>Theme</div>
-          <Select options={props.themes.map((t) => ({ value: t.id, label: t.name, title: t.def.description }))} value={theme?.id ?? "us"}
-            onChange={(id) => { const to = props.themes.find((t) => t.id === id); if (to) { setDesign(convertDesign(design, to)); setSelected(null); } }} />
+          <div className={styles.inlineRow}>
+            <Select options={props.themes.map((t) => ({ value: t.id, label: t.name, title: t.def.description }))} value={theme?.id ?? "us"}
+              onChange={(id) => { const to = props.themes.find((t) => t.id === id); if (to) { setDesign(convertDesign(design, to)); setSelected(null); } }} />
+            <div className={styles.chip} style={{ margin: "0 0 0 6rem" }} title="Add your own themes here (one folder each); they appear when the Sign Builder is opened again"
+              onClick={() => openThemesFolder()}>Folder</div>
+          </div>
           <div className={styles.heading}>Templates</div>
           <TemplateLibrary templates={templates} current={design}
             onPick={(t) => { props.onLoad(clone(t.design)); setSelected(null); }} onSaved={props.onTemplateSaved} />
@@ -148,9 +180,10 @@ export const Designer = (props: {
         <div className={styles.center}>
           <div className={styles.preview}>
             <SignPreview design={design} selected={selected}
-              onSelect={(p) => { setSelected(p); if (p) setFocusToken(focusToken + 1); }} maxWidth={560} maxHeight={300} />
+              onSelect={(p) => { setSelected(p); if (p) setFocusToken(focusToken + 1); }} maxWidth={560} maxHeight={270} />
           </div>
           <div className={styles.hint}>Click any part of the sign to edit it.</div>
+          <Scrollable vertical trackVisibility="scrollable" className={styles.optionsScroll}>
           <div className={styles.signOptions}>
             <Field label="Color">
               <Swatches schemes={def?.schemes ?? {}} scheme={design.scheme ?? def?.defaults?.scheme ?? ""} custom={custom}
@@ -189,6 +222,7 @@ export const Designer = (props: {
             </Field>
             <Field label="Align lines"><Choice options={ALIGN} value={design.align ?? "start"} onChange={(align) => setDesign({ ...design, align })} /></Field>
           </div>
+          </Scrollable>
           <div className={styles.actions}>
             {props.actions.map((a, i) => a.primary ? (
               <div key={a.label} className={styles.primaryButton} title={a.title} onClick={a.onSelect}>{a.label}</div>
@@ -203,6 +237,7 @@ export const Designer = (props: {
           <div className={styles.palette}>
             {(def?.parts ?? []).map((p) => <div key={p.label} className={styles.chip} onClick={() => add(p.item)}>{p.label}</div>)}
           </div>
+          <Scrollable vertical trackVisibility="scrollable" className={styles.partsScroll}>
           <div className={styles.heading}>Parts</div>
           <PartsList design={design} selected={selected} onSelect={setSelected} labels={labels}
             onChange={(d, path) => { setDesign(d); setSelected(path); }}
@@ -220,11 +255,12 @@ export const Designer = (props: {
           )}
           {item && (
             <>
-              <div className={styles.heading}>{describe(item, labels)}</div>
+              <div className={styles.heading}>{kindOf(item, labels)}</div>
               <ItemProperties item={item} onChange={update} focusToken={focusToken} theme={theme}
                 inRow={selected!.includes(".") && getItem(design, selected!.split(".").slice(0, -1).join("."))?.type === "row"} />
             </>
           )}
+          </Scrollable>
         </div>
         {props.overlay}
       </div>

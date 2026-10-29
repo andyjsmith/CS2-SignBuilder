@@ -90,6 +90,8 @@ namespace SignBuilder.Rendering
         {
             while (m_Busy) yield return null;
             m_Busy = true;
+            var start = Time.realtimeSinceStartup;
+            var cold = m_View == null;
             var inner = BakeOne(design, pixelsPerInch, onDone);
             try
             {
@@ -98,6 +100,29 @@ namespace SignBuilder.Rendering
             finally
             {
                 m_Busy = false;
+                var seconds = Time.realtimeSinceStartup - start;
+                if (seconds > 1f) Mod.log.Info($"Bake took {seconds:F1} s (mode {LastMode}{(cold ? ", first bake: renderer started" : "")}{(LastError != null ? ", " + LastError : "")})");
+            }
+        }
+
+        /// <summary>
+        /// Starts the off-screen renderer ahead of the first bake (after a city loads), so placing the first sign
+        /// does not wait for it.
+        /// </summary>
+        public IEnumerator Warmup()
+        {
+            if (m_View != null || m_Busy) yield break;
+            m_Busy = true;
+            var start = Time.realtimeSinceStartup;
+            var inner = Initialize();
+            try
+            {
+                while (inner.MoveNext()) yield return inner.Current;
+            }
+            finally
+            {
+                m_Busy = false;
+                Mod.log.Info($"Sign renderer ready in {Time.realtimeSinceStartup - start:F1} s");
             }
         }
 

@@ -77,6 +77,8 @@ namespace SignBuilder.Systems
                 Directory.CreateDirectory(UserTemplatesDir);
                 UnityEngine.Application.OpenURL("file:///" + UserTemplatesDir.Replace('\\', '/'));
             }));
+            // Player themes: one folder per theme (theme.json, fonts, shields, templates), read when the editor opens.
+            AddBinding(new TriggerBinding(Group, "openThemesFolder", () => Setting.OpenFolder(Themes.UserThemesDir)));
         }
 
         private void Guard(Action action)
@@ -114,6 +116,7 @@ namespace SignBuilder.Systems
             Directory.CreateDirectory(SignBuilderRuntime.DataDir);
             ui.AddHostLocation(Themes.DataHost, SignBuilderRuntime.DataDir, shouldWatch: false);
             RefreshLibrary();
+            if (mode == Game.GameMode.Game) SignBuilderRuntime.Run(SignBuilderRuntime.Baker.Warmup());
         }
 
         public void SetEditorOpen(bool open)

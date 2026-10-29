@@ -96,7 +96,11 @@ namespace SignBuilder.Tools
         public void BeginGantry(IEnumerable<JObject> designs, LayoutOptions start = null)
         {
             SetSigns(designs);
-            m_Options = start?.Clone() ?? new LayoutOptions { FreeWidth = m_Options.FreeWidth, Type = m_Options.Type == "ground" ? "doubleTruss" : m_Options.Type, Span = m_Options.Span };
+            m_Options = start?.Clone() ?? new LayoutOptions
+            {
+                FreeWidth = m_Options.FreeWidth, Type = m_Options.Type == "ground" ? "doubleTruss" : m_Options.Type, Span = m_Options.Span,
+                RoadGap = LayoutOptions.kGantryRoadGap,
+            };
             if (m_Options.Type == "ground") m_Options.Type = "doubleTruss";
             m_Options.EnsureSigns(m_Designs.Count);
             Activate(Mode.PickRoad);
@@ -182,8 +186,17 @@ namespace SignBuilder.Tools
                 case "rotateRight": m_Options.Angle = (m_Options.Angle + 15f) % 360f; break;
                 case "raise": m_Options.Elevation = math.min(m_Options.Elevation + 0.25f, 40f); break;
                 case "lower": m_Options.Elevation = math.max(m_Options.Elevation - 0.25f, MinElevation); break;
-                case "closer": m_Options.RoadGap = math.max(m_Options.RoadGap - 0.25f, kMinRoadGap); break;
+                case "closer": m_Options.RoadGap = math.max(m_Options.RoadGap - 0.25f, m_Options.Type == "ground" ? kMinRoadGap : 0.5f); break;
                 case "farther": m_Options.RoadGap = math.min(m_Options.RoadGap + 0.25f, 30f); break;
+                // Snapped to a road the sign or structure itself goes up and down; freely placed, its base does.
+                case "up":
+                    if (m_Options.Free) goto case "raise";
+                    m_Options.Lift = math.min(m_Options.Lift + 0.25f, 6f);
+                    break;
+                case "down":
+                    if (m_Options.Free) goto case "lower";
+                    m_Options.Lift = math.max(m_Options.Lift - 0.25f, m_Options.Type == "ground" ? AssemblyBuilder.kMinGroundLift : -kMinOverheadClearance);
+                    break;
                 case "wider": m_Options.FreeWidth = math.min(m_Options.FreeWidth + 1f, 60f); break;
                 case "narrower": m_Options.FreeWidth = math.max(m_Options.FreeWidth - 1f, 4f); break;
                 case "smaller": m_Options.SignScale = Step(m_Options.SignScale, -1); break;
@@ -234,6 +247,7 @@ namespace SignBuilder.Tools
                 case "span": m_Options.Span = (string)a["value"]; break;
                 case "side": m_Options.LeftSide = (string)a["value"] == "left"; break;
                 case "reverse": m_Options.Reverse = (bool?)a["value"] ?? false; break;
+                case "swap": m_Options.Reverse = !m_Options.Reverse; break;
                 case "scale": m_Options.SignScale = Step(m_Options.SignScale, (int?)a["value"] ?? 0); break;
                 case "lift": m_Options.Lift = math.clamp(m_Options.Lift + ((float?)a["value"] ?? 0f), -kMinOverheadClearance, 6f); break;
                 case "lights": m_Options.Lights = (bool?)a["value"] ?? false; break;
@@ -423,7 +437,7 @@ namespace SignBuilder.Tools
                 ["type"] = m_Options.Type, ["span"] = m_Options.Span, ["side"] = m_Options.LeftSide ? "left" : "right",
                 ["reverse"] = m_Options.Reverse, ["free"] = m_Options.Free, ["scale"] = m_Options.SignScale / LayoutOptions.kDefaultScale,
                 ["lift"] = m_Options.Lift, ["angle"] = m_Options.Angle, ["elevation"] = m_Options.Elevation, ["width"] = m_Options.FreeWidth,
-                ["replacing"] = m_Replacing != Entity.Null, ["busy"] = m_Busy, ["lights"] = m_Options.Lights,
+                ["replacing"] = m_Replacing != Entity.Null, ["busy"] = m_Busy, ["lights"] = m_Options.Lights, ["gap"] = m_Options.RoadGap,
                 ["dirty"] = m_Changed || m_Replacing == Entity.Null,
             }.ToString(Formatting.None);
         }
@@ -433,8 +447,9 @@ namespace SignBuilder.Tools
         {
             ["free"] = m_Options.Free, ["angle"] = m_Options.Angle, ["elevation"] = m_Options.Elevation, ["width"] = m_Options.FreeWidth,
             ["scale"] = m_Options.SignScale / LayoutOptions.kDefaultScale, ["posts"] = m_Mode == Mode.Posts,
-            // Roadside signs: height of the sign's bottom edge above the ground, and its gap to the road's edge.
-            ["bottom"] = m_Options.Elevation + GantryFactory.kGroundClearance, ["gap"] = m_Options.RoadGap,
+            // Height of a roadside sign's bottom edge above the ground (or a gantry's lift), and the gap to the road's edge.
+            ["bottom"] = (m_Options.Free ? m_Options.Elevation : m_Options.Lift) + GantryFactory.kGroundClearance,
+            ["lift"] = m_Options.Lift, ["gap"] = m_Options.RoadGap,
         }.ToString(Formatting.None);
 
         /// <summary>Sign sizes in meters at the current scale; signs still baking use a placeholder size.</summary>
@@ -546,13 +561,13 @@ namespace SignBuilder.Tools
         {
             var keyboard = UnityEngine.InputSystem.Keyboard.current;
             if (keyboard == null) return;
-            // Shift + mouse wheel: a roadside sign's distance from the road.
+            // Shift + mouse wheel: distance from the road; Ctrl + mouse wheel: height.
             var mouse = UnityEngine.InputSystem.Mouse.current;
-            if (m_Mode == Mode.Posts && !m_Options.Free && mouse != null && keyboard.shiftKey.isPressed)
+            var wheel = mouse?.scroll.ReadValue().y ?? 0f;
+            if (math.abs(wheel) > 0.01f)
             {
-                var wheel = mouse.scroll.ReadValue().y;
-                if (wheel > 0.01f) Adjust("farther");
-                else if (wheel < -0.01f) Adjust("closer");
+                if (keyboard.shiftKey.isPressed && !m_Options.Free) Adjust(wheel > 0 ? "farther" : "closer");
+                else if (keyboard.ctrlKey.isPressed) Adjust(wheel > 0 ? "up" : "down");
             }
             if (!m_Options.Free) return;
             if (keyboard.pageUpKey.wasPressedThisFrame) Adjust("raise");
@@ -593,6 +608,7 @@ namespace SignBuilder.Tools
             key += OptionsKey;
             if (key != m_PreviewKey)
             {
+                var watch = System.Diagnostics.Stopwatch.StartNew();
                 var placement = AssemblyBuilder.Layout(snap, Sizes(), m_Options, m_Shapes);
                 m_LastPlacement = placement;
                 m_LaneCount = placement.LaneCount;
@@ -605,6 +621,7 @@ namespace SignBuilder.Tools
                 }
                 UnityEngine.Object.Destroy(placement.Support);
                 m_PreviewKey = FacesReady ? key : null;
+                if (watch.ElapsedMilliseconds > 100) Mod.log.Info($"Preview rebuild took {watch.ElapsedMilliseconds} ms");
             }
             if (m_PreviewMesh == null) return;
             m_PreviewSteel ??= Rendering.SignPanelRenderer.CreateMaterial("SignBuilder.PreviewSteel", UnityEngine.Texture2D.whiteTexture, new UnityEngine.Color(0.7f, 0.72f, 0.75f), 0.4f);

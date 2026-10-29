@@ -3,11 +3,13 @@ import { Design, DropPosition, describe, getItem, moveTo, outline } from "./desi
 import { TrashIcon } from "./Icons";
 import styles from "./SignEditor.module.scss";
 
-type Drop = { path: string; position: DropPosition } | null;
+// <path>/<position>: where the part goes; <shown>: the row the drop line is drawn on.
+type Drop = { path: string; position: DropPosition; shown: string } | null;
 
 /**
  * The sign's parts as an indented list. Click selects; drag a part (press and move) to reorder it, or drop it
- * onto a Row to put it in that row. Drag it back out of a row to separate it again.
+ * onto a Row or Column to put it inside. Below the last part of a row or column, the pointer's indent picks the
+ * level: further left drops it after the row or column instead of inside it.
  */
 export const PartsList = (props: {
   design: Design;
@@ -22,7 +24,22 @@ export const PartsList = (props: {
   const [drop, setDrop] = useState<Drop>(null);
   const exitTab = props.design.exitTab;
 
-  const targetAt = (y: number, from: string): Drop => {
+  const rowOf = (path: string) => listRef.current?.querySelector(`[data-part-path="${path}"]`) as HTMLElement | null;
+  const gripLeft = (path: string) => (rowOf(path)?.querySelector("svg") as Element | null)?.getBoundingClientRect().left ?? 0;
+  const parentOf = (path: string) => path.split(".").slice(0, -1).join(".");
+  const isLast = (path: string) => {
+    const parent = parentOf(path);
+    const siblings = parent === "" ? props.design.items : getItem(props.design, parent)?.items ?? [];
+    return Number(path.split(".").pop()) === siblings.length - 1;
+  };
+  /** "After" a part that ends its row/column: climbs out while the pointer is left of that level's indent. */
+  const climb = (path: string, x: number) => {
+    let target = path;
+    while (target.includes(".") && isLast(target) && x < gripLeft(target) - 4) target = parentOf(target);
+    return target;
+  };
+
+  const targetAt = (x: number, y: number, from: string): Drop => {
     const rows = Array.from(listRef.current?.querySelectorAll("[data-part-path]") ?? []) as HTMLElement[];
     let best: Drop = null;
     for (const row of rows) {
@@ -32,13 +49,16 @@ export const PartsList = (props: {
       if (path === from || path.startsWith(from + ".")) return null;
       const item = getItem(props.design, path);
       const f = (y - r.top) / Math.max(1, r.height);
-      if (item?.items && f > 0.25 && f < 0.75) best = { path, position: "inside" };
-      else best = { path, position: f < 0.5 ? "before" : "after" };
+      if (item?.items && f > 0.25 && f < 0.75) best = { path, position: "inside", shown: path };
+      else if (f < 0.5) best = { path, position: "before", shown: path };
+      else best = { path: climb(path, x), position: "after", shown: path };
     }
     if (!best && rows.length > 0) {
+      // Below the list: the end of the sign itself, outside every row and column.
       const last = rows[rows.length - 1];
-      if (y > last.getBoundingClientRect().bottom) best = { path: last.getAttribute("data-part-path")!, position: "after" };
+      if (y > last.getBoundingClientRect().bottom) best = { path: String(props.design.items.length - 1), position: "after", shown: last.getAttribute("data-part-path")! };
     }
+    if (best && (best.path === from || best.path.startsWith(from + "."))) return null;
     return best;
   };
 
@@ -56,7 +76,7 @@ export const PartsList = (props: {
       if (!moved && Math.abs(ev.clientY - startY) < 5) return;
       moved = true;
       setDragging(path);
-      current = targetAt(ev.clientY, path);
+      current = targetAt(ev.clientX, ev.clientY, path);
       setDrop(current);
     };
     const onUp = () => {
@@ -87,7 +107,9 @@ export const PartsList = (props: {
         </div>
       )}
       {outline(props.design).map(({ path, item, depth }) => {
-        const marker = drop && drop.path === path ? drop.position : null;
+        const marker = drop && drop.shown === path ? drop.position : null;
+        // Dropping after a row or column (rather than inside it): the line starts at that level's indent.
+        const level = drop && marker === "after" ? drop.path.split(".").length - 1 : depth;
         const cls = path === props.selected ? styles.listItemOn : styles.listItem;
         return (
           <div key={path} data-part-path={path}
@@ -95,7 +117,7 @@ export const PartsList = (props: {
             style={{
               paddingLeft: 8 + depth * 14 + "rem",
               borderTop: marker === "before" ? "2rem solid #ffd400" : undefined,
-              borderBottom: marker === "after" ? "2rem solid #ffd400" : undefined,
+              borderBottom: marker === "after" ? `2rem solid ${level < depth ? "#ff9f1a" : "#ffd400"}` : undefined,
             }}
             onMouseDown={(e) => startDrag(e, path)}>
             <svg className={styles.grip} width="8rem" height="12rem" viewBox="0 0 8 12">
@@ -109,7 +131,7 @@ export const PartsList = (props: {
           </div>
         );
       })}
-      <div className={styles.hint}>Drag parts to reorder them, or onto a Row to put them side by side.</div>
+      <div className={styles.hint}>Drag parts to reorder them, or onto a Row or Column to group them. Below a row or column, move the pointer left to drop outside it.</div>
     </div>
   );
 };

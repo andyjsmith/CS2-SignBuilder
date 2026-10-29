@@ -55,6 +55,8 @@ namespace SignBuilder.Assemblies
         private const float kElevatedDrop = 2f;
         /// <summary>Post center distance inside the deck edge on elevated roads (on the shoulder, inside the barrier).</summary>
         private const float kDeckInset = 0.7f;
+        /// <summary>Lowest a roadside sign may sink: its bottom edge 0.2 m above the ground.</summary>
+        public const float kMinGroundLift = 0.2f - GantryFactory.kGroundClearance;
         /// <summary>Lowest bottom edge for overhead signs (about 17.5 ft).</summary>
         private const float kMinClearance = 5.3f;
 
@@ -168,6 +170,8 @@ namespace SignBuilder.Assemblies
             // structures carry their signs bolted in front of the horizontal pipe. Back signs mirror in Z.
             // Lowering the structure lowers the signs' minimum clearance with it (down to the road surface).
             var lift = type == "ground" ? 0f : math.max(o.Lift, -kMinClearance);
+            // Roadside signs rise and sink with the lift too (their bottom edge stays above the ground).
+            var groundLift = type == "ground" ? math.max(o.Lift, kMinGroundLift) : 0f;
             var clearance = kMinClearance + math.min(lift, 0f);
             var curvedHeight = math.max(7.0f + lift, clearance + maxH * 0.5f);
             var beamHeight = GantryFactory.kMountHeight + lift;
@@ -203,10 +207,10 @@ namespace SignBuilder.Assemblies
                     xs[i] = x + sizes[i].x * 0.5f + o.Slot(i).Offset;
                     x += sizes[i].x + kSignGap;
                 }
-                var centers = Enumerable.Range(0, n).Select(i => new Vector3(xs[i], GantryFactory.kGroundClearance + sizes[i].y * 0.5f, 0f)).ToArray();
+                var centers = Enumerable.Range(0, n).Select(i => new Vector3(xs[i], GantryFactory.kGroundClearance + groundLift + sizes[i].y * 0.5f, 0f)).ToArray();
                 // Each post stops at the top of the sign in front of it: an exit tab only covers part of the width.
                 var postXs = GantryFactory.GroundPostXs(total);
-                var tops = postXs.Select(px => PostTop(px, xs, sizes, shapes)).ToArray();
+                var tops = postXs.Select(px => PostTop(px, xs, sizes, shapes) + groundLift).ToArray();
                 result = new AssemblyPlacement
                 {
                     Origin = origin, Rotation = rotation,
@@ -220,7 +224,7 @@ namespace SignBuilder.Assemblies
                 // Post just off the carriageway edge on the drivers' right (or left), arm reaching over the lanes
                 // only as far as the signs need. Free placement puts the post at the cursor.
                 var side = o.LeftSide ? -1f : 1f;
-                var postOffset = o.Free ? 0f : dir * side * (baseWidth * 0.5f + 1.5f);
+                var postOffset = o.Free ? 0f : dir * side * (baseWidth * 0.5f + math.max(o.RoadGap, 0.5f));
                 if (OffDeck(basePoint + s.Right * postOffset))
                 {
                     postOffset = dir * side * (baseWidth * 0.5f - kDeckInset);
@@ -264,7 +268,7 @@ namespace SignBuilder.Assemblies
                 var origin = s.Point + s.Right * reference;
                 var xs = SignXs(reference);
                 var needed = 2f * (Reach(xs) + postClear);
-                var span = math.max(deckWidth + 5f, needed);
+                var span = math.max(deckWidth + 2f * math.max(o.RoadGap, 0.5f), needed);
                 if (OffDeck(origin - s.Right * span * 0.5f) || OffDeck(origin + s.Right * span * 0.5f))
                 {
                     elevated = true;
@@ -290,16 +294,17 @@ namespace SignBuilder.Assemblies
             }
             result.SignBack = Enumerable.Range(0, n).Select(IsBack).ToArray();
             result.BaseRoad = baseIndex;
-            // Every road alongside, in structure space, and whether the span includes it.
+            // The roads the structure crosses, in structure space (roads clicked off again are left out).
             result.Roads = s.Carriageways.Select((c, i) =>
             {
                 var originOffset = math.dot(result.Origin - s.Point, s.Right);
                 var e = Edges(originOffset, c.Offset, c.Width);
                 return new float3(e.x, e.y, roads.Contains(i) ? 1f : 0f);
-            }).ToArray();
+            }).Where(r => r.z > 0.5f).ToArray();
             result.LaneCount = frontLanes.Count;
             var laneOrigin = math.dot(result.Origin - s.Point, s.Right);
-            result.AllLanes = s.Lanes.Select(l => new float2((l.Offset - laneOrigin) * dir, l.Direction == dir ? 1f : -1f)).ToArray();
+            result.AllLanes = s.Lanes.Where(l => roads.Contains(l.Carriageway))
+                .Select(l => new float2((l.Offset - laneOrigin) * dir, l.Direction == dir ? 1f : -1f)).ToArray();
             return result;
         }
 

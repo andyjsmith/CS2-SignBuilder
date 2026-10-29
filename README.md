@@ -16,15 +16,17 @@ Interstate, US and state shields, exit tabs and EXIT ONLY panels), Germany, Unit
    across the sign (lane arrows under their lanes); text has a letter spacing setting. Set the colors (or custom colors), width, alignment, and for
    US signs an exit tab or EXIT ONLY panel. **Save current as template** keeps the sign as a JSON file in
    `ModsData/SignBuilder/Templates`.
-3. **Place Standalone** puts the sign on roadside posts, snapped beside a road (Shift + mouse wheel sets
-   its distance from the road) or freely placed (right-drag rotates, Page Up / Page Down raise and lower).
+3. **Place Standalone** puts the sign on roadside posts, snapped beside a road or freely placed (right-drag
+   rotates). While placing a sign or a gantry, Shift + mouse wheel sets the distance from the road and
+   Ctrl + mouse wheel (or Page Up / Page Down) the height.
 4. **Place on gantry** asks for a road, pins the structure there with a live preview and opens the
    arrangement panel: a to-scale view of the lanes as drivers see them. Add signs (any theme), drag them
    sideways (they snap to lane centers, remembered from the nearer edge: "rightmost lane", "2nd lane from
    left"), choose the structure (double truss, single truss, curved or straight tube), Span or Cantilever
-   (post on the right or left), facing, height and sign size, and signs on the back for the other
-   direction. For a span, click roads alongside in the world to add them to (or remove them from) the
-   span. **Build** makes it.
+   (post on the right or left), Swap directions, height, posts' distance from the road, sign size and
+   lights, and signs on the back for the other direction. A span crosses only the road it was placed on:
+   click other roads in the world to add them to (or remove them from) the span. **Build** makes it.
+   Esc or the close button asks before discarding anything.
 5. Click a placed sign with the normal selection tool: its panel has **Edit** (gantries reopen in the
    arrangement panel in place, standalone signs in the designer; **Save** rebuilds them where they stand),
    **Move** and **Duplicate**.

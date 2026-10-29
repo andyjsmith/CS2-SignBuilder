@@ -20,7 +20,7 @@ type Context =
   | { kind: "gantrySign"; index: number }
   | { kind: "gantryAdd" };
 
-type Question = { message: string; onConfirm: () => void };
+type Question = { message: string; confirm: string; onConfirm: () => void };
 
 const LOSE_GANTRY = "Close without building? The gantry and its changes will be lost.";
 
@@ -54,9 +54,9 @@ export const SignEditor = () => {
   const load = (d: Design) => { setDesign(d); setBaseline(JSON.stringify(d)); };
   const settle = () => setBaseline(JSON.stringify(design));
   /** Runs <then> now, or once the player confirms when there is something to lose. */
-  const guard = (unsaved: boolean, message: string, then: () => void) => {
+  const guard = (unsaved: boolean, message: string, then: () => void, confirm = "Discard") => {
     if (!unsaved) then();
-    else setQuestion({ message, onConfirm: () => { setQuestion(null); then(); } });
+    else setQuestion({ message, confirm, onConfirm: () => { setQuestion(null); then(); } });
   };
 
   // A placed structure opened for editing (or a design pushed by the harness).
@@ -87,7 +87,7 @@ export const SignEditor = () => {
   if (!open) return null;
   const close = () => { setQuestion(null); cancelTool(); setEditorOpen(false); };
   const overlay = question && (
-    <Confirm message={question.message} confirm="Discard" cancel="Keep editing" onConfirm={question.onConfirm} onCancel={() => setQuestion(null)} />
+    <Confirm message={question.message} confirm={question.confirm} cancel="Keep editing" onConfirm={question.onConfirm} onCancel={() => setQuestion(null)} />
   );
   // Escape works like the game's own dialogs: it closes this one (or dismisses an open question).
   const withBack = (content: any, onBack: () => void) => (
@@ -101,7 +101,8 @@ export const SignEditor = () => {
         onCancel={(unsaved) => guard(unsaved, "Cancel this gantry? Its changes will be lost.", () => arrange({ op: "cancel" }))}
         onEditSign={(index, d) => { load(clone(d)); setContext({ kind: "gantrySign", index }); }}
         onAddSign={() => { load(blankFor(themeOf(themes, design))); setContext({ kind: "gantryAdd" }); }} />,
-      () => closeGantry(gantryUnsaved),
+      // Escape always asks (it is easy to press by accident).
+      () => guard(true, gantryUnsaved ? LOSE_GANTRY : "Close the gantry editor?", close, gantryUnsaved ? "Discard" : "Close"),
     );
   }
   if (mode === "posts" || mode === "pickRoad") {
@@ -143,9 +144,10 @@ export const SignEditor = () => {
   // Closing while one of a gantry's signs is open loses the whole gantry.
   const inGantry = context.kind === "gantrySign" || context.kind === "gantryAdd";
   const requestClose = () => guard(dirty || inGantry, inGantry ? LOSE_GANTRY : "Close the Sign Builder? Your changes to this sign will be lost.", close);
+  const escape = () => (dirty || inGantry ? requestClose() : guard(true, "Close the Sign Builder?", close, "Close"));
   return withBack(
     <Designer design={design} setDesign={setDesign} onLoad={load} onTemplateSaved={settle} templates={templates} themes={themes}
       title={title} actions={actions} onClose={requestClose} overlay={overlay} />,
-    requestClose,
+    escape,
   );
 };

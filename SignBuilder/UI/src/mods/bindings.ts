@@ -39,6 +39,8 @@ export const saveTemplate = (name: string, design: object, id?: string) => trigg
 export const renameTemplate = (id: string, name: string) => trigger(group, "renameTemplate", id, name);
 export const deleteTemplate = (id: string) => trigger(group, "deleteTemplate", id);
 export const openTemplatesFolder = () => trigger(group, "openTemplatesFolder");
+/** Opens ModsData/SignBuilder/Themes, where players add their own themes. */
+export const openThemesFolder = () => trigger(group, "openThemesFolder");
 
 /** Selected-object panel actions on a placed structure. */
 export const editSelected = () => trigger(group, "editSelected");

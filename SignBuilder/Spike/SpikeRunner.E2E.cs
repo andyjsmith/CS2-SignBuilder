@@ -258,6 +258,9 @@ namespace SignBuilder.Spike
             // Duplicate a sign (it lands beside the original), and lights under every sign.
             tool.Arrange("{\"op\":\"duplicateSign\",\"index\":0}");
             tool.Arrange("{\"op\":\"lights\",\"value\":true}");
+            tool.Arrange("{\"op\":\"swap\"}");
+            SpikeReport.Set("e2e.arrange.swapped", JObject.Parse(tool.ArrangeInfo())["reverse"]?.ToString());
+            tool.Arrange("{\"op\":\"swap\"}");
             yield return WaitArrange(tool, ui);
             yield return new WaitForSecondsRealtime(1f);
             var all = JObject.Parse(ui.ArrangeInfoJson);
@@ -416,6 +419,7 @@ namespace SignBuilder.Spike
             var t = math.clamp(spot.t - 0.3f, 0.05f, 0.95f);
             var close = Options("ground", "single");
             close.RoadGap = 0.5f;
+            close.Lift = 1f;
             yield return PlaceAndWait(() => tool.PlaceForTest(spot.edge, t, new List<JObject> { Template("advance-guide") }, close));
             SpikeReport.Set("e2e.features.roadGap", Describe(SignPlacementToolSystem.LastPlaced));
             yield return Shoot(SignPlacementToolSystem.LastPlaced, "e2e_features_roadgap.png", 25f, 22f);
@@ -439,6 +443,7 @@ namespace SignBuilder.Spike
 
             var lit = Options("straight", "single");
             lit.Lights = true;
+            lit.RoadGap = 4f;
             yield return PlaceAndWait(() => tool.PlaceForTest(spot.edge, math.clamp(t + 0.24f, 0.05f, 0.95f), new List<JObject> { Template("split-lane-arrows") }, lit));
             SpikeReport.Set("e2e.features.splitArrows", Describe(SignPlacementToolSystem.LastPlaced));
             yield return Shoot(SignPlacementToolSystem.LastPlaced, "e2e_features_split.png", 180f, 30f);

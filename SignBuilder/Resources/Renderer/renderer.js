@@ -139,7 +139,8 @@
     if (tracking) {
       // Letter spacing also follows the last letter: take it back so the text stays centered.
       e.style.letterSpacing = px(h * tracking / 100);
-      e.style.marginRight = px(-h * tracking / 100);
+      e.sbMarginRight = -h * tracking / 100;
+      e.style.marginRight = px(e.sbMarginRight);
     }
     e.textContent = text;
     return e;
@@ -301,14 +302,20 @@
       if (!c) return;
       // A part in a column can override the column's alignment ("place": start, center or end).
       if (!horizontal && child.place) c.style.alignSelf = { start: "flex-start", center: "center", end: "flex-end" }[child.place] || "auto";
+      var gap = 0;
       if (i > 0) {
         // Gap between neighbors, scaled from the larger legend height of the pair.
         var ref = Math.max(spacingHeight(items[i - 1]), spacingHeight(child));
-        var gap = child.gapBefore != null ? child.gapBefore
+        gap = child.gapBefore != null ? child.gapBefore
           : item.gap != null ? item.gap
           : ref * (horizontal ? DEFAULTS.itemGap : DEFAULTS.lineGap);
-        c.style[horizontal ? "marginLeft" : "marginTop"] = px(gap);
       }
+      // A part's own margin ({ top, right, bottom, left } in sign units) adds to the gap before it.
+      var m = child.margin || {};
+      c.style.marginTop = px((horizontal ? 0 : gap) + (m.top || 0));
+      c.style.marginLeft = px((horizontal ? gap : 0) + (m.left || 0));
+      c.style.marginBottom = px(m.bottom || 0);
+      c.style.marginRight = px((c.sbMarginRight || 0) + (m.right || 0));
       e.appendChild(c);
     });
     return e;

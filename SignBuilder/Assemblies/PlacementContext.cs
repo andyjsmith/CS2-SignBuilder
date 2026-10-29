@@ -46,7 +46,7 @@ namespace SignBuilder.Assemblies
         public float SignScale = kDefaultScale;
         /// <summary>Raises (or lowers) the structure's beam and its signs, meters (down to the road surface).</summary>
         public float Lift;
-        /// <summary>Roadside signs: gap between the road's edge and the nearer edge of the sign, meters.</summary>
+        /// <summary>Gap between the road's edge and the nearer edge of a roadside sign, or a gantry's post, meters.</summary>
         public float RoadGap = kDefaultRoadGap;
         /// <summary>Overhead signs get light fixtures on arms below them, and their faces glow brighter at night.</summary>
         public bool Lights;
@@ -55,6 +55,8 @@ namespace SignBuilder.Assemblies
         /// <summary>Default sign size, shown to players as 100%: full MUTCD size is too big for the game's 4 m lanes.</summary>
         public const float kDefaultScale = 0.7f;
         public const float kDefaultRoadGap = 2.5f;
+        /// <summary>Gantry posts' default distance from the road's edge.</summary>
+        public const float kGantryRoadGap = 2.0f;
 
         public SignSlot Slot(int sign) => sign < Signs.Count ? Signs[sign] : new SignSlot();
 

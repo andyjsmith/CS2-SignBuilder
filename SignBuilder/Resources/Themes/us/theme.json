@@ -174,15 +174,6 @@
       }
     },
     {
-      "label": "Cardinal",
-      "item": {
-        "type": "text",
-        "text": "NORTH",
-        "height": 15,
-        "font": "RG2014D"
-      }
-    },
-    {
       "label": "Arrow",
       "item": {
         "type": "arrow",
@@ -291,22 +282,6 @@
             "type": "arrow",
             "direction": "up",
             "height": 30.0
-          }
-        ]
-      }
-    },
-    {
-      "label": "Speed plate",
-      "item": {
-        "type": "panel",
-        "scheme": "yellow",
-        "radius": 2,
-        "items": [
-          {
-            "type": "text",
-            "text": "50 MPH",
-            "height": 12,
-            "font": "RG2014D"
           }
         ]
       }

@@ -145,27 +145,9 @@ namespace SignBuilder.Spike
                 Tangent = tangent,
                 Right = right,
             };
+            // Only the clicked road: roads alongside join a gantry's span when the player clicks them (AddRoad).
             snap.Carriageways.Add(new Carriageway { Edge = edge.Entity, Offset = 0f, Width = edge.Width });
-
-            // Every other road running parallel within reach: the other carriageway of a divided highway,
-            // collector-distributor roads, parallel ramps. One edge per lateral position.
-            foreach (var other in all)
-            {
-                if (other.Entity == edge.Entity) continue;
-                var d = MathUtils.Distance(other.Curve.m_Bezier.xz, point.xz, out var ot);
-                if (d > kParallelReach) continue;
-                var otherTangent = MathUtils.Tangent(other.Curve.m_Bezier, ot);
-                otherTangent.y = 0;
-                if (math.abs(math.dot(math.normalizesafe(otherTangent), tangent)) < 0.95f) continue;
-                var otherPoint = MathUtils.Position(other.Curve.m_Bezier, ot);
-                var offset = math.dot(otherPoint - point, right);
-                if (math.abs(offset) < (edge.Width + other.Width) * 0.45f) continue; // same carriageway continuation
-                if (math.abs(otherPoint.y - point.y) > 4f) continue; // a road on another level
-                if (snap.Carriageways.Any(c => math.abs(c.Offset - offset) < 1.5f)) continue;
-                snap.Carriageways.Add(new Carriageway { Edge = other.Entity, Offset = offset, Width = other.Width });
-            }
-
-            for (var i = 0; i < snap.Carriageways.Count; i++) AddLanes(snap, snap.Carriageways[i].Edge, i);
+            AddLanes(snap, edge.Entity, 0);
             return snap;
         }
 
@@ -211,9 +193,6 @@ namespace SignBuilder.Spike
             AddLanes(snap, edge, snap.Carriageways.Count - 1);
             return snap.Carriageways.Count - 1;
         }
-
-        /// <summary>How far to each side parallel roads count as part of the same crossing.</summary>
-        private const float kParallelReach = 45f;
 
         private void AddLanes(Snap snap, Entity edge, int carriageway)
         {
