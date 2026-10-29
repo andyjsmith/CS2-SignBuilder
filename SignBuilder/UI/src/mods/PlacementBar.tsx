@@ -6,7 +6,7 @@ import { Choice } from "./Controls";
 import { ArrowIcon } from "./Icons";
 import styles from "./SignEditor.module.scss";
 
-type PlaceInfo = { free?: boolean; angle?: number; elevation?: number; width?: number; scale?: number; posts?: boolean; bottom?: number; lift?: number; gap?: number };
+type PlaceInfo = { surface?: boolean; free?: boolean; angle?: number; elevation?: number; width?: number; scale?: number; posts?: boolean; bottom?: number; lift?: number; gap?: number };
 const signed = (v: number) => `${v >= 0 ? "+" : ""}${v.toFixed(2)} m`;
 
 /** The small bar at the top of the screen while placing a roadside sign or choosing where a gantry goes. */
@@ -18,16 +18,18 @@ export const PlacementBar = (props: { status: string; onBack: () => void; onClos
   );
   const PanelAny: any = Panel;
   return (
-    <PanelAny draggable initialPosition={{ x: 0.5, y: 0.05 }} header={info.posts ? "Place standalone sign" : "Place gantry"} className={styles.compact} onClose={props.onClose}>
+    <PanelAny draggable initialPosition={{ x: 0.5, y: 0.05 }} header={info.surface ? "Surface-mount sign" : info.posts ? "Place standalone sign" : "Place gantry"} className={styles.compact} onClose={props.onClose}>
       <div className={styles.compactBody}>
         <div className={styles.status}>{props.status}</div>
         <div className={styles.hint}>{info.free
           ? "Right-drag to rotate; Page Up / Page Down or Ctrl + mouse wheel to raise and lower."
           : "Shift + mouse wheel: distance from the road. Ctrl + mouse wheel: height."}</div>
-        <div className={styles.barRow}>
-          <Choice options={[{ value: "road", label: "Snap to road" }, { value: "free", label: "Free placement" }]}
-            value={info.free ? "free" : "road"} onChange={(v) => adjust(v)} />
-        </div>
+        {!info.surface && (
+          <div className={styles.barRow}>
+            <Choice options={[{ value: "road", label: "Snap to road" }, { value: "free", label: "Free placement" }]}
+              value={info.free ? "free" : "road"} onChange={(v) => adjust(v)} />
+          </div>
+        )}
         <div className={styles.barRow}>
           {info.free && (
             <>
@@ -37,9 +39,11 @@ export const PlacementBar = (props: { status: string; onBack: () => void; onClos
               <Step action="rotateRight" title="Rotate right (or right-drag)">+15°</Step>
             </>
           )}
-          <div className={styles.barLabel} style={{ marginLeft: info.free ? "16rem" : "0rem" }}>{info.posts ? "Sign bottom" : info.free ? "Base" : "Height"}</div>
+          <div className={styles.barLabel} style={{ marginLeft: info.free ? "16rem" : "0rem" }}>{info.surface ? "Height" : info.posts ? "Sign bottom" : info.free ? "Base" : "Height"}</div>
           <Step action="down" title="Lower (Ctrl + mouse wheel)"><ArrowIcon direction="down" size={12} /></Step>
-          <div className={styles.barValueSmall}>{info.posts
+          <div className={styles.barValueSmall}>{info.surface
+            ? signed(info.elevation ?? 0)
+            : info.posts
             ? `${(info.bottom ?? 0).toFixed(2)} m`
             : signed(info.free ? info.elevation ?? 0 : info.lift ?? 0)}</div>
           <Step action="up" title="Raise (Ctrl + mouse wheel)"><ArrowIcon direction="up" size={12} /></Step>

@@ -438,6 +438,17 @@ namespace SignBuilder.Spike
             yield return PlaceAndWait(() => tool.PlaceFreeForTest(p, new List<JObject> { Template("gore-exit") }, low));
             SpikeReport.Set("e2e.features.lowFree", Describe(SignPlacementToolSystem.LastPlaced));
 
+            // Surface mount: just the sign, placed like a prop (here raised 3 m, turned 30 degrees).
+            var surface = Options("surface", "single");
+            surface.Free = true;
+            surface.Elevation = 3f;
+            surface.Angle = 30f;
+            var q = p + math.mul(tr.m_Rotation, new float3(0, 0, 1)) * 12f;
+            q.y = AssemblyBuilder.TerrainHeight(q);
+            yield return PlaceAndWait(() => tool.PlaceFreeForTest(q, new List<JObject> { Template("services-blue") }, surface));
+            SpikeReport.Set("e2e.features.surface", Describe(SignPlacementToolSystem.LastPlaced));
+            yield return Shoot(SignPlacementToolSystem.LastPlaced, "e2e_features_surface.png", 20f, 18f);
+
             var lowGantry = Options("singleTruss", "single");
             lowGantry.Lift = -5f;
             lowGantry.Lights = true;

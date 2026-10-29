@@ -87,7 +87,9 @@ namespace SignBuilder.Tools
         {
             SetSigns(new[] { design });
             m_Options = start?.Clone() ?? new LayoutOptions { FreeWidth = m_Options.FreeWidth };
-            m_Options.Type = "ground";
+            if (!m_Options.Standalone) m_Options.Type = "ground";
+            // Surface-mounted signs are placed like props: always freely.
+            if (m_Options.Type == "surface") m_Options.Free = true;
             m_Options.EnsureSigns(1);
             Activate(Mode.Posts);
         }
@@ -98,10 +100,10 @@ namespace SignBuilder.Tools
             SetSigns(designs);
             m_Options = start?.Clone() ?? new LayoutOptions
             {
-                FreeWidth = m_Options.FreeWidth, Type = m_Options.Type == "ground" ? "doubleTruss" : m_Options.Type, Span = m_Options.Span,
+                FreeWidth = m_Options.FreeWidth, Type = m_Options.Standalone ? "doubleTruss" : m_Options.Type, Span = m_Options.Span,
                 RoadGap = LayoutOptions.kGantryRoadGap,
             };
-            if (m_Options.Type == "ground") m_Options.Type = "doubleTruss";
+            if (m_Options.Standalone) m_Options.Type = "doubleTruss";
             m_Options.EnsureSigns(m_Designs.Count);
             Activate(Mode.PickRoad);
         }
@@ -181,7 +183,7 @@ namespace SignBuilder.Tools
             switch (action)
             {
                 case "free": m_Options.Free = true; break;
-                case "road": m_Options.Free = false; break;
+                case "road": m_Options.Free = m_Options.Type == "surface"; break;
                 case "rotateLeft": m_Options.Angle = (m_Options.Angle + 345f) % 360f; break;
                 case "rotateRight": m_Options.Angle = (m_Options.Angle + 15f) % 360f; break;
                 case "raise": m_Options.Elevation = math.min(m_Options.Elevation + 0.25f, 40f); break;
@@ -214,6 +216,9 @@ namespace SignBuilder.Tools
         /// near the ground, a gantry until its signs reach the road.
         /// </summary>
         private float MinElevation => m_Options.Type == "ground" ? 0.2f - GantryFactory.kGroundClearance : -5f;
+
+        /// <summary>Placing a surface-mounted sign (just the sign, on an overpass's side or any surface).</summary>
+        private bool Surface => m_Mode == Mode.Posts && m_Options.Type == "surface";
 
         /// <summary>Sign size steps of 5% of the default size (shown to players as 100%).</summary>
         private static float Step(float scale, int direction)
@@ -446,7 +451,7 @@ namespace SignBuilder.Tools
         public string PlacementInfo => new JObject
         {
             ["free"] = m_Options.Free, ["angle"] = m_Options.Angle, ["elevation"] = m_Options.Elevation, ["width"] = m_Options.FreeWidth,
-            ["scale"] = m_Options.SignScale / LayoutOptions.kDefaultScale, ["posts"] = m_Mode == Mode.Posts,
+            ["scale"] = m_Options.SignScale / LayoutOptions.kDefaultScale, ["posts"] = m_Mode == Mode.Posts, ["surface"] = Surface,
             // Height of a roadside sign's bottom edge above the ground (or a gantry's lift), and the gap to the road's edge.
             ["bottom"] = (m_Options.Free ? m_Options.Elevation : m_Options.Lift) + GantryFactory.kGroundClearance,
             ["lift"] = m_Options.Lift, ["gap"] = m_Options.RoadGap,
@@ -463,7 +468,8 @@ namespace SignBuilder.Tools
         {
             base.InitializeRaycast();
             var free = m_Options.Free;
-            m_ToolRaycastSystem.typeMask = free ? TypeMask.Terrain | TypeMask.Net : TypeMask.Net;
+            // Surface-mounted signs also go on buildings and other objects when placed freely.
+            m_ToolRaycastSystem.typeMask = free ? TypeMask.Terrain | TypeMask.Net | (Surface ? TypeMask.StaticObjects : TypeMask.None) : TypeMask.Net;
             m_ToolRaycastSystem.netLayerMask = free ? Layer.All : Layer.Road;
             m_ToolRaycastSystem.collisionMask = CollisionMask.OnGround | CollisionMask.Overground;
         }
@@ -704,7 +710,7 @@ namespace SignBuilder.Tools
             var record = RecordOf(entity);
             if (record == null) return false;
             var options = OptionsOf(record);
-            if (options.Type == "ground")
+            if (options.Standalone)
             {
                 Deactivate();
                 m_Replacing = entity;
@@ -756,9 +762,9 @@ namespace SignBuilder.Tools
             SetHidden(m_Replacing, false);
             m_Replacing = move ? entity : Entity.Null;
             SetHidden(m_Replacing, true);
-            if (options.Type == "ground") BeginPosts(record.Designs[0], options);
+            if (options.Standalone) BeginPosts(record.Designs[0], options);
             else BeginGantry(record.Designs, options);
-            m_UI.OpenForEdit(record, options.Type == "ground" ? "posts" : "gantry");
+            m_UI.OpenForEdit(record, options.Standalone ? "posts" : "gantry");
             return true;
         }
 

@@ -49,7 +49,7 @@ namespace SignBuilder.Assemblies
     public static class AssemblyBuilder
     {
         /// <summary>Structure types (C# ids used by the UI).</summary>
-        public static readonly string[] Types = { "doubleTruss", "singleTruss", "curved", "straight", "ground" };
+        public static readonly string[] Types = { "doubleTruss", "singleTruss", "curved", "straight", "ground", "surface" };
         private const float kSignGap = 0.3f;
         /// <summary>Road surface this far above the terrain counts as elevated (bridge, viaduct, embankment).</summary>
         private const float kElevatedDrop = 2f;
@@ -77,7 +77,7 @@ namespace SignBuilder.Assemblies
         private static AssemblyPlacement LayoutSpec(RoadProbe.Snap s, IReadOnlyList<Vector2> sizes, LayoutOptions o, IReadOnlyList<List<Rect>> shapes)
         {
             var type = o.Type;
-            var cantilever = type != "ground" && o.Span == "cantilever";
+            var cantilever = !o.Standalone && o.Span == "cantilever";
             var n = sizes.Count;
             // Signs face the traffic of the clicked carriageway; reverse aims them at the other direction.
             var dir = s.MainDirection * (o.Reverse ? -1 : 1);
@@ -96,7 +96,7 @@ namespace SignBuilder.Assemblies
             // Lanes per side, left to right as each side's drivers see them. Full spans cover every carriageway.
             // Spans cross their own carriageway plus the roads alongside that the player added.
             var roads = new HashSet<int> { baseIndex };
-            if (!cantilever && type != "ground") foreach (var r in o.ExtraRoads) if (r >= 0 && r < s.Carriageways.Count) roads.Add(r);
+            if (!cantilever && !o.Standalone) foreach (var r in o.ExtraRoads) if (r >= 0 && r < s.Carriageways.Count) roads.Add(r);
             // A side whose roads carry no traffic its way (a one-way road seen from behind, or after swapping
             // directions) still lines its signs up over the lanes there.
             List<RoadProbe.LaneInfo> LanesFor(int d)
@@ -107,7 +107,7 @@ namespace SignBuilder.Assemblies
             }
             var frontLanes = LanesFor(dir);
             var backLanes = LanesFor(-dir);
-            bool IsBack(int i) => type != "ground" && o.Slot(i).Back;
+            bool IsBack(int i) => !o.Standalone && o.Slot(i).Back;
             var maxH = n > 0 ? sizes.Max(z => z.y) : 2f;
 
             var elevated = false;
@@ -198,7 +198,29 @@ namespace SignBuilder.Assemblies
             var postClear = type switch { "curved" => 1.3f, "doubleTruss" => 1.1f, "singleTruss" => 0.6f, _ => 0.5f };
 
             AssemblyPlacement result;
-            if (type == "ground")
+            if (type == "surface")
+            {
+                // Just the sign, placed like a prop: at the cursor (always a free placement), turned by the placement
+                // angle, its bottom on the clicked surface plus the base height.
+                var total = sizes.Sum(z2 => z2.x) + kSignGap * Math.Max(0, n - 1);
+                var origin = s.Point;
+                var facing = quaternion.LookRotationSafe(s.Tangent, new float3(0, 1, 0));
+                var xs = new float[n];
+                var x = -total * 0.5f;
+                for (var i = 0; i < n; i++)
+                {
+                    xs[i] = x + sizes[i].x * 0.5f + o.Slot(i).Offset;
+                    x += sizes[i].x + kSignGap;
+                }
+                var centers = Enumerable.Range(0, n).Select(i => new Vector3(xs[i], sizes[i].y * 0.5f, 0f)).ToArray();
+                result = new AssemblyPlacement
+                {
+                    Origin = origin, Rotation = facing, Spec = SupportSpec.Of("none"),
+                    SignCenters = centers, SignXs = xs, LaneXs = System.Array.Empty<float>(), PostXs = System.Array.Empty<float>(),
+                    StructureX = new float2(-total * 0.5f, total * 0.5f),
+                };
+            }
+            else if (type == "ground")
             {
                 var total = sizes.Sum(z2 => z2.x) + kSignGap * Math.Max(0, n - 1);
                 var lateral = o.Free ? 0f : dir * (baseWidth * 0.5f + o.RoadGap + total * 0.5f);
@@ -443,8 +465,8 @@ namespace SignBuilder.Assemblies
         {
             var prefabs = new RuntimePrefabs();
             var options = record.Context?.Options;
-            var back = Enumerable.Range(0, faces.Count).Select(i => options != null && options.Type != "ground" && options.Slot(i).Back).ToArray();
-            var lights = options != null && options.Lights && options.Type != "ground";
+            var back = Enumerable.Range(0, faces.Count).Select(i => options != null && !options.Standalone && options.Slot(i).Back).ToArray();
+            var lights = options != null && options.Lights && !options.Standalone;
             var mesh = Merge(support, faces, record.Centers, options?.SignScale ?? 1f, back, lights);
             // The distant model: the same structure with far fewer sides on every tube.
             var lowSupport = GantryFactory.FromSpec(record.SupportSpec, lowDetail: true);

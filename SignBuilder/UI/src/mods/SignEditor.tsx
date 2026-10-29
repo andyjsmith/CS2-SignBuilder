@@ -140,6 +140,7 @@ export const SignEditor = () => {
     default:
       actions = [
         { label: "Place Standalone", primary: true, onSelect: () => { settle(); startPosts(design); } },
+        { label: "Surface mount", primary: true, title: "Just the sign, no supports: place it like a prop on any surface", onSelect: () => { settle(); startPosts(design, "surface"); } },
         { label: "Place on gantry", primary: true, onSelect: () => { settle(); startGantry([design]); } },
       ];
   }

@@ -25,8 +25,14 @@ namespace SignBuilder.Assemblies
     /// <summary>Everything that shapes a structure besides its signs' designs and the road under it.</summary>
     public sealed class LayoutOptions
     {
-        /// <summary>doubleTruss (box truss), singleTruss (planar), curved, straight, or ground (roadside posts).</summary>
+        /// <summary>
+        /// doubleTruss (box truss), singleTruss (planar), curved, straight, ground (roadside posts), or surface (just the
+        /// sign, placed like a prop on any surface: always free placement).
+        /// </summary>
         public string Type = "doubleTruss";
+
+        /// <summary>A single sign without an overhead structure: on roadside posts or surface mounted.</summary>
+        public bool Standalone => Type == "ground" || Type == "surface";
         /// <summary>"span" (posts either side of its roads) or "cantilever" (one post, an arm over the lanes).</summary>
         public string Span = "span";
         /// <summary>Roads alongside (Snap.Carriageways indices) that a span also crosses, besides its own.</summary>
@@ -66,7 +72,7 @@ namespace SignBuilder.Assemblies
         }
 
         /// <summary>The support id used in records and the UI summary, e.g. "curved/cantilever/left".</summary>
-        public string Support => Type == "ground" ? "ground" : $"{Type}/{Span}{(Span == "cantilever" && LeftSide ? "/left" : "")}";
+        public string Support => Standalone ? Type : $"{Type}/{Span}{(Span == "cantilever" && LeftSide ? "/left" : "")}";
 
         public LayoutOptions Clone()
         {

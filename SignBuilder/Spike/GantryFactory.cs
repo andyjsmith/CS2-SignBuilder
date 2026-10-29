@@ -53,6 +53,7 @@ namespace SignBuilder.Spike
                 "planarTruss" => PlanarTruss(-Arg(0) * 0.5f, Arg(0) * 0.5f, new[] { -Arg(0) * 0.5f, Arg(0) * 0.5f }, Arg(1)),
                 "planarTrussCantilever" => PlanarTruss(-Arg(0), 0.25f, new[] { 0f }, Arg(1)),
                 "ground" => GroundPosts(Arg(0), Arg(1), out _, Arg(2), a.Skip(3).ToArray()),
+                "none" => new MeshBuilder().Build("SignBuilder.NoSupport"),
                 _ => Truss(Arg(0), Arg(1)),
             };
             }

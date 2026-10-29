@@ -58,7 +58,8 @@ namespace SignBuilder.Systems
             AddBinding(new TriggerBinding<string>(Group, "startPosts", json => Guard(() =>
             {
                 var o = JObject.Parse(json);
-                m_Tool.BeginPosts((JObject)o["design"], new LayoutOptions { Type = "ground", Free = (bool?)o["free"] ?? false });
+                var surface = (string)o["mount"] == "surface";
+                m_Tool.BeginPosts((JObject)o["design"], new LayoutOptions { Type = surface ? "surface" : "ground", Free = surface || ((bool?)o["free"] ?? false) });
             })));
             AddBinding(new TriggerBinding<string>(Group, "startGantry", json => Guard(() =>
             {

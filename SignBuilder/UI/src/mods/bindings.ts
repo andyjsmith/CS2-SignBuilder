@@ -23,8 +23,8 @@ export const arrangeInfo$ = bindValue<string>(group, "arrangeInfo", "");
 export const replacing$ = bindValue<boolean>(group, "replacing", false);
 
 export const setEditorOpen = (open: boolean) => trigger(group, "setEditorOpen", open);
-/** Place one sign on roadside posts. */
-export const startPosts = (design: object, free = false) => trigger(group, "startPosts", JSON.stringify({ design, free }));
+/** Place one sign on roadside posts, or surface mounted (just the sign, placed like a prop on any surface). */
+export const startPosts = (design: object, mount: "posts" | "surface" = "posts") => trigger(group, "startPosts", JSON.stringify({ design, mount }));
 /** Pick a road for a gantry, starting with these signs (may be empty). */
 export const startGantry = (designs: object[]) => trigger(group, "startGantry", JSON.stringify({ designs }));
 /** Placement bar: free, road, rotateLeft, rotateRight, raise, lower, wider, narrower, smaller, larger. */
