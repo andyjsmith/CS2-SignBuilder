@@ -99,7 +99,9 @@ export const Arrange = (props: {
   const max = Math.max(...rights) + 1.5;
   const maxH = Math.max(2.5, ...signs.map((s) => s.h));
   const scale = Math.min(areaWidth / (max - min), 100 / maxH);
-  const px = (x: number) => (x - min) * scale;
+  // Centered when the height limits the scale (the structure is then narrower than the view).
+  const left = Math.max(0, (areaWidth - (max - min) * scale) / 2);
+  const px = (x: number) => left + (x - min) * scale;
   const beamY = 12 + (maxH * scale) / 2;
   const roadY = beamY + (maxH * scale) / 2 + 26;
   const height = roadY + 30;

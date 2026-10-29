@@ -127,14 +127,6 @@
       }
     },
     {
-      "label": "Distance",
-      "item": {
-        "type": "text",
-        "text": "2 km",
-        "height": 10.5
-      }
-    },
-    {
       "label": "Divider",
       "item": {
         "type": "divider"
@@ -157,9 +149,9 @@
       }
     },
     {
-      "label": "Panel",
+      "label": "Chip",
       "item": {
-        "type": "panel",
+        "type": "chip",
         "scheme": "white",
         "items": [
           {
@@ -171,57 +163,12 @@
       }
     },
     {
-      "label": "Split columns",
+      "label": "Panel",
       "item": {
-        "type": "row",
-        "align": "start",
-        "items": [
-          {
-            "type": "stack",
-            "align": "center",
-            "items": [
-              {
-                "type": "text",
-                "text": "Destination",
-                "height": 14.0
-              }
-            ]
-          },
-          {
-            "type": "divider"
-          },
-          {
-            "type": "stack",
-            "align": "center",
-            "items": [
-              {
-                "type": "text",
-                "text": "Destination",
-                "height": 14.0
-              }
-            ]
-          }
-        ]
-      }
-    },
-    {
-      "label": "Lane arrows",
-      "item": {
-        "type": "row",
+        "type": "panel",
+        "scheme": "yellow",
         "align": "center",
-        "justify": "between",
-        "items": [
-          {
-            "type": "arrow",
-            "direction": "turn-left",
-            "height": 25.0
-          },
-          {
-            "type": "arrow",
-            "direction": "up",
-            "height": 25.0
-          }
-        ]
+        "items": []
       }
     },
     {
@@ -238,6 +185,5 @@
         ]
       }
     }
-  ],
-  "features": {}
+  ]
 }

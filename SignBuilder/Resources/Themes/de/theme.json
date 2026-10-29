@@ -97,10 +97,6 @@
     }
   },
   "arrow": "M42 0 H58 V100 H82 L50 150 L18 100 H42 Z",
-  "features": {
-    "exitTab": false,
-    "exitOnly": false
-  },
   "laneWidth": 157.48031496062993,
   "parts": [
     {
@@ -112,20 +108,11 @@
       }
     },
     {
-      "label": "Route number",
+      "label": "Shield",
       "item": {
         "type": "shield",
         "network": "A",
         "number": "7",
-        "height": 17.0
-      }
-    },
-    {
-      "label": "Exit number",
-      "item": {
-        "type": "shield",
-        "network": "AS",
-        "number": "12",
         "height": 17.0
       }
     },
@@ -135,28 +122,6 @@
         "type": "arrow",
         "direction": "up",
         "height": 23.5
-      }
-    },
-    {
-      "label": "Distance",
-      "item": {
-        "type": "text",
-        "text": "1000 m",
-        "height": 11.5
-      }
-    },
-    {
-      "label": "Panel",
-      "item": {
-        "type": "panel",
-        "scheme": "yellow",
-        "items": [
-          {
-            "type": "text",
-            "text": "Ziel",
-            "height": 11.5
-          }
-        ]
       }
     },
     {
@@ -182,62 +147,26 @@
       }
     },
     {
-      "label": "Split columns",
+      "label": "Chip",
       "item": {
-        "type": "row",
-        "align": "start",
+        "type": "chip",
+        "scheme": "white",
         "items": [
           {
-            "type": "stack",
-            "align": "center",
-            "items": [
-              {
-                "type": "text",
-                "text": "Destination",
-                "height": 15.5
-              }
-            ]
-          },
-          {
-            "type": "divider"
-          },
-          {
-            "type": "stack",
-            "align": "center",
-            "items": [
-              {
-                "type": "text",
-                "text": "Destination",
-                "height": 15.5
-              }
-            ]
+            "type": "text",
+            "text": "Text",
+            "height": 11.6
           }
         ]
       }
     },
     {
-      "label": "Lane arrows",
+      "label": "Panel",
       "item": {
-        "type": "row",
+        "type": "panel",
+        "scheme": "yellow",
         "align": "center",
-        "justify": "between",
-        "items": [
-          {
-            "type": "arrow",
-            "direction": "turn-left",
-            "height": 29.375
-          },
-          {
-            "type": "arrow",
-            "direction": "split-left",
-            "height": 29.375
-          },
-          {
-            "type": "arrow",
-            "direction": "up",
-            "height": 29.375
-          }
-        ]
+        "items": []
       }
     },
     {
@@ -249,7 +178,7 @@
           {
             "type": "text",
             "text": "12",
-            "height": 10.85
+            "height": 10.1
           }
         ]
       }

@@ -259,7 +259,11 @@ namespace SignBuilder.Spike
             tool.Arrange("{\"op\":\"duplicateSign\",\"index\":0}");
             tool.Arrange("{\"op\":\"lights\",\"value\":true}");
             tool.Arrange("{\"op\":\"swap\"}");
-            SpikeReport.Set("e2e.arrange.swapped", JObject.Parse(tool.ArrangeInfo())["reverse"]?.ToString());
+            yield return new WaitForSecondsRealtime(1f);
+            var swapped = JObject.Parse(tool.ArrangeInfo());
+            SpikeReport.Set("e2e.arrange.swapped", $"reverse={swapped["reverse"]} lanes={swapped["lanes"]?.Count()} allLanes={swapped["allLanes"]?.Count()}");
+            SpikeReport.Screenshot("e2e_arrange_swapped.png");
+            yield return new WaitForSecondsRealtime(0.5f);
             tool.Arrange("{\"op\":\"swap\"}");
             yield return WaitArrange(tool, ui);
             yield return new WaitForSecondsRealtime(1f);

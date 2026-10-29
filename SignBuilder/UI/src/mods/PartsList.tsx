@@ -124,7 +124,6 @@ export const PartsList = (props: {
           </div>
         );
       })}
-      <div className={styles.hint}>Drag parts to reorder them, or onto a Row or Column to group them. Below a row or column, move the pointer left to drop outside it.</div>
     </div>
   );
 };

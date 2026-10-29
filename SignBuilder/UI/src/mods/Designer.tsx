@@ -7,7 +7,7 @@ import { Design, Item, clone, getItem, insertItem, kindOf, removeItem, updateIte
 import { PartsList } from "./PartsList";
 import { SignPreview } from "./SignPreview";
 import { Template, TemplateLibrary } from "./TemplateLibrary";
-import { Theme, blankFor, convertDesign, laneMinWidth, themeOf } from "./themeModel";
+import { Theme, blankFor, convertDesign, themeOf } from "./themeModel";
 import styles from "./SignEditor.module.scss";
 
 const ARROWS = ["up-left", "up", "up-right", "left", "right", "down-left", "down", "down-right", "turn-left", "split-left", "split-right", "turn-right"];
@@ -16,17 +16,37 @@ const ALIGN: Option[] = ["start", "center", "end"].map((a) => ({ value: a, icon:
 const ROW_ALIGN: Option[] = [{ value: "start", label: "Top" }, { value: "center", label: "Middle" }, { value: "end", label: "Bottom" }];
 const ROW_SPACING: Option[] = [{ value: "", label: "Packed" }, { value: "between", label: "Spread out", title: "Fill the width, with the space between the parts" }];
 const PLACE: Option[] = [{ value: "", label: "Sign default" }, ...ALIGN];
-const PANEL_SPAN: Option[] = [
-  { value: "", label: "Fit" },
-  { value: "full", label: "Full width", title: "As wide as the column it is in" },
-  { value: "bottom", label: "Bottom edge", title: "Across the bottom of the sign, like an EXIT ONLY panel" },
-];
+const CHIP_SPAN: Option[] = [{ value: "", label: "Fit" }, { value: "full", label: "Full width", title: "As wide as the column it is in" }];
 const TAB_SIDE: Option[] = [{ value: "left", label: "Left" }, { value: "center", label: "Center" }, { value: "right", label: "Right" }];
 
 /** Alignment of one part within its column, overriding the sign's "Align lines". */
 const PlaceField = (props: { item: Item; onChange: (patch: Partial<Item>) => void }) => (
   <Field label="Align this part"><Choice options={PLACE} value={props.item.place ?? ""} onChange={(place) => props.onChange({ place: place || undefined })} /></Field>
 );
+
+/**
+ * Color of a text, arrow or divider: the default (the sign's or chip's legend color), one of the theme's colors,
+ * or any color.
+ */
+const PartColorField = (props: { item: Item; theme?: Theme; onChange: (patch: Partial<Item>) => void }) => {
+  const palette = Array.from(new Set(Object.values(props.theme?.def.schemes ?? {}).flatMap((s) => [s.fg, s.bg].map((c) => c.toLowerCase()))));
+  const color = props.item.color as string | undefined;
+  const custom = !!color && !palette.includes(color.toLowerCase());
+  return (
+    <Field label="Color">
+      <div className={styles.choices}>
+        <div className={!color ? styles.choiceOn : styles.choice} title="The sign's legend color" onClick={() => props.onChange({ color: undefined })}>Default</div>
+        {palette.map((c) => (
+          <div key={c} title={c} className={color?.toLowerCase() === c ? styles.swatchOn : styles.swatch} style={{ backgroundColor: c, width: "22rem" }}
+            onClick={() => props.onChange({ color: c })} />
+        ))}
+        <div title="Any color" className={custom ? styles.swatchOn : styles.swatch} style={{ width: "22rem", backgroundImage: "linear-gradient(90deg, #e53935, #fdd835, #43a047, #1e88e5, #8e24aa)" }}
+          onClick={() => props.onChange({ color: color ?? "#ff8800" })} />
+      </div>
+      {custom && <ColorBox value={color!} onChange={(c) => props.onChange({ color: c })} />}
+    </Field>
+  );
+};
 
 /** Extra space around a part (sign units), added to the usual spacing: top, bottom, left, right. */
 const MarginField = (props: { item: Item; onChange: (patch: Partial<Item>) => void }) => {
@@ -72,6 +92,7 @@ function ItemProperties(props: { item: Item; onChange: (patch: Partial<Item>) =>
           <Field label="Letter height"><NumberBox value={item.height ?? def?.defaults?.textHeight ?? 16} onChange={(height) => onChange({ height })} /></Field>
           <Field label="Letter spacing"><NumberBox value={item.tracking ?? 0} step={2} min={-20} onChange={(tracking) => onChange({ tracking: tracking || undefined })} /></Field>
           {fonts.length > 1 && <Field label="Font"><Select options={fonts} value={item.font ?? def?.defaults?.font ?? ""} onChange={(font) => onChange({ font })} /></Field>}
+          <PartColorField item={item} theme={theme} onChange={onChange} />
           {place}
         </>
       );
@@ -92,6 +113,7 @@ function ItemProperties(props: { item: Item; onChange: (patch: Partial<Item>) =>
               value={item.direction ?? "up"} onChange={(direction) => onChange({ direction })} />
           </Field>
           <Field label="Size"><NumberBox value={item.height ?? def?.defaults?.arrowHeight ?? 24} step={2} onChange={(height) => onChange({ height })} /></Field>
+          <PartColorField item={item} theme={theme} onChange={onChange} />
           {place}
         </>
       );
@@ -110,15 +132,29 @@ function ItemProperties(props: { item: Item; onChange: (patch: Partial<Item>) =>
           {place}
         </>
       );
+    case "chip":
+      return (
+        <>
+          <Field label="Chip color"><Choice options={schemes} perRow={6} value={item.scheme ?? ""} onChange={(scheme) => onChange({ scheme })} /></Field>
+          <Field label="Border"><Choice options={[{ value: "no", label: "None" }, { value: "yes", label: "Legend color" }]} value={item.border ? "yes" : "no"}
+            onChange={(v) => onChange({ border: v === "yes" ? true : undefined })} /></Field>
+          <Field label="Width"><Choice options={CHIP_SPAN} value={item.span ?? ""} onChange={(span) => onChange({ span: span || undefined })} /></Field>
+          <Field label="Align within the chip"><Choice options={ALIGN} value={item.align ?? "center"} onChange={(align) => onChange({ align })} /></Field>
+          {place}
+        </>
+      );
     case "panel":
       return (
         <>
           <Field label="Panel color"><Choice options={schemes} perRow={6} value={item.scheme ?? ""} onChange={(scheme) => onChange({ scheme })} /></Field>
-          <Field label="Border"><Choice options={[{ value: "no", label: "None" }, { value: "yes", label: "Legend color" }]} value={item.border ? "yes" : "no"}
-            onChange={(v) => onChange({ border: v === "yes" ? true : undefined })} /></Field>
-          <Field label="Width"><Choice options={PANEL_SPAN} value={item.span ?? ""} onChange={(span) => onChange({ span: span || undefined })} /></Field>
           <Field label="Align within the panel"><Choice options={ALIGN} value={item.align ?? "center"} onChange={(align) => onChange({ align })} /></Field>
-          {item.span !== "bottom" && place}
+        </>
+      );
+    case "divider":
+      return (
+        <>
+          <PartColorField item={item} theme={theme} onChange={onChange} />
+          {place}
         </>
       );
     case "tab":
@@ -126,7 +162,6 @@ function ItemProperties(props: { item: Item; onChange: (patch: Partial<Item>) =>
         <>
           <Field label="Position"><Choice options={TAB_SIDE} value={item.align ?? "right"} onChange={(align) => onChange({ align })} /></Field>
           <Field label="Color"><Choice options={[{ value: "", label: "Sign" }, ...schemes]} perRow={7} value={item.scheme ?? ""} onChange={(scheme) => onChange({ scheme: scheme || undefined })} /></Field>
-          <div className={styles.hint}>Put text (or other parts) inside the tab in the parts list.</div>
         </>
       );
     default:
@@ -144,8 +179,8 @@ export type DesignerAction = { label: string; primary?: boolean; onSelect: () =>
 export const Designer = (props: {
   design: Design;
   setDesign: (d: Design) => void;
-  /** Loads a fresh design (template or blank sign), which starts out with no unsaved changes. */
-  onLoad: (d: Design) => void;
+  /** Loads a fresh design (template or blank sign), asking first if the current one has unsaved changes; <then> runs once loaded. */
+  onLoad: (d: Design, then: () => void) => void;
   onTemplateSaved: () => void;
   templates: Template[];
   themes: Theme[];
@@ -162,16 +197,15 @@ export const Designer = (props: {
   const theme = themeOf(props.themes, design);
   const def = theme?.def;
   const custom = !!design.background;
-  const lane = laneMinWidth(theme);
-  const widthMode = !design.minWidth ? "auto" : design.minWidth === lane ? "lane" : "custom";
+  const widthMode = design.minLanes ? "lanes" : design.minWidth ? "custom" : "auto";
   const labels = Object.fromEntries(Object.entries(def?.shields ?? {}).map(([id, s]) => [id, s.label ?? id]));
 
   const item = selected != null ? getItem(design, selected) : null;
   const update = (patch: Partial<Item>) => { if (selected != null) setDesign(updateItem(design, selected, patch)); };
   const add = (made: Item) => {
-    // Tabs and bottom-edge panels belong to the sign itself, so they go at its top level.
-    const signLevel = made.type === "tab" || made.span === "bottom";
-    const r = insertItem(design, signLevel ? null : selected, clone(made));
+    // Tabs and panels belong to the sign itself, so they go at its top level (a panel after the selected part's top-level part).
+    const anchor = made.type === "tab" ? null : made.type === "panel" ? selected?.split(".")[0] ?? null : selected;
+    const r = insertItem(design, anchor, clone(made));
     setDesign(r.design);
     setSelected(r.path);
   };
@@ -190,8 +224,8 @@ export const Designer = (props: {
           </div>
           <div className={styles.heading}>Templates</div>
           <TemplateLibrary templates={templates} current={design}
-            onPick={(t) => { props.onLoad(clone(t.design)); setSelected(null); }} onSaved={props.onTemplateSaved} />
-          <div className={styles.chip} style={{ alignSelf: "flex-start", marginTop: "6rem" }} onClick={() => { props.onLoad(blankFor(theme)); setSelected(null); }}>New blank sign</div>
+            onPick={(t) => props.onLoad(clone(t.design), () => setSelected(null))} onSaved={props.onTemplateSaved} />
+          <div className={styles.chip} style={{ alignSelf: "flex-start", marginTop: "6rem" }} onClick={() => props.onLoad(blankFor(theme), () => setSelected(null))}>New blank sign</div>
         </div>
 
         <div className={styles.center}>
@@ -199,7 +233,6 @@ export const Designer = (props: {
             <SignPreview design={design} selected={selected}
               onSelect={(p) => { setSelected(p); if (p) setFocusToken(focusToken + 1); }} maxWidth={560} maxHeight={270} />
           </div>
-          <div className={styles.hint}>Click any part of the sign to edit it.</div>
           <Scrollable vertical trackVisibility="scrollable" className={styles.optionsScroll}>
           <div className={styles.signOptions}>
             <Field label="Color">
@@ -220,12 +253,18 @@ export const Designer = (props: {
             </Field>
             <Field label="Width">
               <div className={styles.inlineRow}>
-                <Choice options={[{ value: "auto", label: "Fit text" }, { value: "lane", label: "At least a lane", title: "Never narrower than a 4 m lane at 100% size" },
+                <Choice options={[{ value: "auto", label: "Fit text" }, { value: "lanes", label: "Lanes", title: "At least this many lanes wide (4 m lanes at 100% size)" },
                   { value: "custom", label: "At least" }]} value={widthMode}
-                  onChange={(v) => setDesign({ ...design, minWidth: v === "auto" ? undefined : v === "lane" ? lane : design.minWidth && design.minWidth !== lane ? design.minWidth : Math.round(lane / 2) })} />
-                {widthMode === "custom" && (
-                  <NumberBox value={design.minWidth} step={12} onChange={(minWidth) => setDesign({ ...design, minWidth })} />
-                )}
+                  onChange={(v) => {
+                    const d: Design = { ...design };
+                    delete d.minLanes;
+                    delete d.minWidth;
+                    if (v === "lanes") d.minLanes = 1;
+                    if (v === "custom") d.minWidth = 96;
+                    setDesign(d);
+                  }} />
+                {widthMode === "lanes" && <NumberBox compact value={design.minLanes} min={1} onChange={(minLanes) => setDesign({ ...design, minLanes })} />}
+                {widthMode === "custom" && <NumberBox compact value={design.minWidth} step={12} onChange={(minWidth) => setDesign({ ...design, minWidth })} />}
               </div>
             </Field>
             <Field label="Align lines"><Choice options={ALIGN} value={design.align ?? "start"} onChange={(align) => setDesign({ ...design, align })} /></Field>

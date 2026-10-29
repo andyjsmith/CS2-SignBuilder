@@ -97,9 +97,14 @@ namespace SignBuilder.Assemblies
             // Spans cross their own carriageway plus the roads alongside that the player added.
             var roads = new HashSet<int> { baseIndex };
             if (!cantilever && type != "ground") foreach (var r in o.ExtraRoads) if (r >= 0 && r < s.Carriageways.Count) roads.Add(r);
-            List<RoadProbe.LaneInfo> LanesFor(int d) => s.Lanes
-                .Where(l => l.Direction == d && roads.Contains(l.Carriageway))
-                .OrderBy(l => l.Offset * d).ToList();
+            // A side whose roads carry no traffic its way (a one-way road seen from behind, or after swapping
+            // directions) still lines its signs up over the lanes there.
+            List<RoadProbe.LaneInfo> LanesFor(int d)
+            {
+                var own = s.Lanes.Where(l => l.Direction == d && roads.Contains(l.Carriageway)).ToList();
+                if (own.Count == 0) own = s.Lanes.Where(l => roads.Contains(l.Carriageway)).ToList();
+                return own.OrderBy(l => l.Offset * d).ToList();
+            }
             var frontLanes = LanesFor(dir);
             var backLanes = LanesFor(-dir);
             bool IsBack(int i) => type != "ground" && o.Slot(i).Back;

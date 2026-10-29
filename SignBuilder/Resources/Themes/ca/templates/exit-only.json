@@ -40,7 +40,6 @@
     },
     {
       "type": "panel",
-      "span": "bottom",
       "scheme": "yellow",
       "align": "center",
       "items": [

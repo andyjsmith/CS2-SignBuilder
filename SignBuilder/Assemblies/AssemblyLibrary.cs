@@ -22,15 +22,6 @@ namespace SignBuilder.Assemblies
         /// <summary>The signs on this structure, left to right as seen by approaching traffic.</summary>
         public List<JObject> Designs = new();
 
-        /// <summary>Records written before multi-sign support stored a single design.</summary>
-        [JsonProperty("Design")]
-        private JObject LegacyDesign
-        {
-            set
-            {
-                if (value != null && Designs.Count == 0) Designs.Add(value);
-            }
-        }
         /// <summary>How to rebuild the support mesh (see <see cref="GantryFactory.FromSpec"/>).</summary>
         public SupportSpec SupportSpec;
         /// <summary>Sign panel centers in assembly space, x y z per sign.</summary>

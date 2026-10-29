@@ -138,21 +138,9 @@
     }
   },
   "arrow": "M32 0 H68 V88 H100 L50 150 L0 88 H32 Z",
-  "features": {
-    "exitTab": true,
-    "exitOnly": true,
-    "cardinal": true
-  },
   "exitTab": {
     "font": "RG2014E",
     "height": 10
-  },
-  "exitOnly": {
-    "font": "RG2014E",
-    "words": [
-      "EXIT",
-      "ONLY"
-    ]
   },
   "laneWidth": 157.48031496062993,
   "parts": [
@@ -182,15 +170,6 @@
       }
     },
     {
-      "label": "Distance",
-      "item": {
-        "type": "text",
-        "text": "1 MILE",
-        "height": 12,
-        "font": "RG2014D"
-      }
-    },
-    {
       "label": "Divider",
       "item": {
         "type": "divider"
@@ -205,21 +184,6 @@
       }
     },
     {
-      "label": "Panel",
-      "item": {
-        "type": "panel",
-        "scheme": "white",
-        "items": [
-          {
-            "type": "text",
-            "text": "TOLL",
-            "height": 12,
-            "font": "RG2014D"
-          }
-        ]
-      }
-    },
-    {
       "label": "Column",
       "item": {
         "type": "stack",
@@ -228,66 +192,30 @@
       }
     },
     {
-      "label": "Split columns",
+      "label": "Chip",
       "item": {
-        "type": "row",
-        "align": "start",
+        "type": "chip",
+        "scheme": "white",
         "items": [
           {
-            "type": "stack",
-            "align": "center",
-            "items": [
-              {
-                "type": "text",
-                "text": "Destination",
-                "height": 16
-              }
-            ]
-          },
-          {
-            "type": "divider"
-          },
-          {
-            "type": "stack",
-            "align": "center",
-            "items": [
-              {
-                "type": "text",
-                "text": "Destination",
-                "height": 16
-              }
-            ]
+            "type": "text",
+            "text": "Text",
+            "height": 12.0
           }
         ]
       }
     },
     {
-      "label": "Lane arrows",
+      "label": "Panel",
       "item": {
-        "type": "row",
+        "type": "panel",
+        "scheme": "yellow",
         "align": "center",
-        "justify": "between",
-        "items": [
-          {
-            "type": "arrow",
-            "direction": "turn-left",
-            "height": 30.0
-          },
-          {
-            "type": "arrow",
-            "direction": "split-left",
-            "height": 30.0
-          },
-          {
-            "type": "arrow",
-            "direction": "up",
-            "height": 30.0
-          }
-        ]
+        "items": []
       }
     },
     {
-      "label": "Exit tab",
+      "label": "Tab",
       "item": {
         "type": "tab",
         "align": "right",
@@ -297,33 +225,6 @@
             "text": "EXIT 1",
             "height": 10,
             "font": "RG2014E"
-          }
-        ]
-      }
-    },
-    {
-      "label": "EXIT ONLY",
-      "item": {
-        "type": "panel",
-        "span": "bottom",
-        "scheme": "yellow",
-        "align": "center",
-        "items": [
-          {
-            "type": "arrow",
-            "direction": "down",
-            "height": 18
-          },
-          {
-            "type": "text",
-            "text": "EXIT ONLY",
-            "height": 12,
-            "font": "RG2014E"
-          },
-          {
-            "type": "arrow",
-            "direction": "down",
-            "height": 18
           }
         ]
       }

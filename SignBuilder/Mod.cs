@@ -17,7 +17,6 @@ namespace SignBuilder
 
             // Generated meshes and materials live in a mod-owned database; it must be registered
             // before any save that uses them is loaded.
-            Core.CacheRepair.FixArgbTextures(Spike.SignBuilderCache.RootPath);
             AssetDatabase.global.RegisterDatabase(AssetDatabase<Spike.SignBuilderCache>.instance).ContinueWith(t =>
             {
                 if (t.IsFaulted) log.Error(t.Exception, "Registering the SignBuilder cache database failed");

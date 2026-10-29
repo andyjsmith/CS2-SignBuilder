@@ -34,10 +34,10 @@ export const Select = (props: { options: Option[]; value: string; onChange: (v: 
   if (VanillaDropdownItem) {
     return (
       <div className={styles.select}>
-        <Dropdown content={props.options.map((o) => (
+        <Dropdown theme={GameDropdownTheme ?? undefined} content={props.options.map((o) => (
           <VanillaDropdownItem key={o.value} value={o.value} selected={o.value === props.value} closeOnSelect
             onChange={(v: string) => props.onChange(v)}>
-            <div className={styles.selectItem} style={o.style} title={o.title}>{o.label ?? o.value}</div>
+            <span style={o.style} title={o.title}>{o.label ?? o.value}</span>
           </VanillaDropdownItem>
         ))}>
           <DropdownToggle className={styles.selectVanilla}>{current?.label ?? props.value}</DropdownToggle>
@@ -93,6 +93,8 @@ const load = (path: string, name: string): any => {
 const VanillaTextInput = load("game-ui/common/input/text/text-input.tsx", "TextInput");
 const VanillaColorField = load("game-ui/common/input/color-picker/color-field/color-field.tsx", "ColorField");
 const VanillaDropdownItem = load("game-ui/common/input/dropdown/items/dropdown-item.tsx", "DropdownItem");
+// The in-game drop-down look (dark list, highlighted choice), as the game's own panels use it.
+const GameDropdownTheme = load("game-ui/game/themes/game-dropdown.module.scss", "classes");
 
 /**
  * Text input. <focusToken> changing (or autoFocus) puts the caret at the end of the text, so clicking a legend

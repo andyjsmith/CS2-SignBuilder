@@ -129,14 +129,6 @@
       }
     },
     {
-      "label": "Distance",
-      "item": {
-        "type": "text",
-        "text": "2 km",
-        "height": 12.0
-      }
-    },
-    {
       "label": "Divider",
       "item": {
         "type": "divider"
@@ -159,9 +151,9 @@
       }
     },
     {
-      "label": "Panel",
+      "label": "Chip",
       "item": {
-        "type": "panel",
+        "type": "chip",
         "scheme": "white",
         "items": [
           {
@@ -173,57 +165,12 @@
       }
     },
     {
-      "label": "Split columns",
+      "label": "Panel",
       "item": {
-        "type": "row",
-        "align": "start",
-        "items": [
-          {
-            "type": "stack",
-            "align": "center",
-            "items": [
-              {
-                "type": "text",
-                "text": "Destination",
-                "height": 16
-              }
-            ]
-          },
-          {
-            "type": "divider"
-          },
-          {
-            "type": "stack",
-            "align": "center",
-            "items": [
-              {
-                "type": "text",
-                "text": "Destination",
-                "height": 16
-              }
-            ]
-          }
-        ]
-      }
-    },
-    {
-      "label": "Lane arrows",
-      "item": {
-        "type": "row",
+        "type": "panel",
+        "scheme": "yellow",
         "align": "center",
-        "justify": "between",
-        "items": [
-          {
-            "type": "arrow",
-            "direction": "turn-left",
-            "height": 29.375
-          },
-          {
-            "type": "arrow",
-            "direction": "up",
-            "height": 29.375
-          }
-        ]
+        "items": []
       }
     },
     {
@@ -239,27 +186,6 @@
           }
         ]
       }
-    },
-    {
-      "label": "Chinese + English",
-      "item": {
-        "type": "stack",
-        "align": "center",
-        "items": [
-          {
-            "type": "text",
-            "text": "北京",
-            "height": 16
-          },
-          {
-            "type": "text",
-            "text": "Beijing",
-            "height": 8.8,
-            "gapBefore": 2.4
-          }
-        ]
-      }
     }
-  ],
-  "features": {}
+  ]
 }

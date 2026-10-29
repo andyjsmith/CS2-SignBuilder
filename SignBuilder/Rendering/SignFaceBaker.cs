@@ -128,8 +128,8 @@ namespace SignBuilder.Rendering
 
         private bool m_Busy;
 
-        /// <summary>Bumped when cached faces must not be reused (v2: faces baked concurrently could be wrong).</summary>
-        private const int kCacheVersion = 2;
+        /// <summary>Bumped when cached faces must not be reused (part of every face's cache key).</summary>
+        private const int kCacheVersion = 3;
 
         private IEnumerator BakeOne(JObject design, float pixelsPerInch, Action<BakedFace> onDone)
         {

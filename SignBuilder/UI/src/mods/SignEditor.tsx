@@ -8,7 +8,7 @@ import {
 import { Confirm } from "./Controls";
 import { Designer, DesignerAction } from "./Designer";
 import { registerThemes } from "./SignPreview";
-import { Theme, blankFor, themeOf, upgradeDesign } from "./themeModel";
+import { Theme, blankFor, themeOf } from "./themeModel";
 import { Design, clone } from "./designModel";
 import { PlacementBar } from "./PlacementBar";
 import { Template } from "./TemplateLibrary";
@@ -51,8 +51,7 @@ export const SignEditor = () => {
   const [question, setQuestion] = useState<Question | null>(null);
   const dirty = JSON.stringify(design) !== baseline;
   /** Loads a design (template, placed sign, blank): it starts out unchanged. */
-  const load = (raw: Design) => {
-    const d = upgradeDesign(raw, themeOf(themes, raw));
+  const load = (d: Design) => {
     setDesign(d);
     setBaseline(JSON.stringify(d));
   };
@@ -150,7 +149,8 @@ export const SignEditor = () => {
   const requestClose = () => guard(dirty || inGantry, inGantry ? LOSE_GANTRY : "Close the Sign Builder? Your changes to this sign will be lost.", close);
   const escape = () => (dirty || inGantry ? requestClose() : guard(true, "Close the Sign Builder?", close, "Close"));
   return withBack(
-    <Designer design={design} setDesign={setDesign} onLoad={load} onTemplateSaved={settle} templates={templates} themes={themes}
+    <Designer design={design} setDesign={setDesign} onTemplateSaved={settle}
+      onLoad={(d, then) => guard(dirty, "Load this? Your changes to the current sign will be lost.", () => { load(d); then(); })} templates={templates} themes={themes}
       title={title} actions={actions} onClose={requestClose} overlay={overlay} />,
     escape,
   );

@@ -693,7 +693,7 @@ namespace SignBuilder.Tools
                 ? AssemblyLibrary.FromPrefabName(prefab.name) : null;
 
         private static LayoutOptions OptionsOf(AssemblyRecord record) =>
-            record.Context?.Options != null ? record.Context.Options.Clone() : new LayoutOptions();
+            record.Context.Options.Clone();
 
         /// <summary>
         /// Edit a placed structure: a gantry reopens in the arrangement panel pinned where it stands (Save
@@ -704,13 +704,12 @@ namespace SignBuilder.Tools
             var record = RecordOf(entity);
             if (record == null) return false;
             var options = OptionsOf(record);
-            if (options.Type == "ground" || record.Context == null)
+            if (options.Type == "ground")
             {
                 Deactivate();
                 m_Replacing = entity;
                 m_Options = options;
                 m_UI.OpenForEdit(record, "posts");
-                m_UI.SetStatus(record.Context == null ? "This sign is from an older version: Save asks for a road click." : "Editing a placed sign: change it and press Save.");
                 return true;
             }
             SetSigns(record.Designs);
@@ -730,13 +729,8 @@ namespace SignBuilder.Tools
         {
             if (m_Replacing == Entity.Null || m_Busy) return false;
             var record = RecordOf(m_Replacing);
-            var options = record == null ? m_Options : OptionsOf(record);
-            if (record?.Context == null)
-            {
-                BeginPosts(design, options);
-                m_UI.SetStatus("This sign is from an older version: click beside its road to place the updated sign.");
-                return false;
-            }
+            if (record == null) return false;
+            var options = OptionsOf(record);
             SetSigns(new[] { design });
             m_Options = options;
             SignBuilderRuntime.Run(WaitThenBuild(record.Context.ToSnap()));

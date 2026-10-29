@@ -5,7 +5,7 @@
   "scheme": "green",
   "items": [
     {
-      "type": "panel",
+      "type": "chip",
       "scheme": "white",
       "items": [
         {

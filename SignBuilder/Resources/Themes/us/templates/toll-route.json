@@ -12,7 +12,7 @@
           "align": "center",
           "items": [
             {
-              "type": "panel",
+              "type": "chip",
               "scheme": "yellow",
               "items": [
                 {

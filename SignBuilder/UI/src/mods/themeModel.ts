@@ -12,8 +12,7 @@ export type ThemeDef = {
   fonts?: ThemeFont[];
   schemes?: Record<string, { bg: string; fg: string; label?: string }>;
   shields?: Record<string, ThemeShield>;
-  exitTab?: { font?: string; height?: number };
-  exitOnly?: { font?: string; words?: string[] };
+  exitTab?: { font?: string };
   parts?: { label: string; item: Item }[];
   laneWidth?: number;
 };
@@ -35,8 +34,7 @@ export function blankFor(theme?: Theme): Design {
 
 /**
  * Moves a sign to another theme. Every theme uses the same size unit, so sizes carry over as they are; colors,
- * fonts and plates the new theme lacks fall back to its defaults; US-only parts (exit tab, EXIT ONLY panel) are
- * dropped where the theme has none. Text carries over unchanged.
+ * fonts and plates the new theme lacks fall back to its defaults. Text carries over unchanged.
  */
 export function convertDesign(design: Design, to: Theme): Design {
   const d = clone(design);
@@ -53,32 +51,3 @@ export function convertDesign(design: Design, to: Theme): Design {
   d.scheme = d.scheme && (to.def.schemes ?? {})[d.scheme] ? d.scheme : to.def.defaults?.scheme ?? Object.keys(to.def.schemes ?? {})[0];
   return d;
 }
-
-/**
- * Older designs (placed signs, shared templates) kept the exit tab and the EXIT ONLY panel as sign settings; they
- * are parts now: a tab, and a panel across the bottom edge.
- */
-export function upgradeDesign(design: Design, theme?: Theme): Design {
-  if (!design.exitTab && !design.bottomBar) return design;
-  const d = clone(design);
-  const tab = d.exitTab;
-  const bar = d.bottomBar;
-  delete d.exitTab;
-  delete d.bottomBar;
-  const tabFont = theme?.def.exitTab?.font;
-  const barFont = theme?.def.exitOnly?.font;
-  if (tab) d.items.unshift({ type: "tab", align: tab.align ?? "right", items: [{ type: "text", text: tab.text ?? "EXIT", height: tab.height ?? 10, font: tab.font ?? tabFont }] });
-  if (bar) {
-    const h = bar.height ?? 12;
-    const words: string[] = bar.words ?? theme?.def.exitOnly?.words ?? ["EXIT", "ONLY"];
-    const arrow = { type: "arrow", direction: "down", height: h * 1.5 };
-    const items = (bar.arrows ?? 1) >= 2
-      ? [arrow, { type: "text", text: words.join(" "), height: h, font: barFont }, clone(arrow)]
-      : [{ type: "text", text: words[0], height: h, font: barFont }, arrow, { type: "text", text: words[1], height: h, font: barFont }];
-    d.items.push({ type: "panel", span: "bottom", scheme: bar.scheme ?? "yellow", align: "center", items });
-  }
-  return d;
-}
-
-/** A lane (4 m, at the default 100% sign size) in sign units, less a little clearance: "at least a lane" width. */
-export const laneMinWidth = (theme?: Theme) => Math.round(((theme?.def.laneWidth ?? 4 / 0.0254) / 0.7) * 0.92);

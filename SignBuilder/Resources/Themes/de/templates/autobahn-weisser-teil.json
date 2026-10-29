@@ -19,7 +19,7 @@
       ]
     },
     {
-      "type": "panel",
+      "type": "chip",
       "scheme": "white",
       "items": [
         {

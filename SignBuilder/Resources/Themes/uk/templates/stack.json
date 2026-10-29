@@ -50,7 +50,7 @@
           "direction": "right"
         },
         {
-          "type": "panel",
+          "type": "chip",
           "scheme": "white",
           "items": [
             {

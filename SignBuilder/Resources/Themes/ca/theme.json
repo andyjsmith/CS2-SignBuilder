@@ -116,13 +116,6 @@
     "font": "RG2014E",
     "height": 10
   },
-  "exitOnly": {
-    "font": "RG2014E",
-    "words": [
-      "EXIT",
-      "ONLY"
-    ]
-  },
   "laneWidth": 157.48031496062993,
   "parts": [
     {
@@ -151,14 +144,6 @@
       }
     },
     {
-      "label": "Distance",
-      "item": {
-        "type": "text",
-        "text": "2 km",
-        "height": 12.0
-      }
-    },
-    {
       "label": "Divider",
       "item": {
         "type": "divider"
@@ -181,9 +166,9 @@
       }
     },
     {
-      "label": "Panel",
+      "label": "Chip",
       "item": {
-        "type": "panel",
+        "type": "chip",
         "scheme": "white",
         "items": [
           {
@@ -195,57 +180,12 @@
       }
     },
     {
-      "label": "Split columns",
+      "label": "Panel",
       "item": {
-        "type": "row",
-        "align": "start",
-        "items": [
-          {
-            "type": "stack",
-            "align": "center",
-            "items": [
-              {
-                "type": "text",
-                "text": "Destination",
-                "height": 16
-              }
-            ]
-          },
-          {
-            "type": "divider"
-          },
-          {
-            "type": "stack",
-            "align": "center",
-            "items": [
-              {
-                "type": "text",
-                "text": "Destination",
-                "height": 16
-              }
-            ]
-          }
-        ]
-      }
-    },
-    {
-      "label": "Lane arrows",
-      "item": {
-        "type": "row",
+        "type": "panel",
+        "scheme": "yellow",
         "align": "center",
-        "justify": "between",
-        "items": [
-          {
-            "type": "arrow",
-            "direction": "turn-left",
-            "height": 30.0
-          },
-          {
-            "type": "arrow",
-            "direction": "up",
-            "height": 30.0
-          }
-        ]
+        "items": []
       }
     },
     {
@@ -256,39 +196,12 @@
         "items": [
           {
             "type": "text",
-            "text": "12",
-            "height": 10.4
-          }
-        ]
-      }
-    },
-    {
-      "label": "EXIT ONLY",
-      "item": {
-        "type": "panel",
-        "span": "bottom",
-        "scheme": "yellow",
-        "align": "center",
-        "items": [
-          {
-            "type": "arrow",
-            "direction": "down",
-            "height": 18
-          },
-          {
-            "type": "text",
-            "text": "EXIT ONLY",
-            "height": 12,
+            "text": "EXIT 1",
+            "height": 10,
             "font": "RG2014E"
-          },
-          {
-            "type": "arrow",
-            "direction": "down",
-            "height": 18
           }
         ]
       }
     }
-  ],
-  "features": {}
+  ]
 }

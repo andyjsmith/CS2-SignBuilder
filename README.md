@@ -10,14 +10,15 @@ Players can add their own themes and templates as files, or publish them as mods
 
 1. Click **SB** in the top-left toolbar to open the designer.
 2. Pick a theme and start from one of its templates (or a blank sign). Click any part of the preview to
-   select it (its text box takes the caret) and edit it on the right. Add parts from the theme's palette
-   (text, route numbers, arrows including curved turn and split lane arrows, distances, panels such as a
-   yellow advisory speed plate, rows, columns, and split columns with a divider between them); drag parts
-   in the list to reorder them or drop them onto a Row or Column to group them. A row can be spread out
-   across the sign (lane arrows under their lanes); text has a letter spacing setting. A **Tab** part sits
-   on top of the sign (an exit number plaque), and a panel can span the full width or attach to the
-   sign's bottom edge (an EXIT ONLY panel is such a panel holding two arrows and text). Set the colors (or
-   custom colors), width and alignment. **Save current as template** keeps the sign as a JSON file in
+   select it (its text box takes the caret) and edit it on the right. Signs are built from a few basic
+   parts: Text, Shield, Arrow (including curved turn and split lane arrows), Divider, Row, Column, **Chip**
+   (a small colored box such as a TOLL or speed plate), **Panel** (a band across the sign's full width, at
+   the top, between parts or at the bottom, like an EXIT ONLY panel) and **Tab** (on top of the sign, like
+   an exit number plaque). Drag parts in the list to reorder them or drop them into a Row, Column, Chip,
+   Panel or Tab. A row can be spread out across the sign (lane arrows under their lanes); text, arrows and
+   dividers can take any color; text has a letter spacing setting; any part can have margins. Set the
+   colors (or custom colors), width (fit, a number of lanes, or at least a size) and alignment.
+   **Save current as template** keeps the sign as a JSON file in
    `ModsData/SignBuilder/Templates`.
 3. **Place Standalone** puts the sign on roadside posts, snapped beside a road or freely placed (right-drag
    rotates). While placing a sign or a gantry, Shift + mouse wheel sets the distance from the road and
