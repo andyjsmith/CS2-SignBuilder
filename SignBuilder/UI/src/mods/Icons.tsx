@@ -26,6 +26,21 @@ export const ArrowIcon = (props: { direction: string; size?: number; color?: str
   );
 };
 
+/** Built-in (read-only) template badge. */
+export const LockIcon = () => (
+  <svg width="10rem" height="12rem" viewBox="0 0 10 12">
+    <path d="M2.5 5 V3.5 a2.5 2.5 0 0 1 5 0 V5" stroke="#ffffff" strokeWidth="1.4" fill="none" />
+    <rect x="1" y="5" width="8" height="6.5" rx="1" fill="#ffffff" />
+  </svg>
+);
+
+/** The player's own (editable) template badge. */
+export const PencilIcon = () => (
+  <svg width="12rem" height="12rem" viewBox="0 0 12 12">
+    <path d="M1 11 L1.6 8.2 L8.4 1.4 L10.6 3.6 L3.8 10.4 Z" fill="#ffd400" />
+  </svg>
+);
+
 /** A small trash can, for delete buttons. */
 export const TrashIcon = (props: { size?: number }) => (
   <svg width={(props.size ?? 12) + "rem"} height={(props.size ?? 12) + "rem"} viewBox="0 0 12 12">

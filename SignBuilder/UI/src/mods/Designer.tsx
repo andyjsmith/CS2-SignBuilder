@@ -151,10 +151,12 @@ export const Designer = (props: {
   const widthMode = !design.minWidth ? "auto" : design.minWidth === lane ? "lane" : "custom";
   const labels = Object.fromEntries(Object.entries(def?.shields ?? {}).map(([id, s]) => [id, s.label ?? id]));
 
-  const item = selected != null && selected !== "exitTab" ? getItem(design, selected) : null;
+  // The exit tab and the EXIT ONLY panel are sign-level parts, not in the items list.
+  const signPart = selected === "exitTab" || selected === "bottomBar";
+  const item = selected != null && !signPart ? getItem(design, selected) : null;
   const update = (patch: Partial<Item>) => { if (selected != null) setDesign(updateItem(design, selected, patch)); };
   const add = (made: Item) => {
-    const r = insertItem(design, selected === "exitTab" ? null : selected, clone(made));
+    const r = insertItem(design, signPart ? null : selected, clone(made));
     setDesign(r.design);
     setSelected(r.path);
   };
@@ -207,7 +209,7 @@ export const Designer = (props: {
               <Field label="EXIT ONLY panel">
                 <Choice options={[0, 1, 2].map((n) => ({ value: String(n), icon: <ExitOnlyIcon arrows={n} />, title: n === 0 ? "none" : `${n} arrow${n > 1 ? "s" : ""}` }))}
                   value={design.bottomBar ? String(design.bottomBar.arrows ?? 1) : "0"}
-                  onChange={(v) => setDesign({ ...design, bottomBar: v === "0" ? null : { type: "exitOnly", arrows: Number(v), height: 15 } })} />
+                  onChange={(v) => setDesign({ ...design, bottomBar: v === "0" ? null : { ...(design.bottomBar ?? {}), type: "exitOnly", arrows: Number(v) } })} />
               </Field>
             )}
             <Field label="Width">
@@ -241,7 +243,10 @@ export const Designer = (props: {
           <div className={styles.heading}>Parts</div>
           <PartsList design={design} selected={selected} onSelect={setSelected} labels={labels}
             onChange={(d, path) => { setDesign(d); setSelected(path); }}
-            onDelete={(path) => { setDesign(path === "exitTab" ? { ...design, exitTab: null } : removeItem(design, path)); setSelected(null); }} />
+            onDelete={(path) => {
+              setDesign(path === "exitTab" ? { ...design, exitTab: null } : path === "bottomBar" ? { ...design, bottomBar: null } : removeItem(design, path));
+              setSelected(null);
+            }} />
           {selected === "exitTab" && design.exitTab && (
             <>
               <div className={styles.heading}>Exit tab</div>
@@ -249,7 +254,29 @@ export const Designer = (props: {
                 <TextBox value={design.exitTab.text} focusToken={focusToken} onChange={(text) => setDesign({ ...design, exitTab: { ...design.exitTab!, text } })} />
               </Field>
               <Field label="Letter height">
-                <NumberBox value={design.exitTab.height ?? 9} onChange={(height) => setDesign({ ...design, exitTab: { ...design.exitTab!, height } })} />
+                <NumberBox value={design.exitTab.height ?? 10} onChange={(height) => setDesign({ ...design, exitTab: { ...design.exitTab!, height } })} />
+              </Field>
+            </>
+          )}
+          {selected === "bottomBar" && design.bottomBar && (
+            <>
+              <div className={styles.heading}>EXIT ONLY panel</div>
+              <Field label="Words">
+                <div className={styles.inlineRow}>
+                  {[0, 1].map((k) => (
+                    <div key={k} style={{ width: "120rem", marginRight: "6rem" }}>
+                      <TextBox value={(design.bottomBar!.words ?? ["EXIT", "ONLY"])[k]} focusToken={k === 0 ? focusToken : undefined}
+                        onChange={(text) => {
+                          const words = [...(design.bottomBar!.words ?? ["EXIT", "ONLY"])];
+                          words[k] = text;
+                          setDesign({ ...design, bottomBar: { ...design.bottomBar!, words } });
+                        }} />
+                    </div>
+                  ))}
+                </div>
+              </Field>
+              <Field label="Letter height">
+                <NumberBox value={design.bottomBar.height ?? 14} onChange={(height) => setDesign({ ...design, bottomBar: { ...design.bottomBar!, height } })} />
               </Field>
             </>
           )}

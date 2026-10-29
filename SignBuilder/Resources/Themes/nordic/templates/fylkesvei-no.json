@@ -1,0 +1,41 @@
+{
+  "theme": "nordic",
+  "id": "fylkesvei-no",
+  "name": "County road (NO)",
+  "scheme": "yellow",
+  "items": [
+    {
+      "type": "row",
+      "items": [
+        {
+          "type": "arrow",
+          "direction": "left"
+        },
+        {
+          "type": "shield",
+          "network": "FV",
+          "number": "120"
+        },
+        {
+          "type": "text",
+          "text": "Ski"
+        }
+      ],
+      "align": "center"
+    },
+    {
+      "type": "row",
+      "items": [
+        {
+          "type": "arrow",
+          "direction": "up"
+        },
+        {
+          "type": "text",
+          "text": "Moss"
+        }
+      ],
+      "align": "center"
+    }
+  ]
+}

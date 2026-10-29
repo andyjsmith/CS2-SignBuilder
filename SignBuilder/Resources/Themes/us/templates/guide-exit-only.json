@@ -1,8 +1,9 @@
 {
   "theme": "us",
   "id": "guide-exit-only",
-  "name": "Guide sign with EXIT ONLY panel",
+  "name": "Exit only",
   "scheme": "green",
+  "align": "center",
   "exitTab": {
     "text": "EXIT 44",
     "align": "right"
@@ -10,9 +11,8 @@
   "bottomBar": {
     "type": "exitOnly",
     "arrows": 2,
-    "height": 15
+    "height": 14
   },
-  "align": "center",
   "items": [
     {
       "type": "row",
@@ -35,6 +35,5 @@
       "type": "text",
       "text": "Saugus"
     }
-  ],
-  "support": "curvedSpan"
+  ]
 }

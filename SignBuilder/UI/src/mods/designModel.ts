@@ -8,7 +8,7 @@ export type Design = {
   scheme?: string;
   align?: string;
   exitTab?: { text: string; align?: string; height?: number } | null;
-  bottomBar?: { type: string; arrows?: number; height?: number } | null;
+  bottomBar?: { type: string; arrows?: number; height?: number; words?: string[] } | null;
   items: Item[];
   [key: string]: any;
 };
@@ -146,7 +146,7 @@ export function moveTo(design: Design, from: string, target: string, position: D
 export function describe(item: Item, labels?: Record<string, string>): string {
   switch (item.type) {
     case "text": return `"${item.text}"`;
-    case "shield": return `${labels?.[item.network] ?? item.network} ${item.number}`;
+    case "shield": return `Shield "${item.number ?? ""}"`;
     case "panel": return `Panel (${item.items?.length ?? 0})`;
     case "arrow": return `Arrow ${String(item.direction ?? "up").replace("-", " ")}`;
     case "row": return `Row (${item.items.length})`;
@@ -160,7 +160,7 @@ export function describe(item: Item, labels?: Record<string, string>): string {
 export function kindOf(item: Item, labels?: Record<string, string>): string {
   switch (item.type) {
     case "text": return "Text";
-    case "shield": return `${labels?.[item.network] ?? "Route"} plate`;
+    case "shield": return "Shield";
     case "panel": return "Panel";
     case "arrow": return "Arrow";
     case "row": return "Row";

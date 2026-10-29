@@ -1,0 +1,55 @@
+{
+  "theme": "de",
+  "id": "kreuzung",
+  "name": "Junction",
+  "scheme": "yellow",
+  "items": [
+    {
+      "type": "row",
+      "items": [
+        {
+          "type": "arrow",
+          "direction": "left"
+        },
+        {
+          "type": "text",
+          "text": "Erfurt"
+        }
+      ],
+      "align": "center"
+    },
+    {
+      "type": "row",
+      "items": [
+        {
+          "type": "arrow",
+          "direction": "up"
+        },
+        {
+          "type": "shield",
+          "network": "B",
+          "number": "7"
+        },
+        {
+          "type": "text",
+          "text": "Eisenach"
+        }
+      ],
+      "align": "center"
+    },
+    {
+      "type": "row",
+      "items": [
+        {
+          "type": "arrow",
+          "direction": "right"
+        },
+        {
+          "type": "text",
+          "text": "Gotha"
+        }
+      ],
+      "align": "center"
+    }
+  ]
+}

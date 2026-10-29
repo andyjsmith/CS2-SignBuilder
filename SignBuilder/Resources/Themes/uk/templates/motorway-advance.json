@@ -1,26 +1,22 @@
 {
   "theme": "uk",
-  "name": "Motorway advance direction sign",
+  "id": "motorway-advance",
+  "name": "Motorway advance",
   "scheme": "blue",
   "items": [
     {
       "type": "row",
-      "align": "start",
       "items": [
         {
           "type": "shield",
           "network": "J",
           "number": "12"
         }
-      ]
-    },
-    {
-      "type": "text",
-      "text": "The NORTH"
+      ],
+      "align": "start"
     },
     {
       "type": "row",
-      "align": "center",
       "items": [
         {
           "type": "shield",
@@ -36,7 +32,7 @@
     {
       "type": "text",
       "text": "1 mile",
-      "height": 10.0
+      "height": 12
     }
   ]
 }

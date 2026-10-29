@@ -1,0 +1,28 @@
+{
+  "theme": "nordic",
+  "id": "avkjorsel",
+  "name": "Exit",
+  "scheme": "blue",
+  "align": "center",
+  "items": [
+    {
+      "type": "row",
+      "items": [
+        {
+          "type": "shield",
+          "network": "EXIT",
+          "number": "12"
+        },
+        {
+          "type": "text",
+          "text": "Moss"
+        }
+      ]
+    },
+    {
+      "type": "arrow",
+      "direction": "up-right",
+      "height": 18
+    }
+  ]
+}

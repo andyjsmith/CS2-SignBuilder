@@ -115,6 +115,7 @@ namespace SignBuilder.Systems
             ui.AddHostLocation("signbuilder", SignBuilderRuntime.ResourcesDir, shouldWatch: false);
             Directory.CreateDirectory(SignBuilderRuntime.DataDir);
             ui.AddHostLocation(Themes.DataHost, SignBuilderRuntime.DataDir, shouldWatch: false);
+            foreach (var (host, dir) in Themes.ModHosts) ui.AddHostLocation(host, dir, shouldWatch: false);
             RefreshLibrary();
             if (mode == Game.GameMode.Game) SignBuilderRuntime.Run(SignBuilderRuntime.Baker.Warmup());
         }

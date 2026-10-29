@@ -222,6 +222,7 @@ namespace SignBuilder.Rendering
             // Player themes (fonts, plate artwork) load from ModsData.
             System.IO.Directory.CreateDirectory(Core.SignBuilderRuntime.DataDir);
             m_UISystem.AddHostLocation(Core.Themes.DataHost, Core.SignBuilderRuntime.DataDir, shouldWatch: false);
+            foreach (var (host, dir) in Core.Themes.ModHosts) m_UISystem.AddHostLocation(host, dir, shouldWatch: false);
 
             var go = new GameObject("SignBuilder.SignFaceBakerCamera");
             Object.DontDestroyOnLoad(go);

@@ -1,12 +1,13 @@
 {
   "theme": "us",
   "id": "advance-guide",
-  "name": "Roadside advance guide sign (two posts)",
+  "name": "Advance guide",
   "scheme": "green",
   "exitTab": {
     "text": "EXIT 43",
     "align": "right"
   },
+  "support": "ground",
   "items": [
     {
       "type": "row",
@@ -36,6 +37,5 @@
       "height": 12,
       "font": "RG2014D"
     }
-  ],
-  "support": "ground"
+  ]
 }

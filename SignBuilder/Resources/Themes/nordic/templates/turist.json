@@ -1,0 +1,18 @@
+{
+  "theme": "nordic",
+  "id": "turist",
+  "name": "Tourist",
+  "scheme": "brown",
+  "align": "center",
+  "items": [
+    {
+      "type": "text",
+      "text": "Nidarosdomen"
+    },
+    {
+      "type": "arrow",
+      "direction": "up",
+      "height": 18
+    }
+  ]
+}

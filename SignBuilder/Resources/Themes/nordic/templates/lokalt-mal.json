@@ -1,22 +1,36 @@
 {
   "theme": "nordic",
-  "name": "Local destination",
+  "id": "lokalt-mal",
+  "name": "Local",
   "scheme": "white",
   "items": [
     {
       "type": "row",
-      "align": "center",
       "items": [
         {
-          "type": "text",
-          "text": "Centrum"
+          "type": "arrow",
+          "direction": "left"
         },
         {
-          "type": "arrow",
-          "direction": "right",
-          "height": 17.0
+          "type": "text",
+          "text": "Sentrum"
         }
-      ]
+      ],
+      "align": "center"
+    },
+    {
+      "type": "row",
+      "items": [
+        {
+          "type": "arrow",
+          "direction": "right"
+        },
+        {
+          "type": "text",
+          "text": "Sykehus"
+        }
+      ],
+      "align": "center"
     }
   ]
 }

@@ -1,11 +1,11 @@
 {
   "theme": "de",
-  "name": "Bundesstraße direction sign",
+  "id": "bundesstrasse",
+  "name": "Bundesstraße",
   "scheme": "yellow",
   "items": [
     {
       "type": "row",
-      "align": "center",
       "items": [
         {
           "type": "shield",
@@ -14,24 +14,14 @@
         },
         {
           "type": "text",
-          "text": "Stuttgart"
-        }
-      ]
-    },
-    {
-      "type": "text",
-      "text": "Esslingen"
-    },
-    {
-      "type": "row",
-      "align": "start",
-      "items": [
+          "text": "Göttingen"
+        },
         {
           "type": "arrow",
-          "direction": "up-left",
-          "height": 20.0
+          "direction": "right"
         }
-      ]
+      ],
+      "align": "center"
     }
   ]
 }

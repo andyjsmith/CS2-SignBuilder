@@ -13,6 +13,8 @@ namespace SignBuilder.Core
         public string Id;
         public string Name;
         public bool BuiltIn;
+        /// <summary>Name of the installed mod (Paradox Mods or local) the theme came from, if any.</summary>
+        public string FromMod;
         /// <summary>Folder on disk, and the same folder as a URL the renderer can load fonts and images from.</summary>
         public string Dir;
         public string BaseUrl;
@@ -24,6 +26,8 @@ namespace SignBuilder.Core
     /// Sign themes. Built-in ones ship in Resources/Themes; players add their own in ModsData/SignBuilder/Themes
     /// (one folder per theme: theme.json, fonts/, shields/, templates/). A player folder with the id of a built-in
     /// theme and no theme.json only supplies files for it, such as fonts that cannot ship with the mod.
+    /// Any installed mod (from Paradox Mods or the local Mods folder) can carry themes too, in a SignBuilderThemes
+    /// folder laid out the same way: subscribing to a theme pack is all a player needs to do.
     /// </summary>
     public static class Themes
     {
@@ -54,10 +58,50 @@ namespace SignBuilder.Core
         {
             s_Themes = new Dictionary<string, ThemeInfo>();
             Load(BuiltInDir, true, $"coui://signbuilder/Themes/");
+            // Mod themes before the player's own, so a local folder can override a published theme while editing it.
+            s_ModHosts = ModThemeFolders().Select((dir, i) => (host: $"signbuildermod{i}", dir)).ToList();
+            foreach (var (host, dir) in s_ModHosts) Load(dir, false, $"coui://{host}/", ModName(dir));
             Load(UserThemesDir, false, $"coui://{DataHost}/Themes/");
         }
 
-        private static void Load(string root, bool builtIn, string urlRoot)
+        /// <summary>Folder name in a mod that holds Sign Builder themes.</summary>
+        public const string ModFolder = "SignBuilderThemes";
+
+        private static List<(string host, string dir)> s_ModHosts = new();
+
+        /// <summary>
+        /// coui hosts the renderer loads mod themes' fonts and artwork from (host name, folder). Registered with the
+        /// game's UI system wherever signs are drawn (editor preview and the off-screen baker).
+        /// </summary>
+        public static IReadOnlyList<(string host, string dir)> ModHosts
+        {
+            get
+            {
+                if (s_Themes == null) Reload();
+                return s_ModHosts;
+            }
+        }
+
+        /// <summary>SignBuilderThemes folders of installed mods: subscribed Paradox Mods and local mods.</summary>
+        private static IEnumerable<string> ModThemeFolders()
+        {
+            var userRoot = UnityEngine.Application.persistentDataPath;
+            foreach (var mods in new[] { Path.Combine(userRoot, ".cache", "Mods", "pdx_mods"), Path.Combine(userRoot, "Mods") })
+            {
+                if (!Directory.Exists(mods)) continue;
+                string[] dirs;
+                try { dirs = Directory.GetDirectories(mods); } catch { continue; }
+                foreach (var mod in dirs.OrderBy(d => d))
+                {
+                    var themes = Path.Combine(mod, ModFolder);
+                    if (Directory.Exists(themes)) yield return themes;
+                }
+            }
+        }
+
+        private static string ModName(string themesDir) => Path.GetFileName(Path.GetDirectoryName(themesDir));
+
+        private static void Load(string root, bool builtIn, string urlRoot, string fromMod = null)
         {
             if (!Directory.Exists(root)) return;
             foreach (var dir in Directory.GetDirectories(root).OrderBy(d => d))
@@ -71,7 +115,7 @@ namespace SignBuilder.Core
                     def["id"] = id;
                     var theme = new ThemeInfo
                     {
-                        Id = id, Name = (string)def["name"] ?? id, BuiltIn = builtIn, Dir = dir,
+                        Id = id, Name = (string)def["name"] ?? id, BuiltIn = builtIn, Dir = dir, FromMod = fromMod,
                         BaseUrl = urlRoot + Uri.EscapeDataString(Path.GetFileName(dir)) + "/", Def = def,
                     };
                     ResolveFonts(theme);
@@ -122,7 +166,7 @@ namespace SignBuilder.Core
         /// <summary>All themes for the editor: [{ id, name, builtIn, base, def }].</summary>
         public static string Json() => new JArray(All.Select(t => new JObject
         {
-            ["id"] = t.Id, ["name"] = t.Name, ["builtIn"] = t.BuiltIn, ["base"] = t.BaseUrl, ["def"] = t.Def,
+            ["id"] = t.Id, ["name"] = t.Name, ["builtIn"] = t.BuiltIn, ["fromMod"] = t.FromMod, ["base"] = t.BaseUrl, ["def"] = t.Def,
         })).ToString(Formatting.None);
     }
 }

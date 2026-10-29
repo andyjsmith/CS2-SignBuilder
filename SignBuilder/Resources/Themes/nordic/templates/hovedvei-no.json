@@ -1,26 +1,11 @@
 {
   "theme": "nordic",
-  "name": "Main road direction sign (NO)",
+  "id": "hovedvei-no",
+  "name": "Main road (NO)",
   "scheme": "yellow",
   "items": [
     {
       "type": "row",
-      "align": "center",
-      "items": [
-        {
-          "type": "shield",
-          "network": "E",
-          "number": "18"
-        },
-        {
-          "type": "text",
-          "text": "Oslo"
-        }
-      ]
-    },
-    {
-      "type": "row",
-      "align": "center",
       "items": [
         {
           "type": "shield",
@@ -30,19 +15,13 @@
         {
           "type": "text",
           "text": "Gjøvik"
-        }
-      ]
-    },
-    {
-      "type": "panel",
-      "scheme": "white",
-      "items": [
+        },
         {
-          "type": "text",
-          "text": "Sentrum",
-          "height": 12.0
+          "type": "arrow",
+          "direction": "right"
         }
-      ]
+      ],
+      "align": "center"
     }
   ]
 }

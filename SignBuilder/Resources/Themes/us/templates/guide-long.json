@@ -1,7 +1,7 @@
 {
   "theme": "us",
   "id": "guide-long",
-  "name": "Auto-size check (long legend, TO route, 3-digit shield)",
+  "name": "Downtown",
   "scheme": "green",
   "items": [
     {
@@ -37,7 +37,6 @@
     },
     {
       "type": "row",
-      "align": "center",
       "items": [
         {
           "type": "arrow",
@@ -47,11 +46,11 @@
         {
           "type": "text",
           "text": "1/2 MILE",
-          "height": 13,
+          "height": 12,
           "font": "RG2014D"
         }
-      ]
+      ],
+      "align": "center"
     }
-  ],
-  "support": "truss"
+  ]
 }

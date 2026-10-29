@@ -1,0 +1,32 @@
+{
+  "theme": "de",
+  "id": "wegweiser",
+  "name": "Autobahn guide",
+  "scheme": "blue",
+  "align": "center",
+  "items": [
+    {
+      "type": "row",
+      "items": [
+        {
+          "type": "shield",
+          "network": "A",
+          "number": "7"
+        },
+        {
+          "type": "shield",
+          "network": "E",
+          "number": "45"
+        }
+      ]
+    },
+    {
+      "type": "text",
+      "text": "Würzburg"
+    },
+    {
+      "type": "text",
+      "text": "Kassel"
+    }
+  ]
+}

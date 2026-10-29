@@ -1,6 +1,7 @@
 {
   "theme": "uk",
-  "name": "Primary route with motorway patch",
+  "id": "primary-with-motorway-patch",
+  "name": "With motorway",
   "scheme": "green",
   "items": [
     {
@@ -11,18 +12,17 @@
           "type": "shield",
           "network": "M",
           "number": "62",
-          "height": 14.0
+          "height": 14
         },
         {
           "type": "text",
           "text": "Manchester",
-          "height": 12.0
+          "height": 12
         }
       ]
     },
     {
       "type": "row",
-      "align": "center",
       "items": [
         {
           "type": "shield",
@@ -33,7 +33,8 @@
           "type": "text",
           "text": "Liverpool"
         }
-      ]
+      ],
+      "align": "center"
     }
   ]
 }

@@ -1,0 +1,75 @@
+{
+  "theme": "uk",
+  "id": "motorway-lanes",
+  "name": "Motorway lanes",
+  "scheme": "blue",
+  "items": [
+    {
+      "type": "row",
+      "items": [
+        {
+          "type": "stack",
+          "align": "center",
+          "items": [
+            {
+              "type": "row",
+              "items": [
+                {
+                  "type": "shield",
+                  "network": "M",
+                  "number": "6"
+                }
+              ]
+            },
+            {
+              "type": "text",
+              "text": "The NORTH"
+            },
+            {
+              "type": "text",
+              "text": "Preston"
+            },
+            {
+              "type": "arrow",
+              "direction": "down",
+              "height": 28
+            }
+          ]
+        },
+        {
+          "type": "divider"
+        },
+        {
+          "type": "stack",
+          "align": "center",
+          "items": [
+            {
+              "type": "row",
+              "items": [
+                {
+                  "type": "shield",
+                  "network": "M",
+                  "number": "62"
+                }
+              ]
+            },
+            {
+              "type": "text",
+              "text": "Manchester"
+            },
+            {
+              "type": "text",
+              "text": "Leeds"
+            },
+            {
+              "type": "arrow",
+              "direction": "down",
+              "height": 28
+            }
+          ]
+        }
+      ],
+      "align": "start"
+    }
+  ]
+}

@@ -1,0 +1,35 @@
+{
+  "theme": "us",
+  "id": "street-ahead",
+  "name": "Street exit",
+  "scheme": "green",
+  "align": "center",
+  "exitTab": {
+    "text": "EXIT 7",
+    "align": "left"
+  },
+  "items": [
+    {
+      "type": "text",
+      "text": "Main St",
+      "height": 16
+    },
+    {
+      "type": "row",
+      "items": [
+        {
+          "type": "text",
+          "text": "EXIT",
+          "height": 12,
+          "font": "RG2014D"
+        },
+        {
+          "type": "text",
+          "text": "1/4 MILE",
+          "height": 12,
+          "font": "RG2014D"
+        }
+      ]
+    }
+  ]
+}

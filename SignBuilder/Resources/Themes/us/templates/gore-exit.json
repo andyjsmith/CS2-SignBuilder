@@ -1,10 +1,11 @@
 {
   "theme": "us",
   "id": "gore-exit",
-  "name": "Gore exit sign (single post)",
+  "name": "Gore exit",
   "scheme": "green",
   "cornerRadius": 6,
   "border": 1.25,
+  "support": "ground",
   "items": [
     {
       "type": "text",
@@ -14,7 +15,6 @@
     },
     {
       "type": "row",
-      "align": "center",
       "items": [
         {
           "type": "text",
@@ -27,8 +27,8 @@
           "direction": "up-right",
           "height": 14
         }
-      ]
+      ],
+      "align": "center"
     }
-  ],
-  "support": "ground"
+  ]
 }

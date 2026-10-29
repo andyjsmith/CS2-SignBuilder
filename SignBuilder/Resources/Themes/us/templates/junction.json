@@ -1,0 +1,33 @@
+{
+  "theme": "us",
+  "id": "junction",
+  "name": "Junction",
+  "scheme": "white",
+  "align": "center",
+  "support": "ground",
+  "items": [
+    {
+      "type": "text",
+      "text": "JCT",
+      "height": 12,
+      "font": "RG2014D"
+    },
+    {
+      "type": "row",
+      "items": [
+        {
+          "type": "shield",
+          "network": "US",
+          "number": "20",
+          "height": 30
+        },
+        {
+          "type": "shield",
+          "network": "STATE",
+          "number": "9",
+          "height": 30
+        }
+      ]
+    }
+  ]
+}

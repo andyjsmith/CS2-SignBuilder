@@ -1,37 +1,27 @@
 {
   "theme": "nordic",
-  "name": "Motorway direction sign (NO)",
+  "id": "motorvei-no",
+  "name": "Motorway (NO)",
   "scheme": "blue",
+  "align": "center",
   "items": [
     {
       "type": "row",
-      "align": "center",
       "items": [
         {
           "type": "shield",
           "network": "E",
-          "number": "6"
-        },
-        {
-          "type": "text",
-          "text": "Trondheim"
+          "number": "18"
         }
       ]
     },
     {
-      "type": "row",
-      "align": "center",
-      "items": [
-        {
-          "type": "text",
-          "text": "Gardermoen"
-        },
-        {
-          "type": "arrow",
-          "direction": "up-right",
-          "height": 20.0
-        }
-      ]
+      "type": "text",
+      "text": "Drammen"
+    },
+    {
+      "type": "text",
+      "text": "Oslo S"
     }
   ]
 }

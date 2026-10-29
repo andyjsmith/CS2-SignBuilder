@@ -1,0 +1,60 @@
+{
+  "theme": "us",
+  "id": "distances",
+  "name": "Distances",
+  "scheme": "green",
+  "support": "ground",
+  "items": [
+    {
+      "type": "row",
+      "items": [
+        {
+          "type": "text",
+          "text": "Worcester"
+        },
+        {
+          "type": "text",
+          "text": "12",
+          "margin": {
+            "left": 12
+          }
+        }
+      ],
+      "justify": "between"
+    },
+    {
+      "type": "row",
+      "items": [
+        {
+          "type": "text",
+          "text": "Springfield"
+        },
+        {
+          "type": "text",
+          "text": "47",
+          "margin": {
+            "left": 12
+          }
+        }
+      ],
+      "justify": "between"
+    },
+    {
+      "type": "row",
+      "items": [
+        {
+          "type": "text",
+          "text": "Albany"
+        },
+        {
+          "type": "text",
+          "text": "128",
+          "margin": {
+            "left": 12
+          }
+        }
+      ],
+      "justify": "between"
+    }
+  ]
+}

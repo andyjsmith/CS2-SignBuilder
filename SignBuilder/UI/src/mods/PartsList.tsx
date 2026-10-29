@@ -131,6 +131,12 @@ export const PartsList = (props: {
           </div>
         );
       })}
+      {props.design.bottomBar && (
+        <div className={props.selected === "bottomBar" ? styles.listItemOn : styles.listItem} onClick={() => props.onSelect("bottomBar")}>
+          <div className={styles.rowLabel}>{`"${(props.design.bottomBar.words ?? ["EXIT", "ONLY"]).join(" ")}" panel`}</div>
+          <Delete path="bottomBar" />
+        </div>
+      )}
       <div className={styles.hint}>Drag parts to reorder them, or onto a Row or Column to group them. Below a row or column, move the pointer left to drop outside it.</div>
     </div>
   );

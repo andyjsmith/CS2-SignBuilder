@@ -4,6 +4,7 @@ import { deleteTemplate, openTemplatesFolder, renameTemplate, saveTemplate } fro
 import { Design } from "./designModel";
 import { SignPreview } from "./SignPreview";
 import { TextBox } from "./Controls";
+import { LockIcon, PencilIcon } from "./Icons";
 import styles from "./SignEditor.module.scss";
 
 export type Template = { id: string; name: string; builtIn?: boolean; design: Design };
@@ -55,6 +56,9 @@ export const TemplateLibrary = (props: { templates: Template[]; current: Design;
                   <SignPreview design={t.design} interactive={false} maxWidth={124} maxHeight={64} padding={6} />
                 </div>
                 <div className={styles.cardName}>{t.name}</div>
+                <div className={styles.cardBadge} title={t.builtIn ? "Built-in template (comes with its theme)" : "Your template"}>
+                  {t.builtIn ? <LockIcon /> : <PencilIcon />}
+                </div>
                 <div className={styles.cardMenu} onClick={(e) => { e.stopPropagation(); setMenu(menu === t.id ? null : t.id); }}>···</div>
                 {menu === t.id && (
                   <div className={styles.cardActions} onClick={(e) => e.stopPropagation()}>

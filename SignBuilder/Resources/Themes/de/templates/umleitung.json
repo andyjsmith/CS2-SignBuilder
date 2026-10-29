@@ -1,0 +1,27 @@
+{
+  "theme": "de",
+  "id": "umleitung",
+  "name": "Detour",
+  "scheme": "orange",
+  "items": [
+    {
+      "type": "row",
+      "items": [
+        {
+          "type": "text",
+          "text": "U",
+          "height": 15.5
+        },
+        {
+          "type": "text",
+          "text": "12"
+        },
+        {
+          "type": "arrow",
+          "direction": "up-right"
+        }
+      ],
+      "align": "center"
+    }
+  ]
+}

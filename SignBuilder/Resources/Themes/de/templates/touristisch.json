@@ -1,0 +1,22 @@
+{
+  "theme": "de",
+  "id": "touristisch",
+  "name": "Tourist",
+  "scheme": "brown",
+  "align": "center",
+  "items": [
+    {
+      "type": "text",
+      "text": "Schloss"
+    },
+    {
+      "type": "text",
+      "text": "Neuschwanstein"
+    },
+    {
+      "type": "arrow",
+      "direction": "right",
+      "height": 18
+    }
+  ]
+}

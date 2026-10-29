@@ -1,23 +1,38 @@
 {
   "theme": "uk",
-  "name": "Local direction sign",
+  "id": "local",
+  "name": "Local",
   "scheme": "white",
   "items": [
     {
       "type": "row",
-      "align": "center",
       "items": [
+        {
+          "type": "arrow",
+          "direction": "left"
+        },
         {
           "type": "text",
           "text": "Town Centre",
           "font": "TransportHeavy"
-        },
+        }
+      ],
+      "align": "center"
+    },
+    {
+      "type": "row",
+      "items": [
         {
           "type": "arrow",
-          "direction": "right",
-          "height": 14.0
+          "direction": "right"
+        },
+        {
+          "type": "text",
+          "text": "Station",
+          "font": "TransportHeavy"
         }
-      ]
+      ],
+      "align": "center"
     }
   ]
 }

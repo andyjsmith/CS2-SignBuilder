@@ -1,0 +1,57 @@
+{
+  "theme": "uk",
+  "id": "motorway-distances",
+  "name": "Distances",
+  "scheme": "blue",
+  "items": [
+    {
+      "type": "row",
+      "items": [
+        {
+          "type": "shield",
+          "network": "M",
+          "number": "1"
+        },
+        {
+          "type": "text",
+          "text": "Sheffield"
+        },
+        {
+          "type": "text",
+          "text": "34",
+          "margin": {
+            "left": 14
+          }
+        }
+      ],
+      "justify": "between"
+    },
+    {
+      "type": "row",
+      "items": [
+        {
+          "type": "text",
+          "text": "Leeds"
+        },
+        {
+          "type": "text",
+          "text": "52",
+          "margin": {
+            "left": 14
+          }
+        }
+      ],
+      "justify": "between"
+    },
+    {
+      "type": "row",
+      "items": [
+        {
+          "type": "text",
+          "text": "The NORTH"
+        }
+      ],
+      "justify": "between"
+    }
+  ]
+}

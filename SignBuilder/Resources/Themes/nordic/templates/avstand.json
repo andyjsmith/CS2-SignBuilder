@@ -1,0 +1,64 @@
+{
+  "theme": "nordic",
+  "id": "avstand",
+  "name": "Distances",
+  "scheme": "blue",
+  "items": [
+    {
+      "type": "row",
+      "items": [
+        {
+          "type": "shield",
+          "network": "E",
+          "number": "4"
+        },
+        {
+          "type": "text",
+          "text": "Uppsala"
+        },
+        {
+          "type": "text",
+          "text": "45",
+          "margin": {
+            "left": 14
+          }
+        }
+      ],
+      "justify": "between"
+    },
+    {
+      "type": "row",
+      "items": [
+        {
+          "type": "text",
+          "text": "Gävle"
+        },
+        {
+          "type": "text",
+          "text": "152",
+          "margin": {
+            "left": 14
+          }
+        }
+      ],
+      "justify": "between"
+    },
+    {
+      "type": "row",
+      "items": [
+        {
+          "type": "text",
+          "text": "Sundsvall"
+        },
+        {
+          "type": "text",
+          "text": "366",
+          "margin": {
+            "left": 14
+          }
+        }
+      ],
+      "justify": "between"
+    }
+  ]
+}

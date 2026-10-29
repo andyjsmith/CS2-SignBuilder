@@ -1,0 +1,55 @@
+{
+  "theme": "us",
+  "id": "toll-route",
+  "name": "Toll road",
+  "scheme": "green",
+  "items": [
+    {
+      "type": "row",
+      "items": [
+        {
+          "type": "stack",
+          "align": "center",
+          "items": [
+            {
+              "type": "panel",
+              "scheme": "yellow",
+              "items": [
+                {
+                  "type": "text",
+                  "text": "TOLL",
+                  "height": 10,
+                  "font": "RG2014D"
+                }
+              ],
+              "radius": 2
+            },
+            {
+              "type": "shield",
+              "network": "I",
+              "number": "90",
+              "height": 32
+            }
+          ]
+        },
+        {
+          "type": "stack",
+          "align": "start",
+          "items": [
+            {
+              "type": "text",
+              "text": "EAST",
+              "height": 14,
+              "font": "RG2014D"
+            },
+            {
+              "type": "text",
+              "text": "Boston"
+            }
+          ]
+        }
+      ],
+      "align": "center"
+    }
+  ]
+}

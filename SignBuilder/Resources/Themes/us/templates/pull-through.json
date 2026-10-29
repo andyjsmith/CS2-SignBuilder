@@ -1,0 +1,47 @@
+{
+  "theme": "us",
+  "id": "pull-through",
+  "name": "Pull-through",
+  "scheme": "green",
+  "align": "center",
+  "minWidth": 200,
+  "items": [
+    {
+      "type": "row",
+      "items": [
+        {
+          "type": "shield",
+          "network": "I",
+          "number": "90",
+          "height": 36
+        },
+        {
+          "type": "text",
+          "text": "WEST",
+          "height": 15,
+          "font": "RG2014D"
+        }
+      ]
+    },
+    {
+      "type": "text",
+      "text": "Albany"
+    },
+    {
+      "type": "row",
+      "items": [
+        {
+          "type": "arrow",
+          "direction": "down",
+          "height": 24
+        },
+        {
+          "type": "arrow",
+          "direction": "down",
+          "height": 24
+        }
+      ],
+      "justify": "between"
+    }
+  ]
+}

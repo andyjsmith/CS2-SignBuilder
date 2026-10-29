@@ -1,37 +1,27 @@
 {
   "theme": "uk",
-  "name": "Primary route direction sign",
+  "id": "primary-route",
+  "name": "Primary route",
   "scheme": "green",
   "items": [
     {
       "type": "row",
-      "align": "center",
       "items": [
         {
           "type": "shield",
           "network": "AP",
-          "number": "1"
+          "number": "580"
         },
         {
           "type": "text",
-          "text": "Newcastle"
-        }
-      ]
-    },
-    {
-      "type": "row",
-      "align": "center",
-      "items": [
-        {
-          "type": "text",
-          "text": "Durham"
+          "text": "Liverpool"
         },
         {
           "type": "arrow",
-          "direction": "up-right",
-          "height": 16.5
+          "direction": "right"
         }
-      ]
+      ],
+      "align": "center"
     }
   ]
 }

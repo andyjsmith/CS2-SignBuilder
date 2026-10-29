@@ -1,0 +1,64 @@
+{
+  "theme": "de",
+  "id": "entfernung",
+  "name": "Distances",
+  "scheme": "blue",
+  "items": [
+    {
+      "type": "row",
+      "items": [
+        {
+          "type": "shield",
+          "network": "A",
+          "number": "7"
+        },
+        {
+          "type": "text",
+          "text": "Kassel"
+        },
+        {
+          "type": "text",
+          "text": "45 km",
+          "margin": {
+            "left": 14
+          }
+        }
+      ],
+      "justify": "between"
+    },
+    {
+      "type": "row",
+      "items": [
+        {
+          "type": "text",
+          "text": "Göttingen"
+        },
+        {
+          "type": "text",
+          "text": "78 km",
+          "margin": {
+            "left": 14
+          }
+        }
+      ],
+      "justify": "between"
+    },
+    {
+      "type": "row",
+      "items": [
+        {
+          "type": "text",
+          "text": "Hannover"
+        },
+        {
+          "type": "text",
+          "text": "143 km",
+          "margin": {
+            "left": 14
+          }
+        }
+      ],
+      "justify": "between"
+    }
+  ]
+}

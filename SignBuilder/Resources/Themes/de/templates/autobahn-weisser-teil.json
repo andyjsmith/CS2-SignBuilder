@@ -1,11 +1,11 @@
 {
   "theme": "de",
-  "name": "Autobahn with local panel",
+  "id": "autobahn-weisser-teil",
+  "name": "Exit with city",
   "scheme": "blue",
   "items": [
     {
       "type": "row",
-      "align": "center",
       "items": [
         {
           "type": "shield",
@@ -25,9 +25,16 @@
         {
           "type": "text",
           "text": "Messe",
-          "height": 12.0
+          "height": 12
+        },
+        {
+          "type": "text",
+          "text": "Deutz",
+          "height": 12
         }
-      ]
+      ],
+      "vertical": true,
+      "align": "start"
     }
   ]
 }

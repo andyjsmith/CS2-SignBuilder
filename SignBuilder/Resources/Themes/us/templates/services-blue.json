@@ -1,7 +1,7 @@
 {
   "theme": "us",
   "id": "services-blue",
-  "name": "Motorist services",
+  "name": "Services",
   "scheme": "blue",
   "align": "center",
   "items": [
@@ -16,6 +16,5 @@
       "height": 13,
       "font": "RG2014D"
     }
-  ],
-  "support": "monotube"
+  ]
 }

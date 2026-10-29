@@ -1,0 +1,22 @@
+{
+  "theme": "nordic",
+  "id": "omkjoring",
+  "name": "Detour",
+  "scheme": "orange",
+  "items": [
+    {
+      "type": "row",
+      "items": [
+        {
+          "type": "text",
+          "text": "Omkjøring"
+        },
+        {
+          "type": "arrow",
+          "direction": "right"
+        }
+      ],
+      "align": "center"
+    }
+  ]
+}

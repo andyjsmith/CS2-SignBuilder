@@ -1,0 +1,65 @@
+{
+  "theme": "nordic",
+  "id": "korfalt-se",
+  "name": "Lanes (SE)",
+  "scheme": "blue",
+  "items": [
+    {
+      "type": "row",
+      "items": [
+        {
+          "type": "stack",
+          "align": "center",
+          "items": [
+            {
+              "type": "row",
+              "items": [
+                {
+                  "type": "shield",
+                  "network": "E",
+                  "number": "6"
+                }
+              ]
+            },
+            {
+              "type": "text",
+              "text": "Göteborg"
+            },
+            {
+              "type": "arrow",
+              "direction": "down"
+            }
+          ]
+        },
+        {
+          "type": "divider"
+        },
+        {
+          "type": "stack",
+          "align": "center",
+          "items": [
+            {
+              "type": "row",
+              "items": [
+                {
+                  "type": "shield",
+                  "network": "RIKSVAG",
+                  "number": "40"
+                }
+              ]
+            },
+            {
+              "type": "text",
+              "text": "Borås"
+            },
+            {
+              "type": "arrow",
+              "direction": "down-right"
+            }
+          ]
+        }
+      ],
+      "align": "start"
+    }
+  ]
+}

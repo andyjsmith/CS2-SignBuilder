@@ -1,7 +1,7 @@
 {
   "theme": "us",
   "id": "guide-exit-tab",
-  "name": "Guide sign with exit tab",
+  "name": "Exit guide",
   "scheme": "green",
   "exitTab": {
     "text": "EXIT 42B",
@@ -33,6 +33,5 @@
       "type": "text",
       "text": "Portsmouth NH"
     }
-  ],
-  "support": "truss"
+  ]
 }

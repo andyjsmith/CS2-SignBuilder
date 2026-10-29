@@ -1,7 +1,7 @@
 {
   "theme": "us",
   "id": "attraction-brown",
-  "name": "Recreational / cultural attraction",
+  "name": "Attraction",
   "scheme": "brown",
   "align": "center",
   "items": [
@@ -29,6 +29,5 @@
         }
       ]
     }
-  ],
-  "support": "curvedCantilever"
+  ]
 }

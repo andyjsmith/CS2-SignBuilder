@@ -362,13 +362,15 @@
 
   // ---------------------------------------------------------------- sign-level parts
 
-  // E11-1 style EXIT ONLY panel: "EXIT ↓ ONLY", or "↓ EXIT ONLY ↓" for two arrows.
+  // E11-1 style EXIT ONLY panel: "EXIT ↓ ONLY", or "↓ EXIT ONLY ↓" for two arrows. The two words are editable.
+  var EXIT_ONLY_HEIGHT = 14;
   function exitOnlyItems(bar) {
-    var h = bar.height || 15;
+    var h = bar.height || EXIT_ONLY_HEIGHT;
     var arrow = { type: "arrow", direction: "down", height: h * 1.5 };
     var cfg = T.def.exitOnly || {};
-    var exit = { type: "text", text: (cfg.words || ["EXIT", "ONLY"])[0], height: h, font: cfg.font };
-    var only = { type: "text", text: (cfg.words || ["EXIT", "ONLY"])[1], height: h, font: cfg.font };
+    var words = bar.words || cfg.words || ["EXIT", "ONLY"];
+    var exit = { type: "text", text: words[0], height: h, font: cfg.font };
+    var only = { type: "text", text: words[1], height: h, font: cfg.font };
     var arrows = bar.arrows || 1;
     if (arrows >= 2) return [arrow, exit, only, arrow];
     return [exit, arrow, only];
@@ -377,7 +379,7 @@
   function renderBar(bar, ctx, innerRadius) {
     var s = scheme(bar.scheme || (bar.type === "exitOnly" ? "yellow" : "green"));
     var items = bar.type === "exitOnly" ? exitOnlyItems(bar) : (bar.items || []);
-    var h = bar.type === "exitOnly" ? (bar.height || 15) * 1.5 : heightOf({ type: "row", items: items });
+    var h = bar.type === "exitOnly" ? (bar.height || EXIT_ONLY_HEIGHT) * 1.5 : heightOf({ type: "row", items: items });
     var pad = (bar.padding != null ? bar.padding : h * 0.35);
     var e = el("div", "sb-bar", {
       backgroundColor: s.bg, padding: px(pad) + " " + px(pad * 2),
@@ -405,7 +407,7 @@
 
     if (tab) {
       // Exit plaque letters, smaller than the sign's legends so the tab stays in proportion with game-sized signs.
-      var th = tab.height || (T.def.exitTab && T.def.exitTab.height) || 9;
+      var th = tab.height || (T.def.exitTab && T.def.exitTab.height) || 10;
       var tabRow = el("div", "sb-tab-row", { justifyContent: { left: "flex-start", center: "center", right: "flex-end" }[tabSide] });
       var tabBox = el("div", "sb-tab", {
         backgroundColor: s.bg, padding: px(border) + " " + px(border) + " 0px " + px(border),

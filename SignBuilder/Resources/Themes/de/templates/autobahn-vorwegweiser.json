@@ -1,43 +1,83 @@
 {
   "theme": "de",
-  "name": "Autobahn advance sign (Vorwegweiser)",
+  "id": "autobahn-vorwegweiser",
+  "name": "Autobahn lanes",
   "scheme": "blue",
   "items": [
     {
       "type": "row",
-      "align": "center",
       "items": [
         {
-          "type": "shield",
-          "network": "AS",
-          "number": "12"
+          "type": "stack",
+          "align": "center",
+          "items": [
+            {
+              "type": "row",
+              "items": [
+                {
+                  "type": "shield",
+                  "network": "A",
+                  "number": "7"
+                },
+                {
+                  "type": "text",
+                  "text": "Hamburg"
+                }
+              ]
+            },
+            {
+              "type": "text",
+              "text": "Hannover"
+            },
+            {
+              "type": "row",
+              "items": [
+                {
+                  "type": "arrow",
+                  "direction": "down"
+                },
+                {
+                  "type": "arrow",
+                  "direction": "down"
+                }
+              ],
+              "justify": "between"
+            }
+          ]
         },
         {
-          "type": "text",
-          "text": "Frankfurt-Süd"
-        }
-      ]
-    },
-    {
-      "type": "row",
-      "align": "center",
-      "items": [
-        {
-          "type": "shield",
-          "network": "A",
-          "number": "5"
+          "type": "divider"
         },
         {
-          "type": "shield",
-          "network": "E",
-          "number": "451"
+          "type": "stack",
+          "align": "center",
+          "items": [
+            {
+              "type": "row",
+              "items": [
+                {
+                  "type": "shield",
+                  "network": "A",
+                  "number": "2"
+                },
+                {
+                  "type": "text",
+                  "text": "Berlin"
+                }
+              ]
+            },
+            {
+              "type": "text",
+              "text": "Dortmund"
+            },
+            {
+              "type": "arrow",
+              "direction": "down-right"
+            }
+          ]
         }
-      ]
-    },
-    {
-      "type": "text",
-      "text": "1000 m",
-      "height": 11.5
+      ],
+      "align": "start"
     }
   ]
 }

@@ -1,22 +1,36 @@
 {
   "theme": "de",
-  "name": "Local destination",
+  "id": "ortsziel",
+  "name": "Town center",
   "scheme": "white",
   "items": [
     {
       "type": "row",
-      "align": "center",
       "items": [
         {
-          "type": "text",
-          "text": "Stadtmitte"
+          "type": "arrow",
+          "direction": "left"
         },
         {
-          "type": "arrow",
-          "direction": "right",
-          "height": 17.0
+          "type": "text",
+          "text": "Zentrum"
         }
-      ]
+      ],
+      "align": "center"
+    },
+    {
+      "type": "row",
+      "items": [
+        {
+          "type": "arrow",
+          "direction": "right"
+        },
+        {
+          "type": "text",
+          "text": "Bahnhof"
+        }
+      ],
+      "align": "center"
     }
   ]
 }

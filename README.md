@@ -100,6 +100,12 @@ no `theme.json` supplies extra files for it, such as fonts that cannot ship with
 picks up `Tratex.ttf` or `Trafikkalfabetet.ttf` there). Switching a sign's theme in the designer keeps its
 text and sizes; plates and colors the new theme lacks fall back to its defaults.
 
+**Publishing a theme.** Any installed mod can carry themes: put them in a `SignBuilderThemes` folder at the
+mod's root (`SignBuilderThemes/<id>/theme.json`, `fonts/`, `shields/`, `templates/`) and publish it to
+Paradox Mods. Sign Builder scans subscribed mods (`.cache/Mods/pdx_mods`) and local mods (`Mods`) for that
+folder, so players only subscribe to the theme pack. A folder with the same id in
+`ModsData/SignBuilder/Themes` overrides a published theme (handy while editing one).
+
 ## Credits
 
 - Roadgeek 2014 fonts by Sammi De Guzman (MIT), `Resources/Themes/us/fonts/LICENSE-roadgeek.txt`
