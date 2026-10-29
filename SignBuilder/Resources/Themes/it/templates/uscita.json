@@ -1,0 +1,39 @@
+{
+  "theme": "it",
+  "id": "uscita",
+  "name": "Exit",
+  "scheme": "green",
+  "items": [
+    {
+      "type": "row",
+      "items": [
+        {
+          "type": "text",
+          "text": "Uscita",
+          "height": 11
+        },
+        {
+          "type": "shield",
+          "network": "USCITA",
+          "number": "12"
+        }
+      ],
+      "align": "center"
+    },
+    {
+      "type": "row",
+      "items": [
+        {
+          "type": "text",
+          "text": "Firenze Sud"
+        },
+        {
+          "type": "arrow",
+          "direction": "up-right",
+          "height": 18
+        }
+      ],
+      "align": "center"
+    }
+  ]
+}

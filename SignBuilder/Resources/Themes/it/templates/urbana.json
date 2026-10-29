@@ -1,0 +1,38 @@
+{
+  "theme": "it",
+  "id": "urbana",
+  "name": "Urban",
+  "scheme": "white",
+  "items": [
+    {
+      "type": "row",
+      "items": [
+        {
+          "type": "arrow",
+          "direction": "left"
+        },
+        {
+          "type": "text",
+          "text": "Centro",
+          "font": "TransportHeavy"
+        }
+      ],
+      "align": "center"
+    },
+    {
+      "type": "row",
+      "items": [
+        {
+          "type": "arrow",
+          "direction": "right"
+        },
+        {
+          "type": "text",
+          "text": "Stazione",
+          "font": "TransportHeavy"
+        }
+      ],
+      "align": "center"
+    }
+  ]
+}

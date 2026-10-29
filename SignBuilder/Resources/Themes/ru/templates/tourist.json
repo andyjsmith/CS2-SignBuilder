@@ -1,0 +1,18 @@
+{
+  "theme": "ru",
+  "id": "tourist",
+  "name": "Tourist",
+  "scheme": "brown",
+  "align": "center",
+  "items": [
+    {
+      "type": "text",
+      "text": "Кремль"
+    },
+    {
+      "type": "arrow",
+      "direction": "up",
+      "height": 18
+    }
+  ]
+}

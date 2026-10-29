@@ -1,0 +1,58 @@
+{
+  "theme": "jp",
+  "id": "exit",
+  "name": "Exit",
+  "scheme": "green",
+  "items": [
+    {
+      "type": "panel",
+      "scheme": "white",
+      "items": [
+        {
+          "type": "text",
+          "text": "出口",
+          "height": 10
+        },
+        {
+          "type": "text",
+          "text": "EXIT",
+          "height": 7
+        }
+      ],
+      "radius": 1.5
+    },
+    {
+      "type": "row",
+      "items": [
+        {
+          "type": "shield",
+          "network": "IC",
+          "number": "12"
+        },
+        {
+          "type": "stack",
+          "align": "center",
+          "items": [
+            {
+              "type": "text",
+              "text": "厚木",
+              "height": 16
+            },
+            {
+              "type": "text",
+              "text": "Atsugi",
+              "height": 8.8,
+              "gapBefore": 2.4
+            }
+          ]
+        },
+        {
+          "type": "arrow",
+          "direction": "up-right",
+          "height": 20
+        }
+      ],
+      "align": "center"
+    }
+  ]
+}

@@ -1,0 +1,294 @@
+{
+  "id": "ca",
+  "name": "Canada",
+  "description": "Ontario / Quebec style guide signs, km, bilingual (Roadgeek fonts from the US theme)",
+  "units": "in",
+  "defaults": {
+    "textHeight": 16,
+    "shieldHeight": 36,
+    "arrowHeight": 24,
+    "border": 2,
+    "cornerRadius": 12,
+    "lineGap": 0.75,
+    "margin": 0.75,
+    "itemGap": 0.6,
+    "font": "RG2014EM",
+    "scheme": "green"
+  },
+  "fonts": [
+    {
+      "family": "RG2014EM",
+      "file": "@us/fonts/RG2014EM.ttf",
+      "label": "Series E(M)",
+      "scale": 1.75,
+      "offset": 0.125
+    },
+    {
+      "family": "RG2014D",
+      "file": "@us/fonts/RG2014D.ttf",
+      "label": "Series D",
+      "scale": 1.75,
+      "offset": 0.125
+    },
+    {
+      "family": "RG2014E",
+      "file": "@us/fonts/RG2014E.ttf",
+      "label": "Series E",
+      "scale": 1.75,
+      "offset": 0.125
+    },
+    {
+      "family": "RG2014C",
+      "file": "@us/fonts/RG2014C.ttf",
+      "label": "Series C",
+      "scale": 1.75,
+      "offset": 0.125
+    }
+  ],
+  "schemes": {
+    "green": {
+      "bg": "#006b45",
+      "fg": "#ffffff",
+      "label": "Guide"
+    },
+    "blue": {
+      "bg": "#1f4ea1",
+      "fg": "#ffffff",
+      "label": "Services"
+    },
+    "brown": {
+      "bg": "#6b3f1d",
+      "fg": "#ffffff",
+      "label": "Tourism"
+    },
+    "white": {
+      "bg": "#ffffff",
+      "fg": "#000000",
+      "label": "Regulatory"
+    },
+    "yellow": {
+      "bg": "#ffcc00",
+      "fg": "#000000",
+      "label": "Warning / EXIT ONLY"
+    }
+  },
+  "shields": {
+    "ON": {
+      "label": "Ontario King's Highway",
+      "shape": "img",
+      "img": "shields/ontario.svg",
+      "aspect": 1.0,
+      "fg": "#000000",
+      "num": 0.42,
+      "top": 0.32,
+      "default": "401",
+      "font": "RG2014D",
+      "wide": 1.25,
+      "wideFont": "RG2014C"
+    },
+    "QC": {
+      "label": "Quebec autoroute",
+      "shape": "img",
+      "img": "shields/quebec.svg",
+      "aspect": 1.0,
+      "fg": "#ffffff",
+      "num": 0.42,
+      "top": 0.36,
+      "default": "20",
+      "font": "RG2014D",
+      "wide": 1.25,
+      "wideFont": "RG2014C"
+    },
+    "TCH": {
+      "label": "Trans-Canada Highway",
+      "shape": "img",
+      "img": "shields/tch.svg",
+      "aspect": 1.0,
+      "fg": "#ffffff",
+      "num": 0.34,
+      "top": 0.38,
+      "default": "1",
+      "font": "RG2014D"
+    }
+  },
+  "arrow": "M32 0 H68 V88 H100 L50 150 L0 88 H32 Z",
+  "exitTab": {
+    "font": "RG2014E",
+    "height": 10
+  },
+  "exitOnly": {
+    "font": "RG2014E",
+    "words": [
+      "EXIT",
+      "ONLY"
+    ]
+  },
+  "laneWidth": 157.48031496062993,
+  "parts": [
+    {
+      "label": "Text",
+      "item": {
+        "type": "text",
+        "text": "Destination",
+        "height": 16
+      }
+    },
+    {
+      "label": "Shield",
+      "item": {
+        "type": "shield",
+        "network": "ON",
+        "number": "401",
+        "height": 36
+      }
+    },
+    {
+      "label": "Arrow",
+      "item": {
+        "type": "arrow",
+        "direction": "up",
+        "height": 24
+      }
+    },
+    {
+      "label": "Distance",
+      "item": {
+        "type": "text",
+        "text": "2 km",
+        "height": 12.0
+      }
+    },
+    {
+      "label": "Divider",
+      "item": {
+        "type": "divider"
+      }
+    },
+    {
+      "label": "Row",
+      "item": {
+        "type": "row",
+        "align": "center",
+        "items": []
+      }
+    },
+    {
+      "label": "Column",
+      "item": {
+        "type": "stack",
+        "align": "center",
+        "items": []
+      }
+    },
+    {
+      "label": "Panel",
+      "item": {
+        "type": "panel",
+        "scheme": "white",
+        "items": [
+          {
+            "type": "text",
+            "text": "Text",
+            "height": 12.0
+          }
+        ]
+      }
+    },
+    {
+      "label": "Split columns",
+      "item": {
+        "type": "row",
+        "align": "start",
+        "items": [
+          {
+            "type": "stack",
+            "align": "center",
+            "items": [
+              {
+                "type": "text",
+                "text": "Destination",
+                "height": 16
+              }
+            ]
+          },
+          {
+            "type": "divider"
+          },
+          {
+            "type": "stack",
+            "align": "center",
+            "items": [
+              {
+                "type": "text",
+                "text": "Destination",
+                "height": 16
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "label": "Lane arrows",
+      "item": {
+        "type": "row",
+        "align": "center",
+        "justify": "between",
+        "items": [
+          {
+            "type": "arrow",
+            "direction": "turn-left",
+            "height": 30.0
+          },
+          {
+            "type": "arrow",
+            "direction": "up",
+            "height": 30.0
+          }
+        ]
+      }
+    },
+    {
+      "label": "Tab",
+      "item": {
+        "type": "tab",
+        "align": "right",
+        "items": [
+          {
+            "type": "text",
+            "text": "12",
+            "height": 10.4
+          }
+        ]
+      }
+    },
+    {
+      "label": "EXIT ONLY",
+      "item": {
+        "type": "panel",
+        "span": "bottom",
+        "scheme": "yellow",
+        "align": "center",
+        "items": [
+          {
+            "type": "arrow",
+            "direction": "down",
+            "height": 18
+          },
+          {
+            "type": "text",
+            "text": "EXIT ONLY",
+            "height": 12,
+            "font": "RG2014E"
+          },
+          {
+            "type": "arrow",
+            "direction": "down",
+            "height": 18
+          }
+        ]
+      }
+    }
+  ],
+  "features": {}
+}

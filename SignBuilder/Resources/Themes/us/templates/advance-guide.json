@@ -3,12 +3,20 @@
   "id": "advance-guide",
   "name": "Advance guide",
   "scheme": "green",
-  "exitTab": {
-    "text": "EXIT 43",
-    "align": "right"
-  },
   "support": "ground",
   "items": [
+    {
+      "type": "tab",
+      "align": "right",
+      "items": [
+        {
+          "type": "text",
+          "text": "EXIT 43",
+          "height": 10,
+          "font": "RG2014E"
+        }
+      ]
+    },
     {
       "type": "row",
       "items": [

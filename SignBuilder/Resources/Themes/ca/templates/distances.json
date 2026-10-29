@@ -1,0 +1,59 @@
+{
+  "theme": "ca",
+  "id": "distances",
+  "name": "Distances",
+  "scheme": "green",
+  "items": [
+    {
+      "type": "row",
+      "items": [
+        {
+          "type": "text",
+          "text": "Kingston"
+        },
+        {
+          "type": "text",
+          "text": "92",
+          "margin": {
+            "left": 12
+          }
+        }
+      ],
+      "justify": "between"
+    },
+    {
+      "type": "row",
+      "items": [
+        {
+          "type": "text",
+          "text": "Montréal"
+        },
+        {
+          "type": "text",
+          "text": "287",
+          "margin": {
+            "left": 12
+          }
+        }
+      ],
+      "justify": "between"
+    },
+    {
+      "type": "row",
+      "items": [
+        {
+          "type": "text",
+          "text": "Ottawa"
+        },
+        {
+          "type": "text",
+          "text": "190",
+          "margin": {
+            "left": 12
+          }
+        }
+      ],
+      "justify": "between"
+    }
+  ]
+}

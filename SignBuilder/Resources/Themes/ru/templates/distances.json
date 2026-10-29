@@ -1,0 +1,42 @@
+{
+  "theme": "ru",
+  "id": "distances",
+  "name": "Distances",
+  "scheme": "blue",
+  "items": [
+    {
+      "type": "row",
+      "items": [
+        {
+          "type": "text",
+          "text": "Тверь"
+        },
+        {
+          "type": "text",
+          "text": "170",
+          "margin": {
+            "left": 14
+          }
+        }
+      ],
+      "justify": "between"
+    },
+    {
+      "type": "row",
+      "items": [
+        {
+          "type": "text",
+          "text": "Новгород"
+        },
+        {
+          "type": "text",
+          "text": "520",
+          "margin": {
+            "left": 14
+          }
+        }
+      ],
+      "justify": "between"
+    }
+  ]
+}

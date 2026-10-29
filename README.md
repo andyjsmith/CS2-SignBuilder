@@ -2,8 +2,9 @@
 
 A Cities: Skylines II code mod for designing road signs in game and placing them standalone or on
 gantries. Signs come in themes (one per country or style): United States (MUTCD guide signs with
-Interstate, US and state shields, exit tabs and EXIT ONLY panels), Germany, United Kingdom and Nordic
-(Norway and Sweden). Players can add their own themes and templates as files.
+Interstate, US and state shields, exit tabs and EXIT ONLY panels), Canada, Germany, United Kingdom,
+Nordic (Norway and Sweden), France, Netherlands, Italy, Switzerland, Russia, Japan, China and Australia.
+Players can add their own themes and templates as files, or publish them as mods.
 
 ## Using it
 
@@ -13,8 +14,10 @@ Interstate, US and state shields, exit tabs and EXIT ONLY panels), Germany, Unit
    (text, route numbers, arrows including curved turn and split lane arrows, distances, panels such as a
    yellow advisory speed plate, rows, columns, and split columns with a divider between them); drag parts
    in the list to reorder them or drop them onto a Row or Column to group them. A row can be spread out
-   across the sign (lane arrows under their lanes); text has a letter spacing setting. Set the colors (or custom colors), width, alignment, and for
-   US signs an exit tab or EXIT ONLY panel. **Save current as template** keeps the sign as a JSON file in
+   across the sign (lane arrows under their lanes); text has a letter spacing setting. A **Tab** part sits
+   on top of the sign (an exit number plaque), and a panel can span the full width or attach to the
+   sign's bottom edge (an EXIT ONLY panel is such a panel holding two arrows and text). Set the colors (or
+   custom colors), width and alignment. **Save current as template** keeps the sign as a JSON file in
    `ModsData/SignBuilder/Templates`.
 3. **Place Standalone** puts the sign on roadside posts, snapped beside a road or freely placed (right-drag
    rotates). While placing a sign or a gantry, Shift + mouse wheel sets the distance from the road and
@@ -91,7 +94,9 @@ If the requested save id is stale the harness loads the test save (`ModTest`) by
 
 A theme is a folder with `theme.json`: its name, default sizes (every built-in theme uses the same size unit,
 roughly inches of a full-size sign), fonts (file,
-label, and `scale`/`offset`: em size and vertical offset per letter height, from the font's cap height),
+label, and `scale`/`offset`: em size and vertical offset per letter height, from the font's cap height;
+no file and a `weight` uses a family the game ships, such as "Noto Sans JP"; `@us/fonts/…` borrows another
+theme's file),
 color schemes, route plates (`img` artwork, `ellipse`, colored `rect` plates with optional border and
 prefix such as "A " or "E ", or `plain` colored text), the arrow outline, features (exit tab, EXIT ONLY),
 the parts palette and a `templates/` folder. Built-in themes live in `SignBuilder/Resources/Themes`;
@@ -114,6 +119,9 @@ folder, so players only subscribe to the theme pack. A folder with the same id i
 - Transport Medium, Transport Heavy and Motorway Permanent from roads.org.uk: Crown Copyright, Open
   Government Licence v1.0, United Kingdom theme
 - D-DIN by Datto Inc. (SIL OFL 1.1), Nordic theme stand-in for Tratex / Trafikkalfabetet
+- Canada, Netherlands and Australia reuse the Roadgeek fonts; Italy reuses the Transport fonts
+- Japan, China, Russia, France and Switzerland use Noto Sans fonts that ship with the game
+- Ontario, Quebec, Trans-Canada and Japanese route plate artwork drawn for Sign Builder (CC0)
 
 ## Roadmap
 

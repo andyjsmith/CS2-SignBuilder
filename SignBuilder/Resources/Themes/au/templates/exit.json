@@ -1,0 +1,39 @@
+{
+  "theme": "au",
+  "id": "exit",
+  "name": "Exit",
+  "scheme": "green",
+  "items": [
+    {
+      "type": "tab",
+      "align": "right",
+      "items": [
+        {
+          "type": "text",
+          "text": "EXIT 12",
+          "height": 10,
+          "font": "RG2014E"
+        }
+      ]
+    },
+    {
+      "type": "row",
+      "items": [
+        {
+          "type": "shield",
+          "network": "A",
+          "number": "32"
+        },
+        {
+          "type": "text",
+          "text": "Penrith"
+        }
+      ]
+    },
+    {
+      "type": "arrow",
+      "direction": "up-right",
+      "height": 20
+    }
+  ]
+}

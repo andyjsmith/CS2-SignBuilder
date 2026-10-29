@@ -1,0 +1,47 @@
+{
+  "theme": "ca",
+  "id": "exit-guide",
+  "name": "Exit guide",
+  "scheme": "green",
+  "items": [
+    {
+      "type": "tab",
+      "align": "right",
+      "items": [
+        {
+          "type": "text",
+          "text": "EXIT 373",
+          "height": 10,
+          "font": "RG2014E"
+        }
+      ]
+    },
+    {
+      "type": "row",
+      "items": [
+        {
+          "type": "shield",
+          "network": "ON",
+          "number": "401",
+          "height": 36
+        },
+        {
+          "type": "text",
+          "text": "EAST",
+          "height": 15,
+          "font": "RG2014D"
+        }
+      ]
+    },
+    {
+      "type": "text",
+      "text": "Toronto"
+    },
+    {
+      "type": "text",
+      "text": "2 km",
+      "height": 12,
+      "font": "RG2014D"
+    }
+  ]
+}

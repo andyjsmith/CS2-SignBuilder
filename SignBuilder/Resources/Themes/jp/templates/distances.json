@@ -1,0 +1,68 @@
+{
+  "theme": "jp",
+  "id": "distances",
+  "name": "Distances",
+  "scheme": "green",
+  "items": [
+    {
+      "type": "row",
+      "items": [
+        {
+          "type": "stack",
+          "align": "start",
+          "items": [
+            {
+              "type": "text",
+              "text": "名古屋",
+              "height": 16
+            },
+            {
+              "type": "text",
+              "text": "Nagoya",
+              "height": 8.8,
+              "gapBefore": 2.4
+            }
+          ]
+        },
+        {
+          "type": "text",
+          "text": "120km",
+          "margin": {
+            "left": 14
+          }
+        }
+      ],
+      "justify": "between"
+    },
+    {
+      "type": "row",
+      "items": [
+        {
+          "type": "stack",
+          "align": "start",
+          "items": [
+            {
+              "type": "text",
+              "text": "大阪",
+              "height": 16
+            },
+            {
+              "type": "text",
+              "text": "Osaka",
+              "height": 8.8,
+              "gapBefore": 2.4
+            }
+          ]
+        },
+        {
+          "type": "text",
+          "text": "310km",
+          "margin": {
+            "left": 14
+          }
+        }
+      ],
+      "justify": "between"
+    }
+  ]
+}

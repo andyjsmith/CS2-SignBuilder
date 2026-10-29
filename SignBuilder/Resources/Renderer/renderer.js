@@ -114,6 +114,7 @@
       case "row":
       case "stack":
       case "panel":
+      case "tab":
         var h = 0;
         (item.items || []).forEach(function (c) { h = Math.max(h, heightOf(c)); });
         return h;
@@ -125,16 +126,17 @@
 
   // Font size and vertical offset per letter height: "scale" = em / cap height, "offset" puts the capitals'
   // top at the top of the box (from the font's metrics; Roadgeek 2014 is 1.75 and 0.125).
+  // "weight" picks a face of a family the game itself provides (e.g. "Noto Sans JP" bold), which has no font file.
   function metrics(family) {
     var f = T.fonts[family];
-    return { scale: (f && f.scale) || 1.75, offset: f && f.offset != null ? f.offset : 0.125 };
+    return { scale: (f && f.scale) || 1.75, offset: f && f.offset != null ? f.offset : 0.125, weight: (f && f.weight) || "normal" };
   }
 
   // <tracking>: extra space between letters, in hundredths of the letter height (negative tightens).
   function textBox(text, h, family, color, tracking) {
     var m = metrics(family);
     var e = el("div", "sb-text", {
-      fontFamily: family, fontSize: px(h * m.scale), lineHeight: px(h), height: px(h), top: px(h * m.offset), color: color,
+      fontFamily: family, fontWeight: m.weight, fontSize: px(h * m.scale), lineHeight: px(h), height: px(h), top: px(h * m.offset), color: color,
     });
     if (tracking) {
       // Letter spacing also follows the last letter: take it back so the text stays centered.
@@ -202,7 +204,7 @@
     var m = metrics(font);
     var num = el("div", "sb-num", {
       width: px(w), top: px(h * (def.top != null ? def.top : 0.3) + nh * m.offset),
-      fontFamily: font, fontSize: px(nh * m.scale), lineHeight: px(nh), height: px(nh), color: def.fg || def.color || "#000000",
+      fontFamily: font, fontWeight: m.weight, fontSize: px(nh * m.scale), lineHeight: px(nh), height: px(nh), color: def.fg || def.color || "#000000",
     });
     num.textContent = number;
     box.appendChild(num);
@@ -282,6 +284,7 @@
       case "row":
       case "stack":
       case "panel":
+      case "tab":
         var h = 0;
         (item.items || []).forEach(function (c) { h = Math.max(h, spacingHeight(c)); });
         return h;
@@ -289,7 +292,13 @@
     }
   }
 
-  function renderContainer(item, ctx, horizontal, path) {
+  // Parts drawn by the sign itself rather than in its body: tabs above it and panels attached to its bottom edge.
+  function isTab(item) { return !!item && item.type === "tab"; }
+  function isBottomPanel(item) { return !!item && item.type === "panel" && item.span === "bottom"; }
+  function inBody(item) { return !isTab(item) && !isBottomPanel(item); }
+
+  // <signBody>: the sign's top-level parts, where tabs and bottom panels are skipped (drawn by renderSign).
+  function renderContainer(item, ctx, horizontal, path, signBody) {
     var e = el("div", horizontal ? "sb-row" : "sb-stack");
     var align = { start: "flex-start", left: "flex-start", center: "center", end: "flex-end", right: "flex-end" }[item.align || (horizontal ? "center" : "start")];
     // A spread-out row ("between") fills the width of its column and puts the space between its parts.
@@ -297,15 +306,17 @@
     if (horizontal && item.justify === "between") e.style.alignSelf = "stretch";
     e.style.alignItems = align;
     var items = item.items || [];
+    var previous = null;
     items.forEach(function (child, i) {
+      if (signBody && !inBody(child)) return;
       var c = renderItem(child, ctx, path == null ? null : (path === "" ? String(i) : path + "." + i), horizontal);
       if (!c) return;
       // A part in a column can override the column's alignment ("place": start, center or end).
       if (!horizontal && child.place) c.style.alignSelf = { start: "flex-start", center: "center", end: "flex-end" }[child.place] || "auto";
       var gap = 0;
-      if (i > 0) {
+      if (previous) {
         // Gap between neighbors, scaled from the larger legend height of the pair.
-        var ref = Math.max(spacingHeight(items[i - 1]), spacingHeight(child));
+        var ref = Math.max(spacingHeight(previous), spacingHeight(child));
         gap = child.gapBefore != null ? child.gapBefore
           : item.gap != null ? item.gap
           : ref * (horizontal ? DEFAULTS.itemGap : DEFAULTS.lineGap);
@@ -316,6 +327,7 @@
       c.style.marginLeft = px((horizontal ? gap : 0) + (m.left || 0));
       c.style.marginBottom = px(m.bottom || 0);
       c.style.marginRight = px((c.sbMarginRight || 0) + (m.right || 0));
+      previous = child;
       e.appendChild(c);
     });
     return e;
@@ -356,14 +368,20 @@
       borderRadius: px(item.radius != null ? item.radius : h * 0.15),
     });
     if (item.border) e.style.border = px(item.borderWidth || DEFAULTS.border) + " solid " + (item.border === true ? fg : item.border);
+    // Full width: as wide as the column it is in (a bottom panel nested in a row or column also just fills it).
+    if (item.span === "full" || item.span === "bottom") {
+      e.style.alignSelf = "stretch";
+      e.style.justifyContent = { start: "flex-start", end: "flex-end" }[item.align] || "center";
+    }
     e.appendChild(inner);
     return e;
   }
 
   // ---------------------------------------------------------------- sign-level parts
 
-  // E11-1 style EXIT ONLY panel: "EXIT ↓ ONLY", or "↓ EXIT ONLY ↓" for two arrows. The two words are editable.
-  var EXIT_ONLY_HEIGHT = 14;
+  // Older designs kept the exit tab and the EXIT ONLY panel as sign settings; they are parts now (a tab and a
+  // panel attached to the bottom edge).
+  var EXIT_ONLY_HEIGHT = 12;
   function exitOnlyItems(bar) {
     var h = bar.height || EXIT_ONLY_HEIGHT;
     var arrow = { type: "arrow", direction: "down", height: h * 1.5 };
@@ -371,57 +389,99 @@
     var words = bar.words || cfg.words || ["EXIT", "ONLY"];
     var exit = { type: "text", text: words[0], height: h, font: cfg.font };
     var only = { type: "text", text: words[1], height: h, font: cfg.font };
-    var arrows = bar.arrows || 1;
-    if (arrows >= 2) return [arrow, exit, only, arrow];
+    if ((bar.arrows || 1) >= 2) return [arrow, { type: "text", text: words.join(" "), height: h, font: cfg.font }, arrow];
     return [exit, arrow, only];
   }
 
-  function renderBar(bar, ctx, innerRadius) {
-    var s = scheme(bar.scheme || (bar.type === "exitOnly" ? "yellow" : "green"));
-    var items = bar.type === "exitOnly" ? exitOnlyItems(bar) : (bar.items || []);
-    var h = bar.type === "exitOnly" ? (bar.height || EXIT_ONLY_HEIGHT) * 1.5 : heightOf({ type: "row", items: items });
-    var pad = (bar.padding != null ? bar.padding : h * 0.35);
-    var e = el("div", "sb-bar", {
-      backgroundColor: s.bg, padding: px(pad) + " " + px(pad * 2),
-      borderBottomLeftRadius: px(innerRadius), borderBottomRightRadius: px(innerRadius),
-      display: "flex", flexDirection: "row", justifyContent: "center",
+  function upgrade(doc) {
+    if (!doc.exitTab && !doc.bottomBar) return doc;
+    var copy = {};
+    for (var k in doc) copy[k] = doc[k];
+    copy.items = (doc.items || []).slice();
+    var cfg = T.def.exitTab || {};
+    if (doc.exitTab) {
+      copy.items.unshift({ type: "tab", align: doc.exitTab.align || "right", items: [
+        { type: "text", text: doc.exitTab.text || "EXIT", height: doc.exitTab.height || cfg.height || 10, font: doc.exitTab.font || cfg.font },
+      ] });
+    }
+    if (doc.bottomBar) {
+      copy.items.push({ type: "panel", span: "bottom", scheme: doc.bottomBar.scheme || "yellow", align: "center", items: exitOnlyItems(doc.bottomBar) });
+    }
+    delete copy.exitTab;
+    delete copy.bottomBar;
+    return copy;
+  }
+
+  // A tab on top of the sign (an exit number plaque): the sign's colors and border, open at the bottom.
+  function renderTab(item, ctx, path, s, border, radius) {
+    var c = item.scheme ? scheme(item.scheme) : s;
+    var h = spacingHeight(item) || 10;
+    var box = el("div", "sb-tab", {
+      backgroundColor: c.bg, padding: px(border) + " " + px(border) + " 0px " + px(border),
+      borderTopLeftRadius: px(radius), borderTopRightRadius: px(radius),
     });
-    e.appendChild(renderContainer({ type: "row", items: items, gap: h * 0.5 }, { font: (T.def.exitOnly || {}).font || ctx.font, fg: s.fg, bg: s.bg }, true));
-    return e;
+    var inner = el("div", "sb-tab-inner", {
+      borderStyle: "solid", borderColor: c.fg,
+      borderTopWidth: px(border), borderLeftWidth: px(border), borderRightWidth: px(border), borderBottomWidth: "0px",
+      borderTopLeftRadius: px(radius - border), borderTopRightRadius: px(radius - border),
+      padding: px(h * 0.45) + " " + px(h * 0.7) + " " + px(h * 0.45) + " " + px(h * 0.7),
+    });
+    var font = (T.def.exitTab && T.def.exitTab.font) || ctx.font;
+    inner.appendChild(renderContainer({ type: "row", items: item.items || [], align: "center" }, { font: font, fg: c.fg, bg: c.bg }, true, path));
+    box.appendChild(inner);
+    return tag(box, path);
+  }
+
+  // A panel attached to the sign's bottom edge, full width (an EXIT ONLY panel). The last one gets the sign's
+  // rounded bottom corners.
+  function renderBottomPanel(item, ctx, path, innerRadius, last) {
+    var c = item.scheme ? scheme(item.scheme) : { bg: ctx.fg, fg: ctx.bg };
+    var bg = item.background || c.bg;
+    var fg = item.foreground || c.fg;
+    var h = heightOf(item) || DEFAULTS.textHeight;
+    var pad = item.padding != null ? item.padding : h * 0.35;
+    var e = el("div", "sb-bar", {
+      backgroundColor: bg, padding: px(pad) + " " + px(pad * 2),
+      display: "flex", flexDirection: "row", justifyContent: { start: "flex-start", end: "flex-end" }[item.align] || "center",
+    });
+    if (last) {
+      e.style.borderBottomLeftRadius = px(innerRadius);
+      e.style.borderBottomRightRadius = px(innerRadius);
+    }
+    var gap = item.gap != null ? item.gap : (spacingHeight(item) || h) * 0.75;
+    e.appendChild(renderContainer({ type: "row", items: item.items || [], gap: gap }, { font: ctx.font, fg: fg, bg: bg }, true, path));
+    return tag(e, path);
   }
 
   function renderSign(doc) {
     useTheme(doc);
+    doc = upgrade(doc);
     // Custom colors ("background" / "foreground" as CSS colors) override the scheme.
     var base = scheme(doc.scheme);
     var s = { bg: doc.background || base.bg, fg: doc.foreground || base.fg };
     var border = doc.border != null ? doc.border : DEFAULTS.border;
     var radius = doc.cornerRadius != null ? doc.cornerRadius : DEFAULTS.cornerRadius;
-    var legend = spacingHeight({ type: "stack", items: doc.items || [] }) || DEFAULTS.textHeight;
+    var items = doc.items || [];
+    var legend = spacingHeight({ type: "stack", items: items.filter(inBody) }) || DEFAULTS.textHeight;
     var margin = doc.margin != null ? doc.margin : legend * DEFAULTS.margin;
     var ctx = { font: doc.font || DEFAULTS.font, fg: s.fg, bg: s.bg };
-    var tab = doc.exitTab;
-    var tabSide = tab ? (tab.align || "right") : null;
 
     var sign = el("div", "sb-sign");
 
-    if (tab) {
-      // Exit plaque letters, smaller than the sign's legends so the tab stays in proportion with game-sized signs.
-      var th = tab.height || (T.def.exitTab && T.def.exitTab.height) || 10;
-      var tabRow = el("div", "sb-tab-row", { justifyContent: { left: "flex-start", center: "center", right: "flex-end" }[tabSide] });
-      var tabBox = el("div", "sb-tab", {
-        backgroundColor: s.bg, padding: px(border) + " " + px(border) + " 0px " + px(border),
-        borderTopLeftRadius: px(radius), borderTopRightRadius: px(radius),
-      });
-      var tabInner = el("div", "sb-tab-inner", {
-        borderStyle: "solid", borderColor: s.fg,
-        borderTopWidth: px(border), borderLeftWidth: px(border), borderRightWidth: px(border), borderBottomWidth: "0px",
-        borderTopLeftRadius: px(radius - border), borderTopRightRadius: px(radius - border),
-        padding: px(th * 0.45) + " " + px(th * 0.7) + " " + px(th * 0.45) + " " + px(th * 0.7),
-      });
-      tabInner.appendChild(tag(renderText({ text: tab.text || "EXIT", height: th, font: tab.font || (T.def.exitTab && T.def.exitTab.font) || ctx.font }, ctx), "exitTab"));
-      tabBox.appendChild(tabInner);
-      tabRow.appendChild(tabBox);
+    // Tabs, grouped by side: left, center, right.
+    var sides = { left: [], center: [], right: [] };
+    items.forEach(function (item, i) {
+      if (isTab(item)) sides[{ left: "left", start: "left", center: "center" }[item.align] || "right"].push(renderTab(item, ctx, String(i), s, border, radius));
+    });
+    var anyTab = sides.left.length + sides.center.length + sides.right.length > 0;
+    if (anyTab) {
+      var tabRow = el("div", "sb-tab-row", { justifyContent: "flex-start" });
+      var spacer = function () { return el("div", null, { flexGrow: "1" }); };
+      sides.left.forEach(function (t) { tabRow.appendChild(t); });
+      tabRow.appendChild(spacer());
+      sides.center.forEach(function (t) { tabRow.appendChild(t); });
+      tabRow.appendChild(spacer());
+      sides.right.forEach(function (t) { tabRow.appendChild(t); });
       sign.appendChild(tabRow);
     }
 
@@ -429,9 +489,9 @@
       backgroundColor: s.bg, padding: px(border),
       borderRadius: px(radius),
     });
-    // The corner under the exit tab is square.
-    if (tabSide === "right") panel.style.borderTopRightRadius = "0px";
-    if (tabSide === "left") panel.style.borderTopLeftRadius = "0px";
+    // The corner under a tab at the sign's edge is square.
+    if (sides.right.length) panel.style.borderTopRightRadius = "0px";
+    if (sides.left.length) panel.style.borderTopLeftRadius = "0px";
     if (doc.width) panel.style.width = px(doc.width - border * 2);
     if (doc.minWidth) panel.style.minWidth = px(doc.minWidth - border * 2);
 
@@ -439,14 +499,16 @@
     var inner = el("div", "sb-panel-inner", {
       borderStyle: "solid", borderColor: s.fg, borderWidth: px(border), borderRadius: px(innerRadius),
     });
-    if (tabSide === "right") inner.style.borderTopRightRadius = "0px";
-    if (tabSide === "left") inner.style.borderTopLeftRadius = "0px";
+    if (sides.right.length) inner.style.borderTopRightRadius = "0px";
+    if (sides.left.length) inner.style.borderTopLeftRadius = "0px";
 
-    var content = renderContainer({ type: "stack", items: doc.items || [], align: doc.align || "start" }, ctx, false, "");
+    var content = renderContainer({ type: "stack", items: items, align: doc.align || "start" }, ctx, false, "", true);
     content.style.padding = px(margin);
     if (doc.height) content.style.minHeight = px(doc.height - border * 4 - margin * 2);
     inner.appendChild(content);
-    if (doc.bottomBar) inner.appendChild(tag(renderBar(doc.bottomBar, ctx, innerRadius), "bottomBar"));
+    var bottoms = [];
+    items.forEach(function (item, i) { if (isBottomPanel(item)) bottoms.push(i); });
+    bottoms.forEach(function (i, k) { inner.appendChild(renderBottomPanel(items[i], ctx, String(i), innerRadius, k === bottoms.length - 1)); });
     panel.appendChild(inner);
     sign.appendChild(panel);
     return sign;

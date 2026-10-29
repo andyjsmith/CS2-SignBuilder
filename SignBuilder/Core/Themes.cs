@@ -62,6 +62,32 @@ namespace SignBuilder.Core
             s_ModHosts = ModThemeFolders().Select((dir, i) => (host: $"signbuildermod{i}", dir)).ToList();
             foreach (var (host, dir) in s_ModHosts) Load(dir, false, $"coui://{host}/", ModName(dir));
             Load(UserThemesDir, false, $"coui://{DataHost}/Themes/");
+            foreach (var theme in s_Themes.Values) BorrowFonts(theme);
+        }
+
+        /// <summary>
+        /// Font files written "@&lt;theme&gt;/path" come from another theme's folder (Canada uses the US fonts), so they
+        /// ship once.
+        /// </summary>
+        private static void BorrowFonts(ThemeInfo theme)
+        {
+            if (theme.Def["fonts"] is not JArray fonts) return;
+            foreach (var font in fonts.OfType<JObject>())
+            {
+                var file = (string)font["file"];
+                if (string.IsNullOrEmpty(file) || !file.StartsWith("@")) continue;
+                var slash = file.IndexOf('/');
+                var owner = slash > 1 ? file.Substring(1, slash - 1) : null;
+                if (owner != null && s_Themes.TryGetValue(owner, out var from) && File.Exists(Path.Combine(from.Dir, file.Substring(slash + 1))))
+                {
+                    font["file"] = from.BaseUrl + file.Substring(slash + 1);
+                }
+                else
+                {
+                    Mod.log.Warn($"Theme {theme.Id}: font {file} not found");
+                    font.Remove();
+                }
+            }
         }
 
         /// <summary>Folder name in a mod that holds Sign Builder themes.</summary>
@@ -139,7 +165,8 @@ namespace SignBuilder.Core
             foreach (var font in fonts.OfType<JObject>().ToList())
             {
                 var file = (string)font["file"];
-                if (string.IsNullOrEmpty(file)) continue;
+                // No file: a family the game provides. "@theme/...": borrowed from another theme (BorrowFonts).
+                if (string.IsNullOrEmpty(file) || file.StartsWith("@")) continue;
                 if (File.Exists(Path.Combine(theme.Dir, file))) continue;
                 if (File.Exists(Path.Combine(extras, file)))
                 {

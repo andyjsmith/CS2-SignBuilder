@@ -1,0 +1,27 @@
+{
+  "theme": "it",
+  "id": "statale",
+  "name": "Main road",
+  "scheme": "blue",
+  "items": [
+    {
+      "type": "row",
+      "items": [
+        {
+          "type": "shield",
+          "network": "SS",
+          "number": "1"
+        },
+        {
+          "type": "text",
+          "text": "Livorno"
+        },
+        {
+          "type": "arrow",
+          "direction": "right"
+        }
+      ],
+      "align": "center"
+    }
+  ]
+}

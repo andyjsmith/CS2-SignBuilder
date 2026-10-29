@@ -1,0 +1,75 @@
+{
+  "theme": "nl",
+  "id": "lanes",
+  "name": "Lanes",
+  "scheme": "blue",
+  "items": [
+    {
+      "type": "row",
+      "items": [
+        {
+          "type": "stack",
+          "align": "center",
+          "items": [
+            {
+              "type": "row",
+              "items": [
+                {
+                  "type": "shield",
+                  "network": "A",
+                  "number": "12"
+                }
+              ]
+            },
+            {
+              "type": "text",
+              "text": "Den Haag"
+            },
+            {
+              "type": "row",
+              "items": [
+                {
+                  "type": "arrow",
+                  "direction": "down"
+                },
+                {
+                  "type": "arrow",
+                  "direction": "down"
+                }
+              ],
+              "justify": "between"
+            }
+          ]
+        },
+        {
+          "type": "divider"
+        },
+        {
+          "type": "stack",
+          "align": "center",
+          "items": [
+            {
+              "type": "row",
+              "items": [
+                {
+                  "type": "shield",
+                  "network": "A",
+                  "number": "4"
+                }
+              ]
+            },
+            {
+              "type": "text",
+              "text": "Rotterdam"
+            },
+            {
+              "type": "arrow",
+              "direction": "down-right"
+            }
+          ]
+        }
+      ],
+      "align": "start"
+    }
+  ]
+}

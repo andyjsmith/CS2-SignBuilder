@@ -1,0 +1,29 @@
+{
+  "theme": "ch",
+  "id": "ausfahrt",
+  "name": "Exit",
+  "scheme": "green",
+  "align": "center",
+  "items": [
+    {
+      "type": "row",
+      "items": [
+        {
+          "type": "shield",
+          "network": "EXIT",
+          "number": "15"
+        },
+        {
+          "type": "text",
+          "text": "Winterthur"
+        }
+      ],
+      "align": "center"
+    },
+    {
+      "type": "arrow",
+      "direction": "up-right",
+      "height": 20
+    }
+  ]
+}

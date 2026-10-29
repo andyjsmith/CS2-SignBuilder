@@ -1,0 +1,1 @@
+Noto Sans comes with the game (stand-in for Caractères, which players can add as fonts/Caracteres.ttf in their themes folder).

@@ -1,0 +1,42 @@
+{
+  "theme": "fr",
+  "id": "distances",
+  "name": "Distances",
+  "scheme": "blue",
+  "items": [
+    {
+      "type": "row",
+      "items": [
+        {
+          "type": "text",
+          "text": "Paris"
+        },
+        {
+          "type": "text",
+          "text": "120",
+          "margin": {
+            "left": 14
+          }
+        }
+      ],
+      "justify": "between"
+    },
+    {
+      "type": "row",
+      "items": [
+        {
+          "type": "text",
+          "text": "Lille"
+        },
+        {
+          "type": "text",
+          "text": "340",
+          "margin": {
+            "left": 14
+          }
+        }
+      ],
+      "justify": "between"
+    }
+  ]
+}

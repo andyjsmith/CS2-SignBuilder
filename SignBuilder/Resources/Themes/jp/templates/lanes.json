@@ -1,0 +1,93 @@
+{
+  "theme": "jp",
+  "id": "lanes",
+  "name": "Lanes",
+  "scheme": "green",
+  "items": [
+    {
+      "type": "row",
+      "items": [
+        {
+          "type": "stack",
+          "align": "center",
+          "items": [
+            {
+              "type": "row",
+              "items": [
+                {
+                  "type": "shield",
+                  "network": "E",
+                  "number": "1"
+                },
+                {
+                  "type": "stack",
+                  "align": "center",
+                  "items": [
+                    {
+                      "type": "text",
+                      "text": "名古屋",
+                      "height": 16
+                    },
+                    {
+                      "type": "text",
+                      "text": "Nagoya",
+                      "height": 8.8,
+                      "gapBefore": 2.4
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "arrow",
+              "direction": "down",
+              "height": 24
+            }
+          ]
+        },
+        {
+          "type": "divider"
+        },
+        {
+          "type": "stack",
+          "align": "center",
+          "items": [
+            {
+              "type": "row",
+              "items": [
+                {
+                  "type": "shield",
+                  "network": "E",
+                  "number": "20"
+                },
+                {
+                  "type": "stack",
+                  "align": "center",
+                  "items": [
+                    {
+                      "type": "text",
+                      "text": "八王子",
+                      "height": 16
+                    },
+                    {
+                      "type": "text",
+                      "text": "Hachioji",
+                      "height": 8.8,
+                      "gapBefore": 2.4
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "arrow",
+              "direction": "down-right",
+              "height": 24
+            }
+          ]
+        }
+      ],
+      "align": "start"
+    }
+  ]
+}

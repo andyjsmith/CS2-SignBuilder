@@ -1,7 +1,7 @@
 import { Panel, Scrollable } from "cs2/ui";
 import { openThemesFolder } from "./bindings";
 import { ReactNode, useState } from "react";
-import { ArrowIcon, AlignIcon, ExitOnlyIcon, ExitTabIcon, ThemeShieldIcon } from "./Icons";
+import { ArrowIcon, AlignIcon, ThemeShieldIcon } from "./Icons";
 import { Choice, ColorBox, Field, NumberBox, Option, Select, Swatches, TextBox } from "./Controls";
 import { Design, Item, clone, getItem, insertItem, kindOf, removeItem, updateItem } from "./designModel";
 import { PartsList } from "./PartsList";
@@ -16,6 +16,12 @@ const ALIGN: Option[] = ["start", "center", "end"].map((a) => ({ value: a, icon:
 const ROW_ALIGN: Option[] = [{ value: "start", label: "Top" }, { value: "center", label: "Middle" }, { value: "end", label: "Bottom" }];
 const ROW_SPACING: Option[] = [{ value: "", label: "Packed" }, { value: "between", label: "Spread out", title: "Fill the width, with the space between the parts" }];
 const PLACE: Option[] = [{ value: "", label: "Sign default" }, ...ALIGN];
+const PANEL_SPAN: Option[] = [
+  { value: "", label: "Fit" },
+  { value: "full", label: "Full width", title: "As wide as the column it is in" },
+  { value: "bottom", label: "Bottom edge", title: "Across the bottom of the sign, like an EXIT ONLY panel" },
+];
+const TAB_SIDE: Option[] = [{ value: "left", label: "Left" }, { value: "center", label: "Center" }, { value: "right", label: "Right" }];
 
 /** Alignment of one part within its column, overriding the sign's "Align lines". */
 const PlaceField = (props: { item: Item; onChange: (patch: Partial<Item>) => void }) => (
@@ -28,7 +34,7 @@ const MarginField = (props: { item: Item; onChange: (patch: Partial<Item>) => vo
   const side = (key: string, label: string) => (
     <div className={styles.marginSide}>
       <div className={styles.marginLabel}>{label}</div>
-      <NumberBox value={m[key] ?? 0} min={-40} onChange={(v) => {
+      <NumberBox compact value={m[key] ?? 0} min={-40} onChange={(v) => {
         const next = { ...m, [key]: v || undefined };
         props.onChange({ margin: Object.values(next).some((x) => x) ? next : undefined });
       }} />
@@ -110,8 +116,17 @@ function ItemProperties(props: { item: Item; onChange: (patch: Partial<Item>) =>
           <Field label="Panel color"><Choice options={schemes} perRow={6} value={item.scheme ?? ""} onChange={(scheme) => onChange({ scheme })} /></Field>
           <Field label="Border"><Choice options={[{ value: "no", label: "None" }, { value: "yes", label: "Legend color" }]} value={item.border ? "yes" : "no"}
             onChange={(v) => onChange({ border: v === "yes" ? true : undefined })} /></Field>
+          <Field label="Width"><Choice options={PANEL_SPAN} value={item.span ?? ""} onChange={(span) => onChange({ span: span || undefined })} /></Field>
           <Field label="Align within the panel"><Choice options={ALIGN} value={item.align ?? "center"} onChange={(align) => onChange({ align })} /></Field>
-          {place}
+          {item.span !== "bottom" && place}
+        </>
+      );
+    case "tab":
+      return (
+        <>
+          <Field label="Position"><Choice options={TAB_SIDE} value={item.align ?? "right"} onChange={(align) => onChange({ align })} /></Field>
+          <Field label="Color"><Choice options={[{ value: "", label: "Sign" }, ...schemes]} perRow={7} value={item.scheme ?? ""} onChange={(scheme) => onChange({ scheme: scheme || undefined })} /></Field>
+          <div className={styles.hint}>Put text (or other parts) inside the tab in the parts list.</div>
         </>
       );
     default:
@@ -151,12 +166,12 @@ export const Designer = (props: {
   const widthMode = !design.minWidth ? "auto" : design.minWidth === lane ? "lane" : "custom";
   const labels = Object.fromEntries(Object.entries(def?.shields ?? {}).map(([id, s]) => [id, s.label ?? id]));
 
-  // The exit tab and the EXIT ONLY panel are sign-level parts, not in the items list.
-  const signPart = selected === "exitTab" || selected === "bottomBar";
-  const item = selected != null && !signPart ? getItem(design, selected) : null;
+  const item = selected != null ? getItem(design, selected) : null;
   const update = (patch: Partial<Item>) => { if (selected != null) setDesign(updateItem(design, selected, patch)); };
   const add = (made: Item) => {
-    const r = insertItem(design, signPart ? null : selected, clone(made));
+    // Tabs and bottom-edge panels belong to the sign itself, so they go at its top level.
+    const signLevel = made.type === "tab" || made.span === "bottom";
+    const r = insertItem(design, signLevel ? null : selected, clone(made));
     setDesign(r.design);
     setSelected(r.path);
   };
@@ -198,20 +213,11 @@ export const Designer = (props: {
                 <Field label="Legend"><ColorBox value={design.foreground ?? "#ffffff"} onChange={(foreground) => setDesign({ ...design, foreground })} /></Field>
               </div>
             )}
-            {def?.features?.exitTab && (
-              <Field label="Exit tab">
-                <Choice options={["none", "left", "right"].map((v) => ({ value: v, icon: <ExitTabIcon side={v} />, title: v }))}
-                  value={design.exitTab ? design.exitTab.align ?? "right" : "none"}
-                  onChange={(v) => setDesign({ ...design, exitTab: v === "none" ? null : { text: design.exitTab?.text ?? "EXIT 1", align: v } })} />
-              </Field>
-            )}
-            {def?.features?.exitOnly && (
-              <Field label="EXIT ONLY panel">
-                <Choice options={[0, 1, 2].map((n) => ({ value: String(n), icon: <ExitOnlyIcon arrows={n} />, title: n === 0 ? "none" : `${n} arrow${n > 1 ? "s" : ""}` }))}
-                  value={design.bottomBar ? String(design.bottomBar.arrows ?? 1) : "0"}
-                  onChange={(v) => setDesign({ ...design, bottomBar: v === "0" ? null : { ...(design.bottomBar ?? {}), type: "exitOnly", arrows: Number(v) } })} />
-              </Field>
-            )}
+            <Field label="Add part">
+              <div className={styles.palette}>
+                {(def?.parts ?? []).map((p) => <div key={p.label} className={styles.chip} onClick={() => add(p.item)}>{p.label}</div>)}
+              </div>
+            </Field>
             <Field label="Width">
               <div className={styles.inlineRow}>
                 <Choice options={[{ value: "auto", label: "Fit text" }, { value: "lane", label: "At least a lane", title: "Never narrower than a 4 m lane at 100% size" },
@@ -235,51 +241,11 @@ export const Designer = (props: {
         </div>
 
         <div className={styles.column}>
-          <div className={styles.heading}>Add part</div>
-          <div className={styles.palette}>
-            {(def?.parts ?? []).map((p) => <div key={p.label} className={styles.chip} onClick={() => add(p.item)}>{p.label}</div>)}
-          </div>
           <Scrollable vertical trackVisibility="scrollable" className={styles.partsScroll}>
           <div className={styles.heading}>Parts</div>
           <PartsList design={design} selected={selected} onSelect={setSelected} labels={labels}
             onChange={(d, path) => { setDesign(d); setSelected(path); }}
-            onDelete={(path) => {
-              setDesign(path === "exitTab" ? { ...design, exitTab: null } : path === "bottomBar" ? { ...design, bottomBar: null } : removeItem(design, path));
-              setSelected(null);
-            }} />
-          {selected === "exitTab" && design.exitTab && (
-            <>
-              <div className={styles.heading}>Exit tab</div>
-              <Field label="Text">
-                <TextBox value={design.exitTab.text} focusToken={focusToken} onChange={(text) => setDesign({ ...design, exitTab: { ...design.exitTab!, text } })} />
-              </Field>
-              <Field label="Letter height">
-                <NumberBox value={design.exitTab.height ?? 10} onChange={(height) => setDesign({ ...design, exitTab: { ...design.exitTab!, height } })} />
-              </Field>
-            </>
-          )}
-          {selected === "bottomBar" && design.bottomBar && (
-            <>
-              <div className={styles.heading}>EXIT ONLY panel</div>
-              <Field label="Words">
-                <div className={styles.inlineRow}>
-                  {[0, 1].map((k) => (
-                    <div key={k} style={{ width: "120rem", marginRight: "6rem" }}>
-                      <TextBox value={(design.bottomBar!.words ?? ["EXIT", "ONLY"])[k]} focusToken={k === 0 ? focusToken : undefined}
-                        onChange={(text) => {
-                          const words = [...(design.bottomBar!.words ?? ["EXIT", "ONLY"])];
-                          words[k] = text;
-                          setDesign({ ...design, bottomBar: { ...design.bottomBar!, words } });
-                        }} />
-                    </div>
-                  ))}
-                </div>
-              </Field>
-              <Field label="Letter height">
-                <NumberBox value={design.bottomBar.height ?? 14} onChange={(height) => setDesign({ ...design, bottomBar: { ...design.bottomBar!, height } })} />
-              </Field>
-            </>
-          )}
+            onDelete={(path) => { setDesign(removeItem(design, path)); setSelected(null); }} />
           {item && (
             <>
               <div className={styles.heading}>{kindOf(item, labels)}</div>

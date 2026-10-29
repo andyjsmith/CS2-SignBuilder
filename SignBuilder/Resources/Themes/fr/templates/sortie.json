@@ -1,0 +1,39 @@
+{
+  "theme": "fr",
+  "id": "sortie",
+  "name": "Exit",
+  "scheme": "blue",
+  "items": [
+    {
+      "type": "row",
+      "items": [
+        {
+          "type": "text",
+          "text": "Sortie",
+          "height": 12
+        },
+        {
+          "type": "shield",
+          "network": "SORTIE",
+          "number": "12"
+        }
+      ],
+      "align": "center"
+    },
+    {
+      "type": "row",
+      "items": [
+        {
+          "type": "text",
+          "text": "Sens"
+        },
+        {
+          "type": "arrow",
+          "direction": "up-right",
+          "height": 20
+        }
+      ],
+      "align": "center"
+    }
+  ]
+}

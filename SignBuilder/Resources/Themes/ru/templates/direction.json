@@ -1,0 +1,27 @@
+{
+  "theme": "ru",
+  "id": "direction",
+  "name": "Direction",
+  "scheme": "blue",
+  "items": [
+    {
+      "type": "row",
+      "items": [
+        {
+          "type": "shield",
+          "network": "R",
+          "number": "22"
+        },
+        {
+          "type": "text",
+          "text": "Тамбов"
+        },
+        {
+          "type": "arrow",
+          "direction": "right"
+        }
+      ],
+      "align": "center"
+    }
+  ]
+}

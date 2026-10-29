@@ -4,11 +4,19 @@
   "name": "Street exit",
   "scheme": "green",
   "align": "center",
-  "exitTab": {
-    "text": "EXIT 7",
-    "align": "left"
-  },
   "items": [
+    {
+      "type": "tab",
+      "align": "left",
+      "items": [
+        {
+          "type": "text",
+          "text": "EXIT 7",
+          "height": 10,
+          "font": "RG2014E"
+        }
+      ]
+    },
     {
       "type": "text",
       "text": "Main St",

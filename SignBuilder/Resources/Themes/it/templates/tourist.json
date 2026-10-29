@@ -1,0 +1,18 @@
+{
+  "theme": "it",
+  "id": "tourist",
+  "name": "Tourist",
+  "scheme": "brown",
+  "align": "center",
+  "items": [
+    {
+      "type": "text",
+      "text": "Colosseo"
+    },
+    {
+      "type": "arrow",
+      "direction": "up",
+      "height": 18
+    }
+  ]
+}

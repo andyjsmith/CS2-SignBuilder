@@ -1,0 +1,53 @@
+{
+  "theme": "jp",
+  "id": "expressway",
+  "name": "Expressway",
+  "scheme": "green",
+  "items": [
+    {
+      "type": "row",
+      "items": [
+        {
+          "type": "shield",
+          "network": "E",
+          "number": "1"
+        },
+        {
+          "type": "stack",
+          "align": "center",
+          "items": [
+            {
+              "type": "text",
+              "text": "東京",
+              "height": 16
+            },
+            {
+              "type": "text",
+              "text": "Tokyo",
+              "height": 8.8,
+              "gapBefore": 2.4
+            }
+          ]
+        },
+        {
+          "type": "stack",
+          "align": "center",
+          "items": [
+            {
+              "type": "text",
+              "text": "横浜",
+              "height": 16
+            },
+            {
+              "type": "text",
+              "text": "Yokohama",
+              "height": 8.8,
+              "gapBefore": 2.4
+            }
+          ]
+        }
+      ],
+      "align": "center"
+    }
+  ]
+}

@@ -1,0 +1,50 @@
+{
+  "theme": "ru",
+  "id": "junction",
+  "name": "Junction",
+  "scheme": "blue",
+  "items": [
+    {
+      "type": "row",
+      "items": [
+        {
+          "type": "arrow",
+          "direction": "left"
+        },
+        {
+          "type": "text",
+          "text": "Клин"
+        }
+      ],
+      "align": "center"
+    },
+    {
+      "type": "row",
+      "items": [
+        {
+          "type": "arrow",
+          "direction": "up"
+        },
+        {
+          "type": "text",
+          "text": "Москва"
+        }
+      ],
+      "align": "center"
+    },
+    {
+      "type": "row",
+      "items": [
+        {
+          "type": "arrow",
+          "direction": "right"
+        },
+        {
+          "type": "text",
+          "text": "Дмитров"
+        }
+      ],
+      "align": "center"
+    }
+  ]
+}

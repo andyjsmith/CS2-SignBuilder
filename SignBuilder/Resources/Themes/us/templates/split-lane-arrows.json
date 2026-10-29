@@ -3,11 +3,19 @@
   "id": "split-lane-arrows",
   "name": "Split with lanes",
   "scheme": "green",
-  "exitTab": {
-    "text": "EXIT 27",
-    "align": "right"
-  },
   "items": [
+    {
+      "type": "tab",
+      "align": "right",
+      "items": [
+        {
+          "type": "text",
+          "text": "EXIT 27",
+          "height": 10,
+          "font": "RG2014E"
+        }
+      ]
+    },
     {
       "type": "row",
       "items": [

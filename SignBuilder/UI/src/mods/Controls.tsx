@@ -1,4 +1,5 @@
 import { getModule } from "cs2/modding";
+import { Dropdown, DropdownToggle } from "cs2/ui";
 import { useEffect, useRef, useState } from "react";
 import styles from "./SignEditor.module.scss";
 
@@ -23,10 +24,27 @@ export const Choice = (props: { options: (string | Option)[]; value: string; onC
   return <div className={styles.choiceRows}>{rows.map((r, i) => <div key={i} className={styles.choices}>{r.map(button)}</div>)}</div>;
 };
 
-/** A drop-down list, e.g. the sign theme: the current choice, opening a list of the others. */
+/**
+ * A drop-down list (font, sign theme): the game's own, so the list floats over the content and opens upward when
+ * there is no room below. A plain in-place list is the fallback if a game update moves the module.
+ */
 export const Select = (props: { options: Option[]; value: string; onChange: (v: string) => void }) => {
   const [open, setOpen] = useState(false);
   const current = props.options.find((o) => o.value === props.value);
+  if (VanillaDropdownItem) {
+    return (
+      <div className={styles.select}>
+        <Dropdown content={props.options.map((o) => (
+          <VanillaDropdownItem key={o.value} value={o.value} selected={o.value === props.value} closeOnSelect
+            onChange={(v: string) => props.onChange(v)}>
+            <div className={styles.selectItem} style={o.style} title={o.title}>{o.label ?? o.value}</div>
+          </VanillaDropdownItem>
+        ))}>
+          <DropdownToggle className={styles.selectVanilla}>{current?.label ?? props.value}</DropdownToggle>
+        </Dropdown>
+      </div>
+    );
+  }
   return (
     <div className={styles.select}>
       <div className={styles.selectToggle} onClick={() => setOpen(!open)}>
@@ -74,6 +92,7 @@ const load = (path: string, name: string): any => {
 // elements are the fallback if a game update moves the modules.
 const VanillaTextInput = load("game-ui/common/input/text/text-input.tsx", "TextInput");
 const VanillaColorField = load("game-ui/common/input/color-picker/color-field/color-field.tsx", "ColorField");
+const VanillaDropdownItem = load("game-ui/common/input/dropdown/items/dropdown-item.tsx", "DropdownItem");
 
 /**
  * Text input. <focusToken> changing (or autoFocus) puts the caret at the end of the text, so clicking a legend
@@ -106,8 +125,8 @@ export const TextBox = (props: { value: string; onChange: (v: string) => void; f
 };
 
 /** A number with - and + buttons; sizes are in the sign's own units (shown without a unit). */
-export const NumberBox = (props: { value: number; onChange: (v: number) => void; step?: number; unit?: string; min?: number }) => (
-  <div className={styles.stepper}>
+export const NumberBox = (props: { value: number; onChange: (v: number) => void; step?: number; unit?: string; min?: number; compact?: boolean }) => (
+  <div className={props.compact ? styles.stepperCompact : styles.stepper}>
     <div className={styles.step} onClick={() => props.onChange(Math.max(props.min ?? 1, Math.round((props.value - (props.step ?? 1)) * 100) / 100))}>-</div>
     <div className={styles.stepValue}>{`${props.value}${props.unit ?? ""}`}</div>
     <div className={styles.step} onClick={() => props.onChange(Math.round((props.value + (props.step ?? 1)) * 100) / 100)}>+</div>

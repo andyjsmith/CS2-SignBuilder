@@ -1,0 +1,32 @@
+{
+  "theme": "ch",
+  "id": "autobahn",
+  "name": "Autobahn",
+  "scheme": "green",
+  "align": "center",
+  "items": [
+    {
+      "type": "row",
+      "items": [
+        {
+          "type": "shield",
+          "network": "A",
+          "number": "1"
+        },
+        {
+          "type": "shield",
+          "network": "E",
+          "number": "60"
+        }
+      ]
+    },
+    {
+      "type": "text",
+      "text": "Zürich"
+    },
+    {
+      "type": "text",
+      "text": "Bern"
+    }
+  ]
+}

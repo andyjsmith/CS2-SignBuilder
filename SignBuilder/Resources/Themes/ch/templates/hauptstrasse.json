@@ -1,0 +1,27 @@
+{
+  "theme": "ch",
+  "id": "hauptstrasse",
+  "name": "Main road",
+  "scheme": "blue",
+  "items": [
+    {
+      "type": "row",
+      "items": [
+        {
+          "type": "shield",
+          "network": "H",
+          "number": "2"
+        },
+        {
+          "type": "text",
+          "text": "Luzern"
+        },
+        {
+          "type": "arrow",
+          "direction": "right"
+        }
+      ],
+      "align": "center"
+    }
+  ]
+}

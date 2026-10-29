@@ -297,7 +297,7 @@ namespace SignBuilder.Spike
             SpikeReport.Screenshot("e2e_editgantry.png");
             yield return new WaitForSecondsRealtime(0.5f);
             var edited = (JObject)target.record.Designs[0].DeepClone();
-            ((JArray)edited["items"])[1]["text"] = "Edited In Place";
+            edited["items"].First(i => (string)i["type"] == "text")["text"] = "Edited In Place";
             tool.Arrange(new JObject { ["op"] = "replaceSign", ["index"] = 0, ["design"] = edited }.ToString());
             yield return WaitArrange(tool, ui);
             var before = SignPlacementToolSystem.LastPlaced;
@@ -457,10 +457,11 @@ namespace SignBuilder.Spike
         {
             SpikeReport.Set("e2e.themes.loaded", string.Join(", ", Themes.All.Select(t => $"{t.Id}:{(t.Def["fonts"] as JArray)?.Count}fonts")));
             ui.SetEditorOpen(true);
-            foreach (var theme in new[] { "de", "uk", "nordic" })
+            // The first templates of each newer theme in the designer (UI renderer, game-provided and borrowed fonts).
+            foreach (var theme in new[] { "ca", "jp", "cn", "fr", "nl", "it", "ru", "au", "ch" })
             {
                 var dir = Path.Combine(SignBuilderRuntime.ResourcesDir, "Themes", theme, "templates");
-                foreach (var file in Directory.GetFiles(dir, "*.json").OrderBy(f => f))
+                foreach (var file in Directory.GetFiles(dir, "*.json").OrderBy(f => f).Take(2))
                 {
                     ui.OpenForEdit(new AssemblyRecord { Designs = new List<JObject> { JObject.Parse(File.ReadAllText(file)) } }, "new");
                     yield return new WaitForSecondsRealtime(2.5f);
@@ -479,6 +480,13 @@ namespace SignBuilder.Spike
             var standalone = Template("uk/primary-route");
             yield return PlaceAndWait(() => tool.PlaceForTest(spot.edge, math.clamp(t - 0.12f, 0.05f, 0.95f), new List<JObject> { standalone }, Options("ground", "single")));
             yield return Shoot(SignPlacementToolSystem.LastPlaced, "e2e_themes_standalone.png", 20f, 22f);
+            // Baked with fonts the game provides (CJK, Cyrillic) and fonts borrowed from another theme (Canada).
+            var asian = new List<JObject> { Template("jp/expressway"), Template("cn/expressway"), Template("ru/magistral") };
+            yield return PlaceAndWait(() => tool.PlaceForTest(spot.edge, math.clamp(t + 0.15f, 0.05f, 0.95f), asian, Options("doubleTruss", "full")));
+            SpikeReport.Set("e2e.themes.gantry2", Describe(SignPlacementToolSystem.LastPlaced));
+            yield return Shoot(SignPlacementToolSystem.LastPlaced, "e2e_themes_gantry2.png", 10f, 40f);
+            yield return PlaceAndWait(() => tool.PlaceForTest(spot.edge, math.clamp(t - 0.24f, 0.05f, 0.95f), new List<JObject> { Template("ca/exit-guide") }, Options("ground", "single")));
+            yield return Shoot(SignPlacementToolSystem.LastPlaced, "e2e_themes_canada.png", 20f, 22f);
         }
 
         /// <summary>Templates on disk: save, rename, hide a built-in, delete.</summary>

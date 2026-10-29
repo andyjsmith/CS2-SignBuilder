@@ -1,0 +1,41 @@
+{
+  "theme": "nl",
+  "id": "junction",
+  "name": "Junction",
+  "scheme": "blue",
+  "items": [
+    {
+      "type": "row",
+      "items": [
+        {
+          "type": "arrow",
+          "direction": "left"
+        },
+        {
+          "type": "shield",
+          "network": "N",
+          "number": "201"
+        },
+        {
+          "type": "text",
+          "text": "Aalsmeer"
+        }
+      ],
+      "align": "center"
+    },
+    {
+      "type": "row",
+      "items": [
+        {
+          "type": "arrow",
+          "direction": "up"
+        },
+        {
+          "type": "text",
+          "text": "Haarlem"
+        }
+      ],
+      "align": "center"
+    }
+  ]
+}

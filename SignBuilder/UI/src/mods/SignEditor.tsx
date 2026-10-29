@@ -8,7 +8,7 @@ import {
 import { Confirm } from "./Controls";
 import { Designer, DesignerAction } from "./Designer";
 import { registerThemes } from "./SignPreview";
-import { Theme, blankFor, themeOf } from "./themeModel";
+import { Theme, blankFor, themeOf, upgradeDesign } from "./themeModel";
 import { Design, clone } from "./designModel";
 import { PlacementBar } from "./PlacementBar";
 import { Template } from "./TemplateLibrary";
@@ -51,7 +51,11 @@ export const SignEditor = () => {
   const [question, setQuestion] = useState<Question | null>(null);
   const dirty = JSON.stringify(design) !== baseline;
   /** Loads a design (template, placed sign, blank): it starts out unchanged. */
-  const load = (d: Design) => { setDesign(d); setBaseline(JSON.stringify(d)); };
+  const load = (raw: Design) => {
+    const d = upgradeDesign(raw, themeOf(themes, raw));
+    setDesign(d);
+    setBaseline(JSON.stringify(d));
+  };
   const settle = () => setBaseline(JSON.stringify(design));
   /** Runs <then> now, or once the player confirms when there is something to lose. */
   const guard = (unsaved: boolean, message: string, then: () => void, confirm = "Discard") => {

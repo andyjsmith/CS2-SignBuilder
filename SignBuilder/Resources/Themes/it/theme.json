@@ -1,0 +1,243 @@
+{
+  "id": "it",
+  "name": "Italy",
+  "description": "Autostrada (green), extra-urban (blue), urban (white); Transport fonts from the UK theme",
+  "units": "in",
+  "defaults": {
+    "textHeight": 14.0,
+    "shieldHeight": 15.0,
+    "arrowHeight": 20.0,
+    "border": 1.2,
+    "cornerRadius": 3.5,
+    "lineGap": 0.55,
+    "margin": 0.6,
+    "itemGap": 0.45,
+    "font": "TransportMedium",
+    "scheme": "green"
+  },
+  "fonts": [
+    {
+      "family": "TransportMedium",
+      "file": "@uk/fonts/TransportMedium.ttf",
+      "label": "Transport Medium (light on dark)"
+    },
+    {
+      "family": "TransportHeavy",
+      "file": "@uk/fonts/TransportHeavy.ttf",
+      "label": "Transport Heavy (dark on light)"
+    }
+  ],
+  "schemes": {
+    "green": {
+      "bg": "#00704a",
+      "fg": "#ffffff",
+      "label": "Autostrada"
+    },
+    "blue": {
+      "bg": "#1b4f9c",
+      "fg": "#ffffff",
+      "label": "Extraurbana"
+    },
+    "white": {
+      "bg": "#ffffff",
+      "fg": "#000000",
+      "label": "Urbana"
+    },
+    "brown": {
+      "bg": "#6b3f1d",
+      "fg": "#ffffff",
+      "label": "Turistica"
+    },
+    "yellow": {
+      "bg": "#ffcc00",
+      "fg": "#000000",
+      "label": "Temporanea"
+    }
+  },
+  "shields": {
+    "A": {
+      "label": "Autostrada",
+      "shape": "rect",
+      "bg": "#00704a",
+      "fg": "#ffffff",
+      "num": 0.6,
+      "radius": 0.14,
+      "default": "1",
+      "prefix": "A",
+      "border": "#ffffff"
+    },
+    "SS": {
+      "label": "Strada statale",
+      "shape": "rect",
+      "bg": "#1b4f9c",
+      "fg": "#ffffff",
+      "num": 0.6,
+      "radius": 0.14,
+      "default": "1",
+      "prefix": "SS",
+      "border": "#ffffff"
+    },
+    "E": {
+      "label": "Strada europea",
+      "shape": "rect",
+      "bg": "#00704a",
+      "fg": "#ffffff",
+      "num": 0.6,
+      "radius": 0.14,
+      "default": "35",
+      "prefix": "E",
+      "border": "#ffffff"
+    },
+    "USCITA": {
+      "label": "Exit number",
+      "shape": "rect",
+      "bg": "#ffffff",
+      "fg": "#00704a",
+      "num": 0.6,
+      "radius": 0.14,
+      "default": "12"
+    }
+  },
+  "arrow": "M42 0 H58 V100 H82 L50 150 L18 100 H42 Z",
+  "laneWidth": 157.48031496062993,
+  "parts": [
+    {
+      "label": "Text",
+      "item": {
+        "type": "text",
+        "text": "Destination",
+        "height": 14.0
+      }
+    },
+    {
+      "label": "Shield",
+      "item": {
+        "type": "shield",
+        "network": "A",
+        "number": "1",
+        "height": 15.0
+      }
+    },
+    {
+      "label": "Arrow",
+      "item": {
+        "type": "arrow",
+        "direction": "up",
+        "height": 20.0
+      }
+    },
+    {
+      "label": "Distance",
+      "item": {
+        "type": "text",
+        "text": "2 km",
+        "height": 10.5
+      }
+    },
+    {
+      "label": "Divider",
+      "item": {
+        "type": "divider"
+      }
+    },
+    {
+      "label": "Row",
+      "item": {
+        "type": "row",
+        "align": "center",
+        "items": []
+      }
+    },
+    {
+      "label": "Column",
+      "item": {
+        "type": "stack",
+        "align": "center",
+        "items": []
+      }
+    },
+    {
+      "label": "Panel",
+      "item": {
+        "type": "panel",
+        "scheme": "white",
+        "items": [
+          {
+            "type": "text",
+            "text": "Text",
+            "height": 10.5
+          }
+        ]
+      }
+    },
+    {
+      "label": "Split columns",
+      "item": {
+        "type": "row",
+        "align": "start",
+        "items": [
+          {
+            "type": "stack",
+            "align": "center",
+            "items": [
+              {
+                "type": "text",
+                "text": "Destination",
+                "height": 14.0
+              }
+            ]
+          },
+          {
+            "type": "divider"
+          },
+          {
+            "type": "stack",
+            "align": "center",
+            "items": [
+              {
+                "type": "text",
+                "text": "Destination",
+                "height": 14.0
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "label": "Lane arrows",
+      "item": {
+        "type": "row",
+        "align": "center",
+        "justify": "between",
+        "items": [
+          {
+            "type": "arrow",
+            "direction": "turn-left",
+            "height": 25.0
+          },
+          {
+            "type": "arrow",
+            "direction": "up",
+            "height": 25.0
+          }
+        ]
+      }
+    },
+    {
+      "label": "Tab",
+      "item": {
+        "type": "tab",
+        "align": "right",
+        "items": [
+          {
+            "type": "text",
+            "text": "12",
+            "height": 9.1
+          }
+        ]
+      }
+    }
+  ],
+  "features": {}
+}

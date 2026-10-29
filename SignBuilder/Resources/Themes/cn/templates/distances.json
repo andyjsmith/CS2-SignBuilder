@@ -1,0 +1,68 @@
+{
+  "theme": "cn",
+  "id": "distances",
+  "name": "Distances",
+  "scheme": "green",
+  "items": [
+    {
+      "type": "row",
+      "items": [
+        {
+          "type": "stack",
+          "align": "start",
+          "items": [
+            {
+              "type": "text",
+              "text": "保定",
+              "height": 16
+            },
+            {
+              "type": "text",
+              "text": "Baoding",
+              "height": 8.8,
+              "gapBefore": 2.4
+            }
+          ]
+        },
+        {
+          "type": "text",
+          "text": "85km",
+          "margin": {
+            "left": 14
+          }
+        }
+      ],
+      "justify": "between"
+    },
+    {
+      "type": "row",
+      "items": [
+        {
+          "type": "stack",
+          "align": "start",
+          "items": [
+            {
+              "type": "text",
+              "text": "郑州",
+              "height": 16
+            },
+            {
+              "type": "text",
+              "text": "Zhengzhou",
+              "height": 8.8,
+              "gapBefore": 2.4
+            }
+          ]
+        },
+        {
+          "type": "text",
+          "text": "620km",
+          "margin": {
+            "left": 14
+          }
+        }
+      ],
+      "justify": "between"
+    }
+  ]
+}

@@ -1,0 +1,32 @@
+{
+  "theme": "it",
+  "id": "autostrada",
+  "name": "Autostrada",
+  "scheme": "green",
+  "align": "center",
+  "items": [
+    {
+      "type": "row",
+      "items": [
+        {
+          "type": "shield",
+          "network": "A",
+          "number": "1"
+        },
+        {
+          "type": "shield",
+          "network": "E",
+          "number": "35"
+        }
+      ]
+    },
+    {
+      "type": "text",
+      "text": "Milano"
+    },
+    {
+      "type": "text",
+      "text": "Bologna"
+    }
+  ]
+}

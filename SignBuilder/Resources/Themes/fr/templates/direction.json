@@ -1,0 +1,27 @@
+{
+  "theme": "fr",
+  "id": "direction",
+  "name": "Main road",
+  "scheme": "green",
+  "items": [
+    {
+      "type": "row",
+      "items": [
+        {
+          "type": "shield",
+          "network": "N",
+          "number": "7"
+        },
+        {
+          "type": "text",
+          "text": "Montargis"
+        },
+        {
+          "type": "arrow",
+          "direction": "right"
+        }
+      ],
+      "align": "center"
+    }
+  ]
+}

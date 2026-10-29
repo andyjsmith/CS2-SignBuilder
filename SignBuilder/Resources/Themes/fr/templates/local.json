@@ -1,0 +1,36 @@
+{
+  "theme": "fr",
+  "id": "local",
+  "name": "Local",
+  "scheme": "white",
+  "items": [
+    {
+      "type": "row",
+      "items": [
+        {
+          "type": "arrow",
+          "direction": "left"
+        },
+        {
+          "type": "text",
+          "text": "Centre ville"
+        }
+      ],
+      "align": "center"
+    },
+    {
+      "type": "row",
+      "items": [
+        {
+          "type": "arrow",
+          "direction": "right"
+        },
+        {
+          "type": "text",
+          "text": "Gare"
+        }
+      ],
+      "align": "center"
+    }
+  ]
+}

@@ -1,0 +1,94 @@
+{
+  "theme": "cn",
+  "id": "junction",
+  "name": "Junction",
+  "scheme": "blue",
+  "items": [
+    {
+      "type": "row",
+      "items": [
+        {
+          "type": "arrow",
+          "direction": "left"
+        },
+        {
+          "type": "stack",
+          "align": "center",
+          "items": [
+            {
+              "type": "text",
+              "text": "机场",
+              "height": 16
+            },
+            {
+              "type": "text",
+              "text": "Airport",
+              "height": 8.8,
+              "gapBefore": 2.4
+            }
+          ]
+        }
+      ],
+      "align": "center"
+    },
+    {
+      "type": "row",
+      "items": [
+        {
+          "type": "arrow",
+          "direction": "up"
+        },
+        {
+          "type": "shield",
+          "network": "G",
+          "number": "105"
+        },
+        {
+          "type": "stack",
+          "align": "center",
+          "items": [
+            {
+              "type": "text",
+              "text": "广州",
+              "height": 16
+            },
+            {
+              "type": "text",
+              "text": "Guangzhou",
+              "height": 8.8,
+              "gapBefore": 2.4
+            }
+          ]
+        }
+      ],
+      "align": "center"
+    },
+    {
+      "type": "row",
+      "items": [
+        {
+          "type": "arrow",
+          "direction": "right"
+        },
+        {
+          "type": "stack",
+          "align": "center",
+          "items": [
+            {
+              "type": "text",
+              "text": "市中心",
+              "height": 16
+            },
+            {
+              "type": "text",
+              "text": "City Center",
+              "height": 8.8,
+              "gapBefore": 2.4
+            }
+          ]
+        }
+      ],
+      "align": "center"
+    }
+  ]
+}

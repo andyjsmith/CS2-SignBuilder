@@ -1,0 +1,18 @@
+{
+  "theme": "fr",
+  "id": "tourist",
+  "name": "Tourist",
+  "scheme": "brown",
+  "align": "center",
+  "items": [
+    {
+      "type": "text",
+      "text": "Château de Chambord"
+    },
+    {
+      "type": "arrow",
+      "direction": "right",
+      "height": 18
+    }
+  ]
+}

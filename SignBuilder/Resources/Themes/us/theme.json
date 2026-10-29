@@ -285,6 +285,48 @@
           }
         ]
       }
+    },
+    {
+      "label": "Exit tab",
+      "item": {
+        "type": "tab",
+        "align": "right",
+        "items": [
+          {
+            "type": "text",
+            "text": "EXIT 1",
+            "height": 10,
+            "font": "RG2014E"
+          }
+        ]
+      }
+    },
+    {
+      "label": "EXIT ONLY",
+      "item": {
+        "type": "panel",
+        "span": "bottom",
+        "scheme": "yellow",
+        "align": "center",
+        "items": [
+          {
+            "type": "arrow",
+            "direction": "down",
+            "height": 18
+          },
+          {
+            "type": "text",
+            "text": "EXIT ONLY",
+            "height": 12,
+            "font": "RG2014E"
+          },
+          {
+            "type": "arrow",
+            "direction": "down",
+            "height": 18
+          }
+        ]
+      }
     }
   ]
 }

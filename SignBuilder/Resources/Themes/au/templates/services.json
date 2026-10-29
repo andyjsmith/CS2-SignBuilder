@@ -1,0 +1,19 @@
+{
+  "theme": "au",
+  "id": "services",
+  "name": "Services",
+  "scheme": "blue",
+  "align": "center",
+  "items": [
+    {
+      "type": "text",
+      "text": "Fuel  Food  Rest area",
+      "height": 12
+    },
+    {
+      "type": "text",
+      "text": "2 km",
+      "height": 12
+    }
+  ]
+}

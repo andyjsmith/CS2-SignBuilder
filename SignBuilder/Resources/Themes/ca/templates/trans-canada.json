@@ -1,0 +1,34 @@
+{
+  "theme": "ca",
+  "id": "trans-canada",
+  "name": "Trans-Canada",
+  "scheme": "green",
+  "align": "center",
+  "items": [
+    {
+      "type": "row",
+      "items": [
+        {
+          "type": "shield",
+          "network": "TCH",
+          "number": "1",
+          "height": 36
+        },
+        {
+          "type": "text",
+          "text": "WEST",
+          "height": 15,
+          "font": "RG2014D"
+        }
+      ]
+    },
+    {
+      "type": "text",
+      "text": "Calgary"
+    },
+    {
+      "type": "text",
+      "text": "Banff"
+    }
+  ]
+}

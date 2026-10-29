@@ -1,0 +1,65 @@
+{
+  "theme": "fr",
+  "id": "lanes",
+  "name": "Lanes",
+  "scheme": "blue",
+  "items": [
+    {
+      "type": "row",
+      "items": [
+        {
+          "type": "stack",
+          "align": "center",
+          "items": [
+            {
+              "type": "row",
+              "items": [
+                {
+                  "type": "shield",
+                  "network": "A",
+                  "number": "10"
+                }
+              ]
+            },
+            {
+              "type": "text",
+              "text": "Bordeaux"
+            },
+            {
+              "type": "arrow",
+              "direction": "down"
+            }
+          ]
+        },
+        {
+          "type": "divider"
+        },
+        {
+          "type": "stack",
+          "align": "center",
+          "items": [
+            {
+              "type": "row",
+              "items": [
+                {
+                  "type": "shield",
+                  "network": "A",
+                  "number": "11"
+                }
+              ]
+            },
+            {
+              "type": "text",
+              "text": "Nantes"
+            },
+            {
+              "type": "arrow",
+              "direction": "down-right"
+            }
+          ]
+        }
+      ],
+      "align": "start"
+    }
+  ]
+}

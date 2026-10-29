@@ -1,0 +1,27 @@
+{
+  "theme": "au",
+  "id": "motorway",
+  "name": "Motorway",
+  "scheme": "green",
+  "align": "center",
+  "items": [
+    {
+      "type": "row",
+      "items": [
+        {
+          "type": "shield",
+          "network": "M",
+          "number": "1"
+        },
+        {
+          "type": "text",
+          "text": "Sydney"
+        }
+      ]
+    },
+    {
+      "type": "text",
+      "text": "Gosford"
+    }
+  ]
+}

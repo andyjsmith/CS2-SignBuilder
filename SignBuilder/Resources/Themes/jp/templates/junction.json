@@ -1,0 +1,99 @@
+{
+  "theme": "jp",
+  "id": "junction",
+  "name": "Junction",
+  "scheme": "blue",
+  "items": [
+    {
+      "type": "row",
+      "items": [
+        {
+          "type": "arrow",
+          "direction": "left"
+        },
+        {
+          "type": "stack",
+          "align": "center",
+          "items": [
+            {
+              "type": "text",
+              "text": "新宿",
+              "height": 16
+            },
+            {
+              "type": "text",
+              "text": "Shinjuku",
+              "height": 8.8,
+              "gapBefore": 2.4
+            }
+          ]
+        },
+        {
+          "type": "shield",
+          "network": "N",
+          "number": "20"
+        }
+      ],
+      "align": "center"
+    },
+    {
+      "type": "row",
+      "items": [
+        {
+          "type": "arrow",
+          "direction": "up"
+        },
+        {
+          "type": "stack",
+          "align": "center",
+          "items": [
+            {
+              "type": "text",
+              "text": "渋谷",
+              "height": 16
+            },
+            {
+              "type": "text",
+              "text": "Shibuya",
+              "height": 8.8,
+              "gapBefore": 2.4
+            }
+          ]
+        }
+      ],
+      "align": "center"
+    },
+    {
+      "type": "row",
+      "items": [
+        {
+          "type": "arrow",
+          "direction": "right"
+        },
+        {
+          "type": "stack",
+          "align": "center",
+          "items": [
+            {
+              "type": "text",
+              "text": "品川",
+              "height": 16
+            },
+            {
+              "type": "text",
+              "text": "Shinagawa",
+              "height": 8.8,
+              "gapBefore": 2.4
+            }
+          ]
+        },
+        {
+          "type": "shield",
+          "network": "P",
+          "number": "317"
+        }
+      ],
+      "align": "center"
+    }
+  ]
+}

@@ -1,0 +1,32 @@
+{
+  "theme": "nl",
+  "id": "motorway",
+  "name": "Motorway",
+  "scheme": "blue",
+  "align": "center",
+  "items": [
+    {
+      "type": "row",
+      "items": [
+        {
+          "type": "shield",
+          "network": "A",
+          "number": "2"
+        },
+        {
+          "type": "shield",
+          "network": "E",
+          "number": "35"
+        }
+      ]
+    },
+    {
+      "type": "text",
+      "text": "Amsterdam"
+    },
+    {
+      "type": "text",
+      "text": "Utrecht"
+    }
+  ]
+}

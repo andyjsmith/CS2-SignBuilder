@@ -1,0 +1,65 @@
+{
+  "theme": "ru",
+  "id": "lanes",
+  "name": "Lanes",
+  "scheme": "green",
+  "items": [
+    {
+      "type": "row",
+      "items": [
+        {
+          "type": "stack",
+          "align": "center",
+          "items": [
+            {
+              "type": "row",
+              "items": [
+                {
+                  "type": "shield",
+                  "network": "M",
+                  "number": "4"
+                }
+              ]
+            },
+            {
+              "type": "text",
+              "text": "Воронеж"
+            },
+            {
+              "type": "arrow",
+              "direction": "down"
+            }
+          ]
+        },
+        {
+          "type": "divider"
+        },
+        {
+          "type": "stack",
+          "align": "center",
+          "items": [
+            {
+              "type": "row",
+              "items": [
+                {
+                  "type": "shield",
+                  "network": "A",
+                  "number": "107"
+                }
+              ]
+            },
+            {
+              "type": "text",
+              "text": "Домодедово"
+            },
+            {
+              "type": "arrow",
+              "direction": "down-right"
+            }
+          ]
+        }
+      ],
+      "align": "start"
+    }
+  ]
+}

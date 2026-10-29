@@ -272,6 +272,20 @@
           }
         ]
       }
+    },
+    {
+      "label": "Tab",
+      "item": {
+        "type": "tab",
+        "align": "right",
+        "items": [
+          {
+            "type": "text",
+            "text": "12",
+            "height": 9.799999999999999
+          }
+        ]
+      }
     }
   ]
 }

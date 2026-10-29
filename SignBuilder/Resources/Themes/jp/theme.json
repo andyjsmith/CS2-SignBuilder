@@ -1,0 +1,266 @@
+{
+  "id": "jp",
+  "name": "Japan",
+  "description": "Expressway (green) and general road (blue) guide signs, Japanese with English",
+  "units": "in",
+  "defaults": {
+    "textHeight": 16,
+    "shieldHeight": 20,
+    "arrowHeight": 23.5,
+    "border": 1.2,
+    "cornerRadius": 2.5,
+    "lineGap": 0.55,
+    "margin": 0.6,
+    "itemGap": 0.45,
+    "font": "Noto Sans JP",
+    "scheme": "green"
+  },
+  "fonts": [
+    {
+      "family": "Noto Sans JP",
+      "label": "Noto Sans JP Bold",
+      "weight": "bold",
+      "scale": 1.3495,
+      "offset": -0.0884
+    },
+    {
+      "family": "Noto Sans",
+      "label": "Noto Sans Bold",
+      "weight": "bold",
+      "scale": 1.4008,
+      "offset": -0.0434
+    }
+  ],
+  "schemes": {
+    "green": {
+      "bg": "#00704a",
+      "fg": "#ffffff",
+      "label": "Expressway"
+    },
+    "blue": {
+      "bg": "#1f4ea1",
+      "fg": "#ffffff",
+      "label": "General road"
+    },
+    "white": {
+      "bg": "#ffffff",
+      "fg": "#1f4ea1",
+      "label": "Local"
+    },
+    "brown": {
+      "bg": "#6b3f1d",
+      "fg": "#ffffff",
+      "label": "Tourist"
+    },
+    "yellow": {
+      "bg": "#ffcc00",
+      "fg": "#000000",
+      "label": "Temporary"
+    }
+  },
+  "shields": {
+    "N": {
+      "label": "National route",
+      "shape": "img",
+      "img": "shields/national.svg",
+      "aspect": 1.0,
+      "fg": "#ffffff",
+      "num": 0.44,
+      "top": 0.22,
+      "default": "20"
+    },
+    "P": {
+      "label": "Prefectural route",
+      "shape": "img",
+      "img": "shields/prefectural.svg",
+      "aspect": 1.0,
+      "fg": "#ffffff",
+      "num": 0.44,
+      "top": 0.28,
+      "default": "15"
+    },
+    "E": {
+      "label": "Expressway number",
+      "shape": "rect",
+      "bg": "#00704a",
+      "fg": "#ffffff",
+      "num": 0.6,
+      "radius": 0.12,
+      "default": "1",
+      "prefix": "E",
+      "border": "#ffffff"
+    },
+    "IC": {
+      "label": "Interchange number",
+      "shape": "rect",
+      "bg": "#ffffff",
+      "fg": "#00704a",
+      "num": 0.6,
+      "radius": 0.5,
+      "default": "12",
+      "padX": 0.3
+    }
+  },
+  "arrow": "M42 0 H58 V100 H82 L50 150 L18 100 H42 Z",
+  "laneWidth": 157.48031496062993,
+  "parts": [
+    {
+      "label": "Text",
+      "item": {
+        "type": "text",
+        "text": "Destination",
+        "height": 16
+      }
+    },
+    {
+      "label": "Shield",
+      "item": {
+        "type": "shield",
+        "network": "N",
+        "number": "20",
+        "height": 20
+      }
+    },
+    {
+      "label": "Arrow",
+      "item": {
+        "type": "arrow",
+        "direction": "up",
+        "height": 23.5
+      }
+    },
+    {
+      "label": "Distance",
+      "item": {
+        "type": "text",
+        "text": "2 km",
+        "height": 12.0
+      }
+    },
+    {
+      "label": "Divider",
+      "item": {
+        "type": "divider"
+      }
+    },
+    {
+      "label": "Row",
+      "item": {
+        "type": "row",
+        "align": "center",
+        "items": []
+      }
+    },
+    {
+      "label": "Column",
+      "item": {
+        "type": "stack",
+        "align": "center",
+        "items": []
+      }
+    },
+    {
+      "label": "Panel",
+      "item": {
+        "type": "panel",
+        "scheme": "white",
+        "items": [
+          {
+            "type": "text",
+            "text": "Text",
+            "height": 12.0
+          }
+        ]
+      }
+    },
+    {
+      "label": "Split columns",
+      "item": {
+        "type": "row",
+        "align": "start",
+        "items": [
+          {
+            "type": "stack",
+            "align": "center",
+            "items": [
+              {
+                "type": "text",
+                "text": "Destination",
+                "height": 16
+              }
+            ]
+          },
+          {
+            "type": "divider"
+          },
+          {
+            "type": "stack",
+            "align": "center",
+            "items": [
+              {
+                "type": "text",
+                "text": "Destination",
+                "height": 16
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "label": "Lane arrows",
+      "item": {
+        "type": "row",
+        "align": "center",
+        "justify": "between",
+        "items": [
+          {
+            "type": "arrow",
+            "direction": "turn-left",
+            "height": 29.375
+          },
+          {
+            "type": "arrow",
+            "direction": "up",
+            "height": 29.375
+          }
+        ]
+      }
+    },
+    {
+      "label": "Tab",
+      "item": {
+        "type": "tab",
+        "align": "right",
+        "items": [
+          {
+            "type": "text",
+            "text": "12",
+            "height": 10.4
+          }
+        ]
+      }
+    },
+    {
+      "label": "Japanese + English",
+      "item": {
+        "type": "stack",
+        "align": "center",
+        "items": [
+          {
+            "type": "text",
+            "text": "東京",
+            "height": 16
+          },
+          {
+            "type": "text",
+            "text": "Tokyo",
+            "height": 8.8,
+            "gapBefore": 2.4
+          }
+        ]
+      }
+    }
+  ],
+  "features": {}
+}

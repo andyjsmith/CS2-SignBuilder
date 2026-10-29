@@ -1,0 +1,67 @@
+{
+  "theme": "it",
+  "id": "lanes",
+  "name": "Lanes",
+  "scheme": "green",
+  "items": [
+    {
+      "type": "row",
+      "items": [
+        {
+          "type": "stack",
+          "align": "center",
+          "items": [
+            {
+              "type": "row",
+              "items": [
+                {
+                  "type": "shield",
+                  "network": "A",
+                  "number": "1"
+                }
+              ]
+            },
+            {
+              "type": "text",
+              "text": "Roma"
+            },
+            {
+              "type": "arrow",
+              "direction": "down",
+              "height": 24
+            }
+          ]
+        },
+        {
+          "type": "divider"
+        },
+        {
+          "type": "stack",
+          "align": "center",
+          "items": [
+            {
+              "type": "row",
+              "items": [
+                {
+                  "type": "shield",
+                  "network": "A",
+                  "number": "14"
+                }
+              ]
+            },
+            {
+              "type": "text",
+              "text": "Bari"
+            },
+            {
+              "type": "arrow",
+              "direction": "down-right",
+              "height": 24
+            }
+          ]
+        }
+      ],
+      "align": "start"
+    }
+  ]
+}

@@ -38,7 +38,7 @@
 /* --- designer --- */
 .signOptions { display: flex; flex-direction: column; align-items: flex-start; width: 560rem; margin-top: 6rem; }
 .optionsScroll { width: 580rem; height: 262rem; }
-.partsScroll { height: 500rem; }
+.partsScroll { height: 610rem; }
 .customColors { display: flex; flex-direction: row; }
 .customColors > div { margin-right: 16rem; }
 .library { display: flex; flex-direction: column; }
@@ -99,5 +99,9 @@
 .dangerButton:hover { background-color: #cc4545; }
 .marginGrid { display: flex; flex-direction: column; }
 .marginSide { display: flex; flex-direction: row; align-items: center; margin: 0 10rem 3rem 0; }
-.marginLabel { width: 46rem; font-size: 12rem; color: rgba(255, 255, 255, 0.7); }
+.marginLabel { width: 42rem; font-size: 12rem; color: rgba(255, 255, 255, 0.7); }
 .cardBadge { position: absolute; right: 26rem; bottom: 4rem; opacity: 0.7; }
+.stepperCompact { display: flex; flex-direction: row; align-items: center; }
+.stepperCompact .stepValue { width: 34rem; }
+.stepperCompact .step { min-width: 22rem; padding: 0 3rem; }
+.selectVanilla { width: 100%; }

@@ -1,0 +1,31 @@
+{
+  "theme": "jp",
+  "id": "tourist",
+  "name": "Tourist",
+  "scheme": "brown",
+  "align": "center",
+  "items": [
+    {
+      "type": "stack",
+      "align": "center",
+      "items": [
+        {
+          "type": "text",
+          "text": "富士山",
+          "height": 16
+        },
+        {
+          "type": "text",
+          "text": "Mt. Fuji",
+          "height": 8.8,
+          "gapBefore": 2.4
+        }
+      ]
+    },
+    {
+      "type": "arrow",
+      "direction": "up-right",
+      "height": 18
+    }
+  ]
+}

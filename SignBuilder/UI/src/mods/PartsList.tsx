@@ -22,7 +22,6 @@ export const PartsList = (props: {
   const listRef = useRef<HTMLDivElement>(null);
   const [dragging, setDragging] = useState<string | null>(null);
   const [drop, setDrop] = useState<Drop>(null);
-  const exitTab = props.design.exitTab;
 
   const rowOf = (path: string) => listRef.current?.querySelector(`[data-part-path="${path}"]`) as HTMLElement | null;
   const gripLeft = (path: string) => (rowOf(path)?.querySelector("svg") as Element | null)?.getBoundingClientRect().left ?? 0;
@@ -100,12 +99,6 @@ export const PartsList = (props: {
 
   return (
     <div ref={listRef}>
-      {exitTab && (
-        <div className={props.selected === "exitTab" ? styles.listItemOn : styles.listItem} onClick={() => props.onSelect("exitTab")}>
-          <div className={styles.rowLabel}>{`Exit tab "${exitTab.text}"`}</div>
-          <Delete path="exitTab" />
-        </div>
-      )}
       {outline(props.design).map(({ path, item, depth }) => {
         const marker = drop && drop.shown === path ? drop.position : null;
         // Dropping after a row or column (rather than inside it): the line starts at that level's indent.
@@ -131,12 +124,6 @@ export const PartsList = (props: {
           </div>
         );
       })}
-      {props.design.bottomBar && (
-        <div className={props.selected === "bottomBar" ? styles.listItemOn : styles.listItem} onClick={() => props.onSelect("bottomBar")}>
-          <div className={styles.rowLabel}>{`"${(props.design.bottomBar.words ?? ["EXIT", "ONLY"]).join(" ")}" panel`}</div>
-          <Delete path="bottomBar" />
-        </div>
-      )}
       <div className={styles.hint}>Drag parts to reorder them, or onto a Row or Column to group them. Below a row or column, move the pointer left to drop outside it.</div>
     </div>
   );

@@ -1,0 +1,59 @@
+{
+  "theme": "cn",
+  "id": "expressway",
+  "name": "Expressway",
+  "scheme": "green",
+  "items": [
+    {
+      "type": "row",
+      "items": [
+        {
+          "type": "shield",
+          "network": "G",
+          "number": "4"
+        },
+        {
+          "type": "stack",
+          "align": "center",
+          "items": [
+            {
+              "type": "text",
+              "text": "北京",
+              "height": 16
+            },
+            {
+              "type": "text",
+              "text": "Beijing",
+              "height": 8.8,
+              "gapBefore": 2.4
+            }
+          ]
+        }
+      ],
+      "align": "center"
+    },
+    {
+      "type": "row",
+      "items": [
+        {
+          "type": "stack",
+          "align": "center",
+          "items": [
+            {
+              "type": "text",
+              "text": "石家庄",
+              "height": 16
+            },
+            {
+              "type": "text",
+              "text": "Shijiazhuang",
+              "height": 8.8,
+              "gapBefore": 2.4
+            }
+          ]
+        }
+      ],
+      "align": "center"
+    }
+  ]
+}

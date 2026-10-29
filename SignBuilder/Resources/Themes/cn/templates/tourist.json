@@ -1,0 +1,31 @@
+{
+  "theme": "cn",
+  "id": "tourist",
+  "name": "Tourist",
+  "scheme": "brown",
+  "align": "center",
+  "items": [
+    {
+      "type": "stack",
+      "align": "center",
+      "items": [
+        {
+          "type": "text",
+          "text": "长城",
+          "height": 16
+        },
+        {
+          "type": "text",
+          "text": "Great Wall",
+          "height": 8.8,
+          "gapBefore": 2.4
+        }
+      ]
+    },
+    {
+      "type": "arrow",
+      "direction": "up",
+      "height": 18
+    }
+  ]
+}

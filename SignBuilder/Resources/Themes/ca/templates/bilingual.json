@@ -1,0 +1,35 @@
+{
+  "theme": "ca",
+  "id": "bilingual",
+  "name": "Bilingual",
+  "scheme": "green",
+  "items": [
+    {
+      "type": "row",
+      "items": [
+        {
+          "type": "stack",
+          "align": "start",
+          "items": [
+            {
+              "type": "text",
+              "text": "Ottawa"
+            },
+            {
+              "type": "text",
+              "text": "Centre-ville",
+              "height": 12,
+              "font": "RG2014D"
+            }
+          ]
+        },
+        {
+          "type": "arrow",
+          "direction": "up-right",
+          "height": 22
+        }
+      ],
+      "align": "center"
+    }
+  ]
+}

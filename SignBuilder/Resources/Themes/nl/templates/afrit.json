@@ -1,0 +1,39 @@
+{
+  "theme": "nl",
+  "id": "afrit",
+  "name": "Exit",
+  "scheme": "blue",
+  "items": [
+    {
+      "type": "row",
+      "items": [
+        {
+          "type": "shield",
+          "network": "AFRIT",
+          "number": "12"
+        },
+        {
+          "type": "text",
+          "text": "Hilversum"
+        }
+      ],
+      "align": "center"
+    },
+    {
+      "type": "row",
+      "items": [
+        {
+          "type": "shield",
+          "network": "N",
+          "number": "201"
+        },
+        {
+          "type": "arrow",
+          "direction": "up-right",
+          "height": 20
+        }
+      ],
+      "align": "center"
+    }
+  ]
+}

@@ -1,0 +1,32 @@
+{
+  "theme": "ru",
+  "id": "magistral",
+  "name": "Motorway",
+  "scheme": "green",
+  "align": "center",
+  "items": [
+    {
+      "type": "row",
+      "items": [
+        {
+          "type": "shield",
+          "network": "M",
+          "number": "11"
+        },
+        {
+          "type": "shield",
+          "network": "E",
+          "number": "105"
+        }
+      ]
+    },
+    {
+      "type": "text",
+      "text": "Санкт-Петербург"
+    },
+    {
+      "type": "text",
+      "text": "Тверь"
+    }
+  ]
+}

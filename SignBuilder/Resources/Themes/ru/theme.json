@@ -1,0 +1,242 @@
+{
+  "id": "ru",
+  "name": "Russia",
+  "description": "Motorway (green) and other roads (blue) signs, Cyrillic",
+  "units": "in",
+  "defaults": {
+    "textHeight": 15.5,
+    "shieldHeight": 17.0,
+    "arrowHeight": 23.5,
+    "border": 1.2,
+    "cornerRadius": 3.5,
+    "lineGap": 0.55,
+    "margin": 0.6,
+    "itemGap": 0.45,
+    "font": "Noto Sans",
+    "scheme": "blue"
+  },
+  "fonts": [
+    {
+      "family": "Noto Sans",
+      "label": "Noto Sans Bold",
+      "weight": "bold",
+      "scale": 1.4008,
+      "offset": -0.0434
+    }
+  ],
+  "schemes": {
+    "green": {
+      "bg": "#00704a",
+      "fg": "#ffffff",
+      "label": "Автомагистраль"
+    },
+    "blue": {
+      "bg": "#1b4f9c",
+      "fg": "#ffffff",
+      "label": "Дороги"
+    },
+    "white": {
+      "bg": "#ffffff",
+      "fg": "#000000",
+      "label": "Населённый пункт"
+    },
+    "brown": {
+      "bg": "#6b3f1d",
+      "fg": "#ffffff",
+      "label": "Туристические"
+    },
+    "yellow": {
+      "bg": "#ffcc00",
+      "fg": "#000000",
+      "label": "Временные"
+    }
+  },
+  "shields": {
+    "M": {
+      "label": "Federal motorway",
+      "shape": "rect",
+      "bg": "#ffffff",
+      "fg": "#000000",
+      "num": 0.6,
+      "radius": 0.14,
+      "default": "11",
+      "prefix": "М-",
+      "border": "#000000"
+    },
+    "R": {
+      "label": "Federal road",
+      "shape": "rect",
+      "bg": "#ffffff",
+      "fg": "#000000",
+      "num": 0.6,
+      "radius": 0.14,
+      "default": "22",
+      "prefix": "Р-",
+      "border": "#000000"
+    },
+    "A": {
+      "label": "Federal road (A)",
+      "shape": "rect",
+      "bg": "#ffffff",
+      "fg": "#000000",
+      "num": 0.6,
+      "radius": 0.14,
+      "default": "107",
+      "prefix": "А-",
+      "border": "#000000"
+    },
+    "E": {
+      "label": "European route",
+      "shape": "rect",
+      "bg": "#00704a",
+      "fg": "#ffffff",
+      "num": 0.6,
+      "radius": 0.14,
+      "default": "105",
+      "prefix": "E",
+      "border": "#ffffff"
+    }
+  },
+  "arrow": "M42 0 H58 V100 H82 L50 150 L18 100 H42 Z",
+  "laneWidth": 157.48031496062993,
+  "parts": [
+    {
+      "label": "Text",
+      "item": {
+        "type": "text",
+        "text": "Destination",
+        "height": 15.5
+      }
+    },
+    {
+      "label": "Shield",
+      "item": {
+        "type": "shield",
+        "network": "M",
+        "number": "11",
+        "height": 17.0
+      }
+    },
+    {
+      "label": "Arrow",
+      "item": {
+        "type": "arrow",
+        "direction": "up",
+        "height": 23.5
+      }
+    },
+    {
+      "label": "Distance",
+      "item": {
+        "type": "text",
+        "text": "2 km",
+        "height": 11.6
+      }
+    },
+    {
+      "label": "Divider",
+      "item": {
+        "type": "divider"
+      }
+    },
+    {
+      "label": "Row",
+      "item": {
+        "type": "row",
+        "align": "center",
+        "items": []
+      }
+    },
+    {
+      "label": "Column",
+      "item": {
+        "type": "stack",
+        "align": "center",
+        "items": []
+      }
+    },
+    {
+      "label": "Panel",
+      "item": {
+        "type": "panel",
+        "scheme": "white",
+        "items": [
+          {
+            "type": "text",
+            "text": "Text",
+            "height": 11.6
+          }
+        ]
+      }
+    },
+    {
+      "label": "Split columns",
+      "item": {
+        "type": "row",
+        "align": "start",
+        "items": [
+          {
+            "type": "stack",
+            "align": "center",
+            "items": [
+              {
+                "type": "text",
+                "text": "Destination",
+                "height": 15.5
+              }
+            ]
+          },
+          {
+            "type": "divider"
+          },
+          {
+            "type": "stack",
+            "align": "center",
+            "items": [
+              {
+                "type": "text",
+                "text": "Destination",
+                "height": 15.5
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "label": "Lane arrows",
+      "item": {
+        "type": "row",
+        "align": "center",
+        "justify": "between",
+        "items": [
+          {
+            "type": "arrow",
+            "direction": "turn-left",
+            "height": 29.375
+          },
+          {
+            "type": "arrow",
+            "direction": "up",
+            "height": 29.375
+          }
+        ]
+      }
+    },
+    {
+      "label": "Tab",
+      "item": {
+        "type": "tab",
+        "align": "right",
+        "items": [
+          {
+            "type": "text",
+            "text": "12",
+            "height": 10.1
+          }
+        ]
+      }
+    }
+  ],
+  "features": {}
+}

@@ -1,0 +1,32 @@
+{
+  "theme": "fr",
+  "id": "autoroute",
+  "name": "Autoroute",
+  "scheme": "blue",
+  "align": "center",
+  "items": [
+    {
+      "type": "row",
+      "items": [
+        {
+          "type": "shield",
+          "network": "A",
+          "number": "6"
+        },
+        {
+          "type": "shield",
+          "network": "E",
+          "number": "15"
+        }
+      ]
+    },
+    {
+      "type": "text",
+      "text": "Lyon"
+    },
+    {
+      "type": "text",
+      "text": "Auxerre"
+    }
+  ]
+}
