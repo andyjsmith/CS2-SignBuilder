@@ -2,14 +2,14 @@
   "id": "de",
   "name": "Germany",
   "description": "Wegweiser (RWBA), DIN 1451 Mittelschrift",
-  "units": "mm",
+  "units": "in",
   "defaults": {
     "font": "DIN1451",
-    "textHeight": 400,
-    "shieldHeight": 430,
-    "arrowHeight": 600,
-    "border": 30,
-    "cornerRadius": 90,
+    "textHeight": 15.5,
+    "shieldHeight": 17.0,
+    "arrowHeight": 23.5,
+    "border": 1.2,
+    "cornerRadius": 3.5,
     "lineGap": 0.55,
     "margin": 0.6,
     "itemGap": 0.45,
@@ -101,14 +101,14 @@
     "exitTab": false,
     "exitOnly": false
   },
-  "laneWidth": 4000,
+  "laneWidth": 157.48031496062993,
   "parts": [
     {
       "label": "Text",
       "item": {
         "type": "text",
         "text": "Ziel",
-        "height": 400
+        "height": 15.5
       }
     },
     {
@@ -117,7 +117,7 @@
         "type": "shield",
         "network": "A",
         "number": "7",
-        "height": 430
+        "height": 17.0
       }
     },
     {
@@ -126,7 +126,7 @@
         "type": "shield",
         "network": "AS",
         "number": "12",
-        "height": 430
+        "height": 17.0
       }
     },
     {
@@ -134,7 +134,7 @@
       "item": {
         "type": "arrow",
         "direction": "up",
-        "height": 600
+        "height": 23.5
       }
     },
     {
@@ -142,7 +142,7 @@
       "item": {
         "type": "text",
         "text": "1000 m",
-        "height": 290
+        "height": 11.5
       }
     },
     {
@@ -154,7 +154,7 @@
           {
             "type": "text",
             "text": "Ziel",
-            "height": 290
+            "height": 11.5
           }
         ]
       }
@@ -171,6 +171,73 @@
         "type": "row",
         "align": "center",
         "items": []
+      }
+    },
+    {
+      "label": "Column",
+      "item": {
+        "type": "stack",
+        "align": "center",
+        "items": []
+      }
+    },
+    {
+      "label": "Split columns",
+      "item": {
+        "type": "row",
+        "align": "start",
+        "items": [
+          {
+            "type": "stack",
+            "align": "center",
+            "items": [
+              {
+                "type": "text",
+                "text": "Destination",
+                "height": 15.5
+              }
+            ]
+          },
+          {
+            "type": "divider"
+          },
+          {
+            "type": "stack",
+            "align": "center",
+            "items": [
+              {
+                "type": "text",
+                "text": "Destination",
+                "height": 15.5
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "label": "Lane arrows",
+      "item": {
+        "type": "row",
+        "align": "center",
+        "justify": "between",
+        "items": [
+          {
+            "type": "arrow",
+            "direction": "turn-left",
+            "height": 29.375
+          },
+          {
+            "type": "arrow",
+            "direction": "split-left",
+            "height": 29.375
+          },
+          {
+            "type": "arrow",
+            "direction": "up",
+            "height": 29.375
+          }
+        ]
       }
     }
   ]

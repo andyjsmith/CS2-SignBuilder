@@ -13,6 +13,12 @@ namespace SignBuilder.Spike
         public const float kClearance = 6.4f;      // underside of the structure (~21 ft)
         public const float kTrussDepth = 1.5f;
         public const float kMountHeight = kClearance + kTrussDepth * 0.5f;
+        // Member sizes the signs are mounted against (see AssemblyBuilder's sign depth).
+        public const float kChordRadius = 0.09f;
+        public const float kPlanarChordRadius = 0.08f;
+        public const float kMonotubeRadius = 0.32f;
+        public const float kCantileverArmRadius = 0.28f;
+        public const float kPanelThickness = 0.08f;
 
         /// <summary>
         /// How far posts reach below the base plate, so uneven ground never shows a gap under them.
@@ -21,23 +27,27 @@ namespace SignBuilder.Spike
         /// </summary>
         public const float kFooting = 0.5f;
 
-        /// <summary>Builds the support described by a spec (layout output, stored in records and saves).</summary>
         /// <summary>Beam height adjustment for the mesh being built (SupportSpec.Lift).</summary>
         private static float s_Lift;
 
-        public static Mesh FromSpec(Assemblies.SupportSpec spec)
+        /// <summary>
+        /// Builds the support described by a spec (layout output, stored in records and saves). <paramref name="lowDetail"/>
+        /// builds the distant (LOD) version: the same members with far fewer sides.
+        /// </summary>
+        public static Mesh FromSpec(Assemblies.SupportSpec spec, bool lowDetail = false)
         {
             var a = spec.Args ?? System.Array.Empty<float>();
             float Arg(int i) => i < a.Length ? a[i] : 0f;
             s_Lift = spec.Lift;
+            MeshBuilder.LowDetail = lowDetail;
             Mesh mesh;
             try
             {
             mesh = spec.Kind switch
             {
                 "monotube" => Monotube(Arg(0), Arg(1)),
-                "curvedSpan" => CurvedSpan(Arg(0), Arg(1), ground: Arg(2)),
-                "curvedCantilever" => CurvedCantilever(Arg(0), Arg(1), ground: Arg(2)),
+                "curvedSpan" => CurvedSpan(Arg(0), Arg(1), Bend(Arg(1), Arg(2)), ground: Arg(2)),
+                "curvedCantilever" => CurvedCantilever(Arg(0), Arg(1), Bend(Arg(1), Arg(2)), ground: Arg(2)),
                 "cantilever" => Cantilever(Arg(0), Arg(1)),
                 "trussCantilever" => TrussCantilever(Arg(0), Arg(1)),
                 "planarTruss" => PlanarTruss(-Arg(0) * 0.5f, Arg(0) * 0.5f, new[] { -Arg(0) * 0.5f, Arg(0) * 0.5f }, Arg(1)),
@@ -49,10 +59,14 @@ namespace SignBuilder.Spike
             finally
             {
                 s_Lift = 0f;
+                MeshBuilder.LowDetail = false;
             }
             if (spec.Mirror) Mirror(mesh);
             return mesh;
         }
+
+        /// <summary>The curved tube's bend radius: 3 m, smaller when the structure is lowered so the bend stays above its flange.</summary>
+        private static float Bend(float height, float ground) => Mathf.Clamp(height + ground - 1.6f, 0.6f, 3f);
 
         /// <summary>Mirrors a mesh across X in place (flipping winding so faces stay outward).</summary>
         private static void Mirror(Mesh mesh)
@@ -85,8 +99,8 @@ namespace SignBuilder.Spike
             const float depth = 1.2f;
             var y0 = kMountHeight + s_Lift - depth * 0.5f;
             var y1 = kMountHeight + s_Lift + depth * 0.5f;
-            b.AddTube(new Vector3(x0, y0, 0), new Vector3(x1, y0, 0), 0.08f, 10);
-            b.AddTube(new Vector3(x0, y1, 0), new Vector3(x1, y1, 0), 0.08f, 10);
+            b.AddTube(new Vector3(x0, y0, 0), new Vector3(x1, y0, 0), kPlanarChordRadius, 10);
+            b.AddTube(new Vector3(x0, y1, 0), new Vector3(x1, y1, 0), kPlanarChordRadius, 10);
             var panels = Mathf.Max(2, Mathf.RoundToInt((x1 - x0) / depth));
             var step = (x1 - x0) / panels;
             for (var i = 0; i <= panels; i++)
@@ -97,11 +111,10 @@ namespace SignBuilder.Spike
                 var flip = (i & 1) == 0;
                 b.AddTube(new Vector3(xa, flip ? y0 : y1, 0), new Vector3(xa + step, flip ? y1 : y0, 0), 0.04f, 8);
             }
+            // Columns stand in the truss's plane: the chords run into them.
             foreach (var x in columns)
             {
-                b.AddTube(new Vector3(x, -ground - kFooting, 0.25f), new Vector3(x, y1 + 0.25f, 0.25f), 0.22f, 16);
-                b.AddTube(new Vector3(x, y0, 0.05f), new Vector3(x, y0, 0.25f), 0.06f, 8);
-                b.AddTube(new Vector3(x, y1, 0.05f), new Vector3(x, y1, 0.25f), 0.06f, 8);
+                b.AddTube(new Vector3(x, -ground - kFooting, 0), new Vector3(x, y1 + 0.25f, 0), 0.22f, 16);
             }
             return b.Build("SignBuilder.PlanarTruss");
         }
@@ -126,7 +139,7 @@ namespace SignBuilder.Spike
             foreach (var y in new[] { y0, y1 })
             foreach (var z in new[] { z0, z1 })
             {
-                b.AddTube(new Vector3(x0, y, z), new Vector3(x1, y, z), 0.09f, 10);
+                b.AddTube(new Vector3(x0, y, z), new Vector3(x1, y, z), kChordRadius, 10);
             }
             var panels = Mathf.Max(2, Mathf.RoundToInt(span / depth));
             var step = span / panels;
@@ -168,7 +181,7 @@ namespace SignBuilder.Spike
             var b = new MeshBuilder();
             var half = span * 0.5f;
             var y = kMountHeight + s_Lift;
-            b.AddTube(new Vector3(-half - 0.2f, y, 0), new Vector3(half + 0.2f, y, 0), 0.32f, 20);
+            b.AddTube(new Vector3(-half - 0.2f, y, 0), new Vector3(half + 0.2f, y, 0), kMonotubeRadius, 20);
             foreach (var x in new[] { -half, half })
             {
                 b.AddTube(new Vector3(x, -ground - kFooting, 0), new Vector3(x, y + 0.5f, 0), 0.36f, 20);
@@ -181,7 +194,7 @@ namespace SignBuilder.Spike
             var b = new MeshBuilder();
             var y = kMountHeight + s_Lift;
             b.AddTube(new Vector3(0, -ground - kFooting, 0), new Vector3(0, y + 0.6f, 0), 0.38f, 20);
-            b.AddTube(new Vector3(-0.3f * Mathf.Sign(armLength), y, 0), new Vector3(armLength, y, 0), 0.28f, 20);
+            b.AddTube(new Vector3(-0.3f * Mathf.Sign(armLength), y, 0), new Vector3(armLength, y, 0), kCantileverArmRadius, 20);
             return b.Build("SignBuilder.Cantilever");
         }
 
@@ -278,6 +291,28 @@ namespace SignBuilder.Spike
         }
 
         /// <summary>
+        /// Sign lighting under one sign (local to the sign's center, face toward -Z): fixtures spaced along its bottom
+        /// edge, each on an arm reaching forward and down from the bottom edge, its housing tilted up at the face.
+        /// </summary>
+        public static Mesh SignLights(float width, float height)
+        {
+            var b = new MeshBuilder();
+            var count = Mathf.Max(1, Mathf.RoundToInt(width / 2.4f));
+            var bottom = -height * 0.5f;
+            for (var i = 0; i < count; i++)
+            {
+                var x = (i + 0.5f) / count * width - width * 0.5f;
+                var root = new Vector3(x, bottom + 0.1f, 0.06f);
+                var elbow = new Vector3(x, bottom - 0.25f, 0.02f);
+                var head = new Vector3(x, bottom - 0.35f, -0.85f);
+                b.AddTube(root, elbow, 0.035f, 8);
+                b.AddTube(elbow, head, 0.035f, 8);
+                b.AddBox(head + new Vector3(0, 0.03f, -0.05f), new Vector3(0.55f, 0.1f, 0.32f), Quaternion.Euler(-25f, 0, 0));
+            }
+            return b.Build("SignBuilder.SignLights");
+        }
+
+        /// <summary>
         /// A thin sign panel box: submesh 0 is the -Z face showing the whole sign texture, submesh 1
         /// the back and edges (plain aluminum).
         /// </summary>
@@ -293,7 +328,7 @@ namespace SignBuilder.Spike
             foreach (var r in shape)
             {
                 var center = new Vector3((r.center.x - 0.5f) * width, (r.center.y - 0.5f) * height, 0);
-                b.AddBox(center, new Vector3(r.width * width, r.height * height, 0.08f), Quaternion.identity, r, otherSubmesh: 1);
+                b.AddBox(center, new Vector3(r.width * width, r.height * height, kPanelThickness), Quaternion.identity, r, otherSubmesh: 1);
             }
             return b.Build("SignBuilder.Panel");
         }

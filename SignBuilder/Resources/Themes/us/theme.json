@@ -145,7 +145,7 @@
   },
   "exitTab": {
     "font": "RG2014E",
-    "height": 12
+    "height": 9
   },
   "exitOnly": {
     "font": "RG2014E",
@@ -222,6 +222,89 @@
           {
             "type": "text",
             "text": "TOLL",
+            "height": 12,
+            "font": "RG2014D"
+          }
+        ]
+      }
+    },
+    {
+      "label": "Column",
+      "item": {
+        "type": "stack",
+        "align": "center",
+        "items": []
+      }
+    },
+    {
+      "label": "Split columns",
+      "item": {
+        "type": "row",
+        "align": "start",
+        "items": [
+          {
+            "type": "stack",
+            "align": "center",
+            "items": [
+              {
+                "type": "text",
+                "text": "Destination",
+                "height": 16
+              }
+            ]
+          },
+          {
+            "type": "divider"
+          },
+          {
+            "type": "stack",
+            "align": "center",
+            "items": [
+              {
+                "type": "text",
+                "text": "Destination",
+                "height": 16
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "label": "Lane arrows",
+      "item": {
+        "type": "row",
+        "align": "center",
+        "justify": "between",
+        "items": [
+          {
+            "type": "arrow",
+            "direction": "turn-left",
+            "height": 30.0
+          },
+          {
+            "type": "arrow",
+            "direction": "split-left",
+            "height": 30.0
+          },
+          {
+            "type": "arrow",
+            "direction": "up",
+            "height": 30.0
+          }
+        ]
+      }
+    },
+    {
+      "label": "Speed plate",
+      "item": {
+        "type": "panel",
+        "scheme": "yellow",
+        "radius": 2,
+        "items": [
+          {
+            "type": "text",
+            "text": "50 MPH",
             "height": 12,
             "font": "RG2014D"
           }

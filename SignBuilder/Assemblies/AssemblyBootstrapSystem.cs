@@ -52,7 +52,12 @@ namespace SignBuilder.Assemblies
                 }
                 var b = record.Bounds;
                 var bounds = new Bounds3(new float3(b[0], b[1], b[2]), new float3(b[3], b[4], b[5]));
-                TrackNewPrefab(prefabs.Register(record.PrefabName, geometry, surfaces.ToArray(), bounds, record.IndexCount, record.VertexCount));
+                (GeometryAsset, int, int)? lod = null;
+                if (record.LodGeometryId != null && AssetDatabase.global.TryGetAsset(Colossal.Hash128.Parse(record.LodGeometryId), out GeometryAsset lodGeometry))
+                {
+                    lod = (lodGeometry, record.LodIndexCount, record.LodVertexCount);
+                }
+                TrackNewPrefab(prefabs.Register(record.PrefabName, geometry, surfaces.ToArray(), bounds, record.IndexCount, record.VertexCount, lod));
                 ok++;
             }
             Mod.log.Info($"Registered {ok} sign assemblies before load ({missing} with missing assets)");

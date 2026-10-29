@@ -1,5 +1,6 @@
 import { useRef, useState } from "react";
 import { Design, DropPosition, describe, getItem, moveTo, outline } from "./designModel";
+import { TrashIcon } from "./Icons";
 import styles from "./SignEditor.module.scss";
 
 type Drop = { path: string; position: DropPosition } | null;
@@ -14,6 +15,7 @@ export const PartsList = (props: {
   onSelect: (path: string | null) => void;
   onChange: (design: Design, selected: string) => void;
   labels?: Record<string, string>;
+  onDelete: (path: string) => void;
 }) => {
   const listRef = useRef<HTMLDivElement>(null);
   const [dragging, setDragging] = useState<string | null>(null);
@@ -39,6 +41,12 @@ export const PartsList = (props: {
     }
     return best;
   };
+
+  // Delete button at the right end of a part's row (it must not start a drag or select the part).
+  const Delete = (p: { path: string }) => (
+    <div className={styles.rowDelete} title="Delete this part" onMouseDown={(e) => e.stopPropagation()}
+      onClick={(e) => { e.stopPropagation(); props.onDelete(p.path); }}><TrashIcon /></div>
+  );
 
   const startDrag = (e: any, path: string) => {
     const startY = e.clientY;
@@ -74,7 +82,8 @@ export const PartsList = (props: {
     <div ref={listRef}>
       {exitTab && (
         <div className={props.selected === "exitTab" ? styles.listItemOn : styles.listItem} onClick={() => props.onSelect("exitTab")}>
-          {`Exit tab "${exitTab.text}"`}
+          <div className={styles.rowLabel}>{`Exit tab "${exitTab.text}"`}</div>
+          <Delete path="exitTab" />
         </div>
       )}
       {outline(props.design).map(({ path, item, depth }) => {
@@ -92,8 +101,11 @@ export const PartsList = (props: {
             <svg className={styles.grip} width="8rem" height="12rem" viewBox="0 0 8 12">
               {[0, 1, 2].map((r) => [0, 1].map((c) => <rect key={`${r}${c}`} x={c * 5} y={r * 5} width="3" height="2" fill="rgba(255,255,255,0.5)" />))}
             </svg>
-            {describe(item, props.labels)}
-            {item.items && item.items.length === 0 && <span className={styles.hintInline}> drop parts here</span>}
+            <div className={styles.rowLabel}>
+              {describe(item, props.labels)}
+              {item.items && item.items.length === 0 && <span className={styles.hintInline}> drop parts here</span>}
+            </div>
+            <Delete path={path} />
           </div>
         );
       })}

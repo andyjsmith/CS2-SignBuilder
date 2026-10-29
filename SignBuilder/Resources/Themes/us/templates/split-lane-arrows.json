@@ -1,0 +1,57 @@
+{
+  "theme": "us",
+  "id": "split-lane-arrows",
+  "name": "Split with lane arrows",
+  "scheme": "green",
+  "exitTab": {
+    "text": "EXIT 27",
+    "align": "right"
+  },
+  "items": [
+    {
+      "type": "row",
+      "align": "start",
+      "items": [
+        {
+          "type": "stack",
+          "align": "center",
+          "items": [
+            { "type": "text", "text": "SOUTH", "height": 15, "font": "RG2014D" },
+            { "type": "shield", "network": "I", "number": "494", "height": 30 }
+          ]
+        },
+        { "type": "divider" },
+        {
+          "type": "stack",
+          "align": "center",
+          "items": [
+            {
+              "type": "row",
+              "items": [
+                { "type": "shield", "network": "I", "number": "94", "height": 30 },
+                { "type": "text", "text": "WEST", "height": 15, "font": "RG2014D" }
+              ]
+            },
+            { "type": "text", "text": "St Cloud", "height": 16 }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "row",
+      "align": "center",
+      "justify": "between",
+      "items": [
+        { "type": "arrow", "direction": "turn-left", "height": 30 },
+        {
+          "type": "panel",
+          "scheme": "yellow",
+          "radius": 2,
+          "items": [{ "type": "text", "text": "50 MPH", "height": 12, "font": "RG2014D" }]
+        },
+        { "type": "arrow", "direction": "split-left", "height": 30 },
+        { "type": "arrow", "direction": "up", "height": 30 }
+      ]
+    }
+  ]
+}

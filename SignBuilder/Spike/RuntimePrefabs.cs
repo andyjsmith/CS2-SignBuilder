@@ -82,9 +82,11 @@ namespace SignBuilder.Spike
         /// <summary>
         /// Registers a static object prefab named <paramref name="name"/> that renders an existing
         /// geometry asset with one surface per submesh. Used both for new builds and to re-create
-        /// prefabs from stored asset ids before a save loads. Returns null if it already exists.
+        /// prefabs from stored asset ids before a save loads. Returns null if it already exists. <paramref name="lod"/>
+        /// (optional) is a low-detail geometry with the same submeshes, shown at a distance.
         /// </summary>
-        public StaticObjectPrefab Register(string name, GeometryAsset geometry, SurfaceAsset[] surfaces, Bounds3 bounds, int indexCount, int vertexCount)
+        public StaticObjectPrefab Register(string name, GeometryAsset geometry, SurfaceAsset[] surfaces, Bounds3 bounds, int indexCount, int vertexCount,
+            (GeometryAsset geometry, int indexCount, int vertexCount)? lod = null)
         {
             if (name.StartsWith("SignBuilder_A_")) Core.AssetNames.Add(name);
             if (m_PrefabSystem.TryGetPrefab(new PrefabID(nameof(StaticObjectPrefab), name), out var existing)) return existing as StaticObjectPrefab;
@@ -98,6 +100,21 @@ namespace SignBuilder.Spike
             renderPrefab.meshCount = surfaces.Length;
             var size = bounds.max - bounds.min;
             renderPrefab.surfaceArea = size.x * size.y;
+            if (lod != null)
+            {
+                var lodPrefab = ScriptableObject.CreateInstance<RenderPrefab>();
+                lodPrefab.name = name + "_Mesh_LOD1";
+                lodPrefab.geometryAsset = lod.Value.geometry;
+                lodPrefab.surfaceAssets = surfaces;
+                lodPrefab.bounds = bounds;
+                lodPrefab.indexCount = lod.Value.indexCount;
+                lodPrefab.vertexCount = lod.Value.vertexCount;
+                lodPrefab.meshCount = surfaces.Length;
+                lodPrefab.surfaceArea = renderPrefab.surfaceArea;
+                if (!m_PrefabSystem.AddPrefab(lodPrefab)) throw new InvalidOperationException($"PrefabSystem.AddPrefab failed for {lodPrefab.name}");
+                var lods = renderPrefab.AddComponent<LodProperties>();
+                lods.m_LodMeshes = new[] { lodPrefab };
+            }
 
             var objectPrefab = ScriptableObject.CreateInstance<StaticObjectPrefab>();
             objectPrefab.name = name;

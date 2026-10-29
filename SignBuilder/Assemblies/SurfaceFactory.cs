@@ -40,17 +40,19 @@ namespace SignBuilder.Assemblies
             return surface;
         }
 
-        /// <summary>A sign face: the baked texture, matte non-metallic, transparent corners cut out.</summary>
-        public static SurfaceAsset SignFace(ILocalAssetDatabase database, string folder, SurfaceAsset template, Texture2D face, string key)
+        /// <summary>
+        /// A sign face: the baked texture, matte non-metallic, transparent corners cut out. <paramref name="glow"/> is its
+        /// self-illumination: faint (retroreflective sheeting) by default, brighter for signs with lights.
+        /// </summary>
+        public static SurfaceAsset SignFace(ILocalAssetDatabase database, string folder, SurfaceAsset template, Texture2D face, string key, float glow = 0.3f)
         {
             face = Savable(face);
             return Create(database, folder, "SignBuilder_Face_" + key.Substring(0, Math.Min(12, key.Length)), template, face, FaceMask(), m =>
             {
                 if (m.HasProperty("_AlphaCutoffEnable")) m.SetFloat("_AlphaCutoffEnable", 1f);
                 if (m.HasProperty("_AlphaCutoff")) m.SetFloat("_AlphaCutoff", 0.5f);
-                // A faint self-illumination stands in for retroreflective sheeting at night.
                 if (m.HasProperty("_EmissiveColorMap")) m.SetTexture("_EmissiveColorMap", face);
-                if (m.HasProperty("_EmissiveColor")) m.SetColor("_EmissiveColor", Color.white * 0.3f);
+                if (m.HasProperty("_EmissiveColor")) m.SetColor("_EmissiveColor", Color.white * glow);
             });
         }
 

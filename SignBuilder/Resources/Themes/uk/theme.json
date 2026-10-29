@@ -2,14 +2,14 @@
   "id": "uk",
   "name": "United Kingdom",
   "description": "TSRGD direction signs (Transport and Motorway fonts)",
-  "units": "mm",
+  "units": "in",
   "defaults": {
     "font": "TransportMedium",
-    "textHeight": 350,
-    "shieldHeight": 380,
-    "arrowHeight": 490,
-    "border": 40,
-    "cornerRadius": 80,
+    "textHeight": 14.0,
+    "shieldHeight": 15.0,
+    "arrowHeight": 19.5,
+    "border": 1.6,
+    "cornerRadius": 3.1,
     "lineGap": 0.6,
     "margin": 0.6,
     "itemGap": 0.45,
@@ -134,14 +134,14 @@
     "exitTab": false,
     "exitOnly": false
   },
-  "laneWidth": 4000,
+  "laneWidth": 157.48031496062993,
   "parts": [
     {
       "label": "Text",
       "item": {
         "type": "text",
         "text": "Destination",
-        "height": 350
+        "height": 14.0
       }
     },
     {
@@ -150,7 +150,7 @@
         "type": "shield",
         "network": "AP",
         "number": "1",
-        "height": 380
+        "height": 15.0
       }
     },
     {
@@ -159,7 +159,7 @@
         "type": "shield",
         "network": "J",
         "number": "12",
-        "height": 380
+        "height": 15.0
       }
     },
     {
@@ -167,7 +167,7 @@
       "item": {
         "type": "arrow",
         "direction": "up",
-        "height": 490
+        "height": 19.5
       }
     },
     {
@@ -175,7 +175,7 @@
       "item": {
         "type": "text",
         "text": "1 mile",
-        "height": 260
+        "height": 10.0
       }
     },
     {
@@ -187,7 +187,7 @@
           {
             "type": "text",
             "text": "Destination",
-            "height": 280
+            "height": 11.0
           }
         ]
       }
@@ -204,6 +204,73 @@
         "type": "row",
         "align": "center",
         "items": []
+      }
+    },
+    {
+      "label": "Column",
+      "item": {
+        "type": "stack",
+        "align": "center",
+        "items": []
+      }
+    },
+    {
+      "label": "Split columns",
+      "item": {
+        "type": "row",
+        "align": "start",
+        "items": [
+          {
+            "type": "stack",
+            "align": "center",
+            "items": [
+              {
+                "type": "text",
+                "text": "Destination",
+                "height": 14.0
+              }
+            ]
+          },
+          {
+            "type": "divider"
+          },
+          {
+            "type": "stack",
+            "align": "center",
+            "items": [
+              {
+                "type": "text",
+                "text": "Destination",
+                "height": 14.0
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "label": "Lane arrows",
+      "item": {
+        "type": "row",
+        "align": "center",
+        "justify": "between",
+        "items": [
+          {
+            "type": "arrow",
+            "direction": "turn-left",
+            "height": 24.375
+          },
+          {
+            "type": "arrow",
+            "direction": "split-left",
+            "height": 24.375
+          },
+          {
+            "type": "arrow",
+            "direction": "up",
+            "height": 24.375
+          }
+        ]
       }
     }
   ]

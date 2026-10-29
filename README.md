@@ -10,12 +10,14 @@ Interstate, US and state shields, exit tabs and EXIT ONLY panels), Germany, Unit
 1. Click **SB** in the top-left toolbar to open the designer.
 2. Pick a theme and start from one of its templates (or a blank sign). Click any part of the preview to
    select it (its text box takes the caret) and edit it on the right. Add parts from the theme's palette
-   (text, route numbers, arrows, distances, panels, rows); drag parts in the list to reorder them or drop
-   them onto a Row to put them side by side. Set the colors (or custom colors), width, alignment, and for
+   (text, route numbers, arrows including curved turn and split lane arrows, distances, panels such as a
+   yellow advisory speed plate, rows, columns, and split columns with a divider between them); drag parts
+   in the list to reorder them or drop them onto a Row or Column to group them. A row can be spread out
+   across the sign (lane arrows under their lanes); text has a letter spacing setting. Set the colors (or custom colors), width, alignment, and for
    US signs an exit tab or EXIT ONLY panel. **Save current as template** keeps the sign as a JSON file in
    `ModsData/SignBuilder/Templates`.
-3. **Place Standalone** puts the sign on roadside posts, snapped beside a road or freely placed
-   (right-drag rotates, Page Up / Page Down raise and lower).
+3. **Place Standalone** puts the sign on roadside posts, snapped beside a road (Shift + mouse wheel sets
+   its distance from the road) or freely placed (right-drag rotates, Page Up / Page Down raise and lower).
 4. **Place on gantry** asks for a road, pins the structure there with a live preview and opens the
    arrangement panel: a to-scale view of the lanes as drivers see them. Add signs (any theme), drag them
    sideways (they snap to lane centers, remembered from the nearer edge: "rightmost lane", "2nd lane from
@@ -85,7 +87,8 @@ If the requested save id is stale the harness loads the test save (`ModTest`) by
 
 ## Themes
 
-A theme is a folder with `theme.json`: its name and units (`in` or `mm`), default sizes, fonts (file,
+A theme is a folder with `theme.json`: its name, default sizes (every built-in theme uses the same size unit,
+roughly inches of a full-size sign), fonts (file,
 label, and `scale`/`offset`: em size and vertical offset per letter height, from the font's cap height),
 color schemes, route plates (`img` artwork, `ellipse`, colored `rect` plates with optional border and
 prefix such as "A " or "E ", or `plain` colored text), the arrow outline, features (exit tab, EXIT ONLY),
@@ -93,7 +96,7 @@ the parts palette and a `templates/` folder. Built-in themes live in `SignBuilde
 players add theirs in `ModsData/SignBuilder/Themes/<id>`. A player folder with a built-in theme's id and
 no `theme.json` supplies extra files for it, such as fonts that cannot ship with the mod (the Nordic theme
 picks up `Tratex.ttf` or `Trafikkalfabetet.ttf` there). Switching a sign's theme in the designer keeps its
-text and scales its sizes; plates and colors the new theme lacks fall back to its defaults.
+text and sizes; plates and colors the new theme lacks fall back to its defaults.
 
 ## Credits
 
@@ -106,5 +109,6 @@ text and scales its sizes; plates and colors the new theme lacks fall back to it
 
 ## Roadmap
 
-- More themes (and per-country spacing rules); diagrammatic and lane-arrow signs aligned to detected lanes
+- More themes (and per-country spacing rules); lane arrows placed automatically over the detected lanes
+- Sign lights are fixtures and a brighter face at night; they do not cast light into the scene yet
 - Structures placed before the save-recipe change cannot be rebuilt on other PCs (re-place them)

@@ -6,7 +6,7 @@ import { Choice } from "./Controls";
 import { ArrowIcon } from "./Icons";
 import styles from "./SignEditor.module.scss";
 
-type PlaceInfo = { free?: boolean; angle?: number; elevation?: number; width?: number; scale?: number; posts?: boolean };
+type PlaceInfo = { free?: boolean; angle?: number; elevation?: number; width?: number; scale?: number; posts?: boolean; bottom?: number; gap?: number };
 
 /** The small bar at the top of the screen while placing a roadside sign or choosing where a gantry goes. */
 export const PlacementBar = (props: { status: string; onBack: () => void; onClose: () => void }) => {
@@ -31,9 +31,11 @@ export const PlacementBar = (props: { status: string; onBack: () => void; onClos
             <Step action="rotateLeft" title="Rotate left (or right-drag)">-15°</Step>
             <div className={styles.barValueSmall}>{`${Math.round(info.angle ?? 0)}°`}</div>
             <Step action="rotateRight" title="Rotate right (or right-drag)">+15°</Step>
-            <div className={styles.barLabel} style={{ marginLeft: "16rem" }}>Height</div>
+            <div className={styles.barLabel} style={{ marginLeft: "16rem" }}>{info.posts ? "Sign bottom" : "Base"}</div>
             <Step action="lower" title="Lower (Page Down)"><ArrowIcon direction="down" size={12} /></Step>
-            <div className={styles.barValueSmall}>{`${(info.elevation ?? 0).toFixed(1)} m`}</div>
+            <div className={styles.barValueSmall}>{info.posts
+              ? `${(info.bottom ?? 0).toFixed(2)} m`
+              : `${(info.elevation ?? 0) >= 0 ? "+" : ""}${(info.elevation ?? 0).toFixed(2)} m`}</div>
             <Step action="raise" title="Raise (Page Up)"><ArrowIcon direction="up" size={12} /></Step>
           </div>
         )}
@@ -43,8 +45,17 @@ export const PlacementBar = (props: { status: string; onBack: () => void; onClos
             <Step action="smaller">-</Step>
             <div className={styles.barValueSmall}>{`${Math.round((info.scale ?? 1) * 100)}%`}</div>
             <Step action="larger">+</Step>
+            {!info.free && (
+              <>
+                <div className={styles.barLabel} style={{ marginLeft: "16rem" }}>From road</div>
+                <Step action="closer" title="Closer to the road (Shift + mouse wheel)">-</Step>
+                <div className={styles.barValueSmall}>{`${(info.gap ?? 0).toFixed(2)} m`}</div>
+                <Step action="farther" title="Farther from the road (Shift + mouse wheel)">+</Step>
+              </>
+            )}
           </div>
         )}
+        {info.posts && !info.free && <div className={styles.hint}>Shift + mouse wheel moves the sign closer to or farther from the road.</div>}
         <div className={styles.actions}>
           <Button variant="flat" onSelect={props.onBack}><div className={styles.flatLabel}>Back to editor</div></Button>
         </div>

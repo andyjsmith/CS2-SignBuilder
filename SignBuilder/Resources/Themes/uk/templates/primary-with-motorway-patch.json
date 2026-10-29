@@ -11,12 +11,12 @@
           "type": "shield",
           "network": "M",
           "number": "62",
-          "height": 350
+          "height": 14.0
         },
         {
           "type": "text",
           "text": "Manchester",
-          "height": 300
+          "height": 12.0
         }
       ]
     },

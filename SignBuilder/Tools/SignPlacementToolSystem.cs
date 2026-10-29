@@ -51,6 +51,8 @@ namespace SignBuilder.Tools
         private int m_LaneCount;
         private AssemblyPlacement? m_LastPlacement;
         private int m_FacesVersion;
+        // The arrangement changed since it was opened (a new gantry is always unsaved).
+        private bool m_Changed;
 
         // Right mouse button in free placement: a drag rotates, a click without dragging cancels.
         private bool m_RightDown;
@@ -103,6 +105,7 @@ namespace SignBuilder.Tools
         private void Activate(Mode mode)
         {
             m_Mode = mode;
+            m_Changed = false;
             m_PreviewKey = null;
             m_ToolSystem.activeTool = this;
             Status();
@@ -126,7 +129,7 @@ namespace SignBuilder.Tools
             {
                 Mode.Posts => (m_Options.Free ? "Click to place the sign" : "Click beside a road to place the sign") + replacing + ". Right-click to stop.",
                 Mode.PickRoad => (m_Options.Free ? "Click where the gantry should stand" : "Click a road for the gantry") + replacing + ". Right-click to stop.",
-                _ => m_Replacing != Entity.Null ? "Arrange the signs, then press Save." : "Arrange the signs, then press Build. Click another road to move the gantry.",
+                _ => "",
             });
         }
 
@@ -177,8 +180,10 @@ namespace SignBuilder.Tools
                 case "road": m_Options.Free = false; break;
                 case "rotateLeft": m_Options.Angle = (m_Options.Angle + 345f) % 360f; break;
                 case "rotateRight": m_Options.Angle = (m_Options.Angle + 15f) % 360f; break;
-                case "raise": m_Options.Elevation = math.min(m_Options.Elevation + 0.5f, 40f); break;
-                case "lower": m_Options.Elevation = math.max(m_Options.Elevation - 0.5f, 0f); break;
+                case "raise": m_Options.Elevation = math.min(m_Options.Elevation + 0.25f, 40f); break;
+                case "lower": m_Options.Elevation = math.max(m_Options.Elevation - 0.25f, MinElevation); break;
+                case "closer": m_Options.RoadGap = math.max(m_Options.RoadGap - 0.25f, kMinRoadGap); break;
+                case "farther": m_Options.RoadGap = math.min(m_Options.RoadGap + 0.25f, 30f); break;
                 case "wider": m_Options.FreeWidth = math.min(m_Options.FreeWidth + 1f, 60f); break;
                 case "narrower": m_Options.FreeWidth = math.max(m_Options.FreeWidth - 1f, 4f); break;
                 case "smaller": m_Options.SignScale = Step(m_Options.SignScale, -1); break;
@@ -188,6 +193,15 @@ namespace SignBuilder.Tools
             Status();
         }
 
+        /// <summary>Closest a roadside sign's edge may come to the road's edge (negative: over the shoulder).</summary>
+        private const float kMinRoadGap = -1f;
+
+        /// <summary>
+        /// How far free placement may sink below the clicked surface: a roadside sign until its bottom edge is
+        /// near the ground, a gantry until its signs reach the road.
+        /// </summary>
+        private float MinElevation => m_Options.Type == "ground" ? 0.2f - GantryFactory.kGroundClearance : -5f;
+
         /// <summary>Sign size steps of 5% of the default size (shown to players as 100%).</summary>
         private static float Step(float scale, int direction)
         {
@@ -196,6 +210,9 @@ namespace SignBuilder.Tools
         }
 
         private float3 m_FreePoint;
+
+        /// <summary>The lowest overhead signs may go: their bottom edge at the road surface.</summary>
+        private const float kMinOverheadClearance = 5.3f;
 
         private void RepinFree() => m_Pinned = PlacementContext.FreeSnap(m_FreePoint, m_Options.Angle, m_Options);
 
@@ -209,14 +226,31 @@ namespace SignBuilder.Tools
             JObject a;
             try { a = JObject.Parse(json); } catch { return; }
             var i = (int?)a["index"] ?? -1;
-            switch ((string)a["op"])
+            var op = (string)a["op"];
+            if (op != "view" && op != "build" && op != "cancel") m_Changed = true;
+            switch (op)
             {
                 case "type": m_Options.Type = (string)a["value"]; break;
                 case "span": m_Options.Span = (string)a["value"]; break;
                 case "side": m_Options.LeftSide = (string)a["value"] == "left"; break;
                 case "reverse": m_Options.Reverse = (bool?)a["value"] ?? false; break;
                 case "scale": m_Options.SignScale = Step(m_Options.SignScale, (int?)a["value"] ?? 0); break;
-                case "lift": m_Options.Lift = math.clamp(m_Options.Lift + ((float?)a["value"] ?? 0f), -1f, 6f); break;
+                case "lift": m_Options.Lift = math.clamp(m_Options.Lift + ((float?)a["value"] ?? 0f), -kMinOverheadClearance, 6f); break;
+                case "lights": m_Options.Lights = (bool?)a["value"] ?? false; break;
+                case "duplicateSign":
+                    if (i >= 0 && i < m_Designs.Count)
+                    {
+                        var copy = m_Options.Slot(i).Clone();
+                        var back = m_ViewBack;
+                        m_ViewBack = copy.Back;
+                        AddSign((JObject)m_Designs[i].DeepClone());
+                        m_ViewBack = back;
+                        // Next to the original (overlaps are pushed apart).
+                        var slot = m_Options.Signs[m_Designs.Count - 1];
+                        slot.Mode = copy.Mode == "auto" ? "auto" : "free";
+                        slot.Offset = copy.Mode == "auto" ? 0f : FreeOffsetOf(i) + 0.5f;
+                    }
+                    break;
                 case "view": m_ViewBack = (string)a["value"] == "back"; break;
                 case "addRoads": // test hook: every road alongside
                     m_Options.ExtraRoads = Enumerable.Range(0, m_Pinned?.Carriageways.Count ?? 0).ToList();
@@ -306,8 +340,28 @@ namespace SignBuilder.Tools
                 }
             }
             var center = lanes.Length > 0 ? lanes.Average() : 0f;
+            // Over any other lane (one carrying the other direction, or on a road the span does not include).
+            if (snap && p.AllLanes != null)
+            {
+                foreach (var l in p.AllLanes)
+                {
+                    var lx = m_ViewBack ? -l.x : l.x;
+                    if (math.abs(lx - x) < 0.75f) { x = lx; break; }
+                }
+            }
             slot.Mode = "free";
             slot.Offset = x - center;
+        }
+
+        /// <summary>Sign <paramref name="index"/>'s position as a free-mode offset in its side's view.</summary>
+        private float FreeOffsetOf(int index)
+        {
+            if (m_LastPlacement == null) return 0f;
+            var p = m_LastPlacement.Value;
+            var back = m_Options.Slot(index).Back;
+            var lanes = (back ? p.BackLaneXs : p.LaneXs) ?? System.Array.Empty<float>();
+            var x = p.SignXs != null && index < p.SignXs.Length ? p.SignXs[index] : 0f;
+            return (back ? -x : x) - (lanes.Length > 0 ? lanes.Average() : 0f);
         }
 
         private void CancelArrange()
@@ -354,6 +408,8 @@ namespace SignBuilder.Tools
             return new JObject
             {
                 ["lanes"] = new JArray((m_ViewBack ? p.BackLaneXs : p.LaneXs) ?? System.Array.Empty<float>()),
+                // Every lane alongside, in this side's view: x and whether its traffic faces this side.
+                ["allLanes"] = new JArray((p.AllLanes ?? System.Array.Empty<float2>()).Select(l => new JArray(V(l.x), (l.y > 0) != m_ViewBack))),
                 ["deck"] = new JArray(deck.x, deck.y),
                 ["structure"] = new JArray(structure.x, structure.y),
                 ["posts"] = new JArray((p.PostXs ?? System.Array.Empty<float>()).Select(V)),
@@ -367,7 +423,8 @@ namespace SignBuilder.Tools
                 ["type"] = m_Options.Type, ["span"] = m_Options.Span, ["side"] = m_Options.LeftSide ? "left" : "right",
                 ["reverse"] = m_Options.Reverse, ["free"] = m_Options.Free, ["scale"] = m_Options.SignScale / LayoutOptions.kDefaultScale,
                 ["lift"] = m_Options.Lift, ["angle"] = m_Options.Angle, ["elevation"] = m_Options.Elevation, ["width"] = m_Options.FreeWidth,
-                ["replacing"] = m_Replacing != Entity.Null, ["busy"] = m_Busy,
+                ["replacing"] = m_Replacing != Entity.Null, ["busy"] = m_Busy, ["lights"] = m_Options.Lights,
+                ["dirty"] = m_Changed || m_Replacing == Entity.Null,
             }.ToString(Formatting.None);
         }
 
@@ -376,6 +433,8 @@ namespace SignBuilder.Tools
         {
             ["free"] = m_Options.Free, ["angle"] = m_Options.Angle, ["elevation"] = m_Options.Elevation, ["width"] = m_Options.FreeWidth,
             ["scale"] = m_Options.SignScale / LayoutOptions.kDefaultScale, ["posts"] = m_Mode == Mode.Posts,
+            // Roadside signs: height of the sign's bottom edge above the ground, and its gap to the road's edge.
+            ["bottom"] = m_Options.Elevation + GantryFactory.kGroundClearance, ["gap"] = m_Options.RoadGap,
         }.ToString(Formatting.None);
 
         /// <summary>Sign sizes in meters at the current scale; signs still baking use a placeholder size.</summary>
@@ -397,18 +456,19 @@ namespace SignBuilder.Tools
         protected override JobHandle OnUpdate(JobHandle inputDeps)
         {
             applyAction.shouldBeEnabled = !m_Busy;
-            cancelAction.shouldBeEnabled = true;
+            // While arranging, Escape belongs to the arrangement panel (which asks before discarding changes).
+            cancelAction.shouldBeEnabled = m_Mode != Mode.Arrange;
 
             // Free placement: right-drag rotates like vanilla prop placement; a right click without a drag
             // still cancels (on release). Other cancel inputs (Escape) work as usual.
             var mouse = UnityEngine.InputSystem.Mouse.current;
             var rotating = m_Options.Free && mouse != null;
-            if (rotating && TrackRightDrag(mouse))
+            if (rotating && TrackRightDrag(mouse) && m_Mode != Mode.Arrange)
             {
                 Cancel();
                 return base.OnUpdate(inputDeps);
             }
-            if (cancelAction.WasPressedThisFrame() && !(rotating && (mouse.rightButton.isPressed || mouse.rightButton.wasReleasedThisFrame)))
+            if (m_Mode != Mode.Arrange && cancelAction.WasPressedThisFrame() && !(rotating && (mouse.rightButton.isPressed || mouse.rightButton.wasReleasedThisFrame)))
             {
                 Cancel();
                 return base.OnUpdate(inputDeps);
@@ -437,6 +497,7 @@ namespace SignBuilder.Tools
                 if (snap != null && !m_Busy && applyAction.WasPressedThisFrame())
                 {
                     var road = m_Options.Free ? -1 : RoadAlongside(entity);
+                    m_Changed = true;
                     if (road > 0 && m_Options.Span != "cantilever" && road != m_LastPlacement?.BaseRoad)
                     {
                         if (!m_Options.ExtraRoads.Remove(road)) m_Options.ExtraRoads.Add(road);
@@ -484,7 +545,16 @@ namespace SignBuilder.Tools
         private void HandleKeys()
         {
             var keyboard = UnityEngine.InputSystem.Keyboard.current;
-            if (keyboard == null || !m_Options.Free) return;
+            if (keyboard == null) return;
+            // Shift + mouse wheel: a roadside sign's distance from the road.
+            var mouse = UnityEngine.InputSystem.Mouse.current;
+            if (m_Mode == Mode.Posts && !m_Options.Free && mouse != null && keyboard.shiftKey.isPressed)
+            {
+                var wheel = mouse.scroll.ReadValue().y;
+                if (wheel > 0.01f) Adjust("farther");
+                else if (wheel < -0.01f) Adjust("closer");
+            }
+            if (!m_Options.Free) return;
             if (keyboard.pageUpKey.wasPressedThisFrame) Adjust("raise");
             if (keyboard.pageDownKey.wasPressedThisFrame) Adjust("lower");
         }
@@ -561,6 +631,7 @@ namespace SignBuilder.Tools
             {
                 m_Pinned = null;
                 Deactivate();
+                m_UI.SetEditorOpen(false);
             });
         }
 

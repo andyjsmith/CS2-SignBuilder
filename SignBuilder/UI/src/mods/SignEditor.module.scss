@@ -1,6 +1,6 @@
 // Gameface supports a subset of CSS: flexbox works but `gap` does not, so spacing uses margins.
 .panel { width: 1180rem; }
-.body { display: flex; flex-direction: row; align-items: stretch; padding: 8rem; }
+.body { position: relative; display: flex; flex-direction: row; align-items: stretch; padding: 8rem; }
 .column { width: 280rem; display: flex; flex-direction: column; }
 .center { flex: 1; display: flex; flex-direction: column; align-items: center; margin: 0 12rem; }
 .heading { font-size: 14rem; font-weight: bold; color: rgba(255, 255, 255, 0.9); margin: 10rem 0 4rem 0; text-transform: uppercase; }
@@ -29,7 +29,7 @@
 .swatchOn { border: 3rem solid #ffd400; }
 .optionRow { display: flex; flex-direction: row; justify-content: center; }
 .optionGroup { display: flex; flex-direction: column; align-items: center; margin: 0 10rem; }
-.barRow { display: flex; flex-direction: row; align-items: center; margin: 3rem 0; }
+.barRow { display: flex; flex-direction: row; align-items: center; margin: 2rem 0; }
 .barLabel { font-size: 13rem; color: rgba(255, 255, 255, 0.75); margin-right: 8rem; }
 .barValue { min-width: 130rem; text-align: center; font-size: 14rem; color: #fff; white-space: nowrap; }
 .step { display: flex; align-items: center; justify-content: center; padding: 0 6rem; width: auto; min-width: 26rem; }
@@ -41,11 +41,12 @@
 .customColors > div { margin-right: 16rem; }
 .library { display: flex; flex-direction: column; }
 .libraryActions, .namingRow { display: flex; flex-direction: row; flex-wrap: wrap; align-items: center; margin-bottom: 6rem; }
-.cards { display: flex; flex-direction: row; flex-wrap: wrap; max-height: 620rem; overflow-y: scroll; }
+.cards { height: 440rem; }
+.cardRow { display: flex; flex-direction: row; align-items: flex-start; }
 .card { position: relative; width: 134rem; margin: 0 6rem 6rem 0; padding: 4rem; border-radius: 4rem; background-color: rgba(255, 255, 255, 0.06); }
 .card:hover { background-color: rgba(255, 255, 255, 0.16); }
 .thumb { width: 124rem; height: 64rem; background-color: rgba(120, 140, 110, 0.45); border-radius: 3rem; }
-.cardName { font-size: 12rem; color: #fff; margin-top: 3rem; height: 30rem; overflow: hidden; }
+.cardName { font-size: 12rem; color: #fff; margin: 3rem 14rem 2rem 0; }
 .cardMenu { position: absolute; right: 4rem; bottom: 2rem; font-size: 14rem; color: rgba(255, 255, 255, 0.8); padding: 0 4rem; }
 .cardActions { position: absolute; left: 0; right: 0; top: 0; display: flex; flex-direction: column; padding: 4rem; background-color: rgba(20, 24, 30, 0.95); border-radius: 4rem; }
 .grip { margin-right: 8rem; }
@@ -54,14 +55,16 @@
 .hintInline { font-size: 11rem; color: rgba(255, 255, 255, 0.5); }
 /* --- arrangement --- */
 .arrange { width: 1240rem; }
-.arrangeBody { padding: 8rem 12rem; display: flex; flex-direction: column; align-items: stretch; }
+.arrangeBody { position: relative; padding: 6rem 12rem; display: flex; flex-direction: column; align-items: stretch; }
 .barGap { width: 18rem; }
 .barValueSmall { min-width: 60rem; text-align: center; font-size: 14rem; color: #fff; white-space: nowrap; }
-.diagram { position: relative; margin: 8rem 0 4rem 0; background-color: rgba(120, 150, 110, 0.35); border-radius: 4rem; overflow: hidden; }
+.diagram { position: relative; margin: 6rem 0 4rem 0; background-color: rgba(120, 150, 110, 0.35); border-radius: 4rem; overflow: hidden; }
 .deck { position: absolute; height: 26px; background-color: rgba(60, 62, 66, 0.95); }
-.lane, .laneOn { position: absolute; width: 36px; text-align: center; font-size: 12rem; color: rgba(255, 255, 255, 0.8); }
+.lane, .laneOn, .laneOther { position: absolute; width: 36px; display: flex; flex-direction: row; align-items: center; justify-content: center; font-size: 12rem; color: rgba(255, 255, 255, 0.8); }
+.laneOther { opacity: 0.55; }
 .laneOn { color: #ffd400; font-weight: bold; }
 .laneLine { position: absolute; width: 2px; height: 26px; background-color: rgba(255, 255, 255, 0.6); }
+.laneLineCenter { position: absolute; width: 2px; height: 26px; background-color: #e8b923; }
 .beam { position: absolute; height: 6px; background-color: #b9bec4; }
 .post { position: absolute; width: 6px; background-color: #b9bec4; }
 .signBox, .signBoxOn { position: absolute; }
@@ -74,3 +77,21 @@
 .primaryButtonOff { background-color: rgba(255, 255, 255, 0.15); color: rgba(255, 255, 255, 0.5); }
 .inlineRow { display: flex; flex-direction: row; align-items: center; }
 .deckOther { position: absolute; height: 26px; background-color: rgba(60, 62, 66, 0.35); }
+.choiceRows { display: flex; flex-direction: column; align-items: flex-start; }
+.select { position: relative; width: 240rem; }
+.selectToggle { display: flex; flex-direction: row; align-items: center; padding: 4rem 8rem; font-size: 14rem; color: #fff; background-color: rgba(0, 0, 0, 0.35); border: 1rem solid rgba(255, 255, 255, 0.3); border-radius: 3rem; }
+.selectToggle:hover { background-color: rgba(255, 255, 255, 0.12); }
+.selectCaret { margin-left: 6rem; font-size: 12rem; }
+.selectMenu { position: absolute; left: 0; right: 0; top: 30rem; padding: 3rem; background-color: rgba(24, 28, 34, 0.98); border: 1rem solid rgba(255, 255, 255, 0.25); border-radius: 3rem; z-index: 10; }
+.selectItem, .selectItemOn { padding: 4rem 8rem; font-size: 14rem; color: #fff; border-radius: 2rem; }
+.selectItem:hover { background-color: rgba(255, 255, 255, 0.15); }
+.selectItemOn { background-color: rgba(80, 160, 255, 0.5); }
+.searchRow { margin-bottom: 6rem; }
+.rowLabel { flex: 1; }
+.rowDelete { padding: 2rem 4rem; margin-left: 6rem; border-radius: 3rem; opacity: 0.6; }
+.rowDelete:hover { opacity: 1; background-color: rgba(220, 60, 60, 0.6); }
+.confirmShade { position: absolute; left: 0; top: 0; right: 0; bottom: 0; display: flex; align-items: center; justify-content: center; background-color: rgba(0, 0, 0, 0.55); }
+.confirmBox { display: flex; flex-direction: column; align-items: center; padding: 16rem 20rem; border-radius: 6rem; background-color: rgba(30, 36, 44, 0.98); }
+.confirmText { font-size: 15rem; color: #fff; margin-bottom: 12rem; }
+.dangerButton { padding: 5rem 14rem; margin-right: 10rem; font-size: 14rem; font-weight: bold; color: #fff; border-radius: 4rem; background-color: #b23a3a; }
+.dangerButton:hover { background-color: #cc4545; }

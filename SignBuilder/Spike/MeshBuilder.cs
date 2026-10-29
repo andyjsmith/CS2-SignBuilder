@@ -21,6 +21,14 @@ namespace SignBuilder.Spike
 
         public MeshBuilder() => m_Triangles = m_Submeshes[0];
 
+        /// <summary>
+        /// While set, tubes are built with few sides (thin bars as triangular prisms): the low-detail model shown
+        /// at a distance (the prefab's LOD).
+        /// </summary>
+        public static bool LowDetail { get; set; }
+
+        private static int Sides(int segments, float radius) => !LowDetail ? segments : radius < 0.06f ? 3 : System.Math.Min(segments, 6);
+
         /// <summary>Triangles added from now on go to submesh <paramref name="index"/> (one material each).</summary>
         public void UseSubmesh(int index)
         {
@@ -58,6 +66,7 @@ namespace SignBuilder.Spike
         /// <summary>Adds a capped round tube from <paramref name="a"/> to <paramref name="b"/>. U wraps the circumference, V runs along the length.</summary>
         public void AddTube(Vector3 a, Vector3 b, float radius, int segments = 16)
         {
+            segments = Sides(segments, radius);
             var axis = b - a;
             var length = axis.magnitude;
             var dir = axis / length;
@@ -91,6 +100,7 @@ namespace SignBuilder.Spike
         public void AddSweptTube(IList<Vector3> path, float radius, int segments = 18)
         {
             if (path.Count < 2) return;
+            segments = Sides(segments, radius);
             var circumference = 2 * Mathf.PI * radius;
             var uvScale = UvPerMeter > 0 ? UvPerMeter : 1f;
             var tangent0 = (path[1] - path[0]).normalized;

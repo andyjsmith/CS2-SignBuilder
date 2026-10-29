@@ -54,12 +54,18 @@ namespace SignBuilder.Assemblies
         {
             ["Id"] = Id, ["Support"] = Support, ["Reverse"] = Reverse, ["Designs"] = new JArray(Designs),
             ["SupportSpec"] = SupportSpec == null ? null : JObject.FromObject(SupportSpec), ["SignCenters"] = SignCenters == null ? null : new JArray(SignCenters),
+            // Sign size, back-side signs and lights come from the options.
+            ["Context"] = Context == null ? null : JObject.FromObject(Context),
         };
 
         public static AssemblyRecord FromPortable(JObject json) => json.ToObject<AssemblyRecord>();
 
         // Local asset ids (this PC's cache database).
         public string GeometryId;
+        /// <summary>The low-detail model shown at a distance (same submeshes and surfaces).</summary>
+        public string LodGeometryId;
+        public int LodIndexCount;
+        public int LodVertexCount;
         public List<string> SurfaceIds = new();
         public float[] Bounds; // min xyz, max xyz in assembly-local space
         public int IndexCount;

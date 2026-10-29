@@ -1,12 +1,14 @@
 import { useValue } from "cs2/api";
+import { BackConsumer } from "cs2/input";
 import { useEffect, useMemo, useState } from "react";
 import { Arrange } from "./Arrange";
 import {
-  arrange, cancelTool, editingDesign$, editorOpen$, replacing$, savePosts, setEditorOpen, startGantry, startPosts, templates$, themes$, toolMode$, toolStatus$,
+  arrange, arrangeInfo$, cancelTool, editingDesign$, editorOpen$, replacing$, savePosts, setEditorOpen, startGantry, startPosts, templates$, themes$, toolMode$, toolStatus$,
 } from "./bindings";
+import { Confirm } from "./Controls";
 import { Designer, DesignerAction } from "./Designer";
 import { registerThemes } from "./SignPreview";
-import { Theme, blankFor } from "./themeModel";
+import { Theme, blankFor, themeOf } from "./themeModel";
 import { Design, clone } from "./designModel";
 import { PlacementBar } from "./PlacementBar";
 import { Template } from "./TemplateLibrary";
@@ -18,9 +20,14 @@ type Context =
   | { kind: "gantrySign"; index: number }
   | { kind: "gantryAdd" };
 
+type Question = { message: string; onConfirm: () => void };
+
+const LOSE_GANTRY = "Close without building? The gantry and its changes will be lost.";
+
 /**
  * Sign Builder's UI root. The designer edits one sign; from there it goes on roadside posts (placement bar) or
  * onto a gantry (pick a road, then the arrangement panel, which can send a sign back to the designer to edit).
+ * Escape closes the dialog like the game's own; unsaved changes are asked about first.
  */
 export const SignEditor = () => {
   const open = useValue(editorOpen$);
@@ -29,6 +36,9 @@ export const SignEditor = () => {
   const status = useValue(toolStatus$);
   const mode = useValue(toolMode$);
   const replacing = useValue(replacing$);
+  const arrangeJson = useValue(arrangeInfo$);
+  // Whether closing the arrangement would lose anything (a new gantry, or changes to a placed one).
+  const gantryUnsaved = useMemo(() => { try { return arrangeJson ? JSON.parse(arrangeJson).dirty !== false : true; } catch { return true; } }, [arrangeJson]);
   const templates: Template[] = useMemo(() => { try { return JSON.parse(templatesJson); } catch { return []; } }, [templatesJson]);
   const themesJson = useValue(themes$);
   const themes: Theme[] = useMemo(() => { try { return JSON.parse(themesJson); } catch { return []; } }, [themesJson]);
@@ -36,6 +46,18 @@ export const SignEditor = () => {
 
   const [design, setDesign] = useState<Design>(blankFor());
   const [context, setContext] = useState<Context>({ kind: "new" });
+  // The design as last loaded, placed or saved: any difference is an unsaved change.
+  const [baseline, setBaseline] = useState(() => JSON.stringify(blankFor()));
+  const [question, setQuestion] = useState<Question | null>(null);
+  const dirty = JSON.stringify(design) !== baseline;
+  /** Loads a design (template, placed sign, blank): it starts out unchanged. */
+  const load = (d: Design) => { setDesign(d); setBaseline(JSON.stringify(d)); };
+  const settle = () => setBaseline(JSON.stringify(design));
+  /** Runs <then> now, or once the player confirms when there is something to lose. */
+  const guard = (unsaved: boolean, message: string, then: () => void) => {
+    if (!unsaved) then();
+    else setQuestion({ message, onConfirm: () => { setQuestion(null); then(); } });
+  };
 
   // A placed structure opened for editing (or a design pushed by the harness).
   useEffect(() => {
@@ -44,10 +66,10 @@ export const SignEditor = () => {
       const payload = JSON.parse(editing);
       const first = (payload.designs ?? [])[0];
       if (payload.kind === "posts" && first) {
-        setDesign(clone(first));
+        load(clone(first));
         setContext({ kind: "postsEdit" });
       } else if (payload.kind === "new" && first) {
-        setDesign(clone(first));
+        load(clone(first));
         setContext({ kind: "new" });
       } else {
         setContext({ kind: "new" });
@@ -60,14 +82,26 @@ export const SignEditor = () => {
     if (mode !== "arrange" && (context.kind === "gantrySign" || context.kind === "gantryAdd")) setContext({ kind: "new" });
   }, [mode]);
 
+  useEffect(() => { if (!open) setQuestion(null); }, [open]);
+
   if (!open) return null;
-  const close = () => { cancelTool(); setEditorOpen(false); };
+  const close = () => { setQuestion(null); cancelTool(); setEditorOpen(false); };
+  const overlay = question && (
+    <Confirm message={question.message} confirm="Discard" cancel="Keep editing" onConfirm={question.onConfirm} onCancel={() => setQuestion(null)} />
+  );
+  // Escape works like the game's own dialogs: it closes this one (or dismisses an open question).
+  const withBack = (content: any, onBack: () => void) => (
+    <BackConsumer onAction={() => (question ? setQuestion(null) : onBack())}>{content}</BackConsumer>
+  );
 
   if (mode === "arrange" && context.kind !== "gantrySign" && context.kind !== "gantryAdd") {
-    return (
-      <Arrange onClose={close}
-        onEditSign={(index, d) => { setDesign(clone(d)); setContext({ kind: "gantrySign", index }); }}
-        onAddSign={() => setContext({ kind: "gantryAdd" })} />
+    const closeGantry = (unsaved: boolean) => guard(unsaved, LOSE_GANTRY, close);
+    return withBack(
+      <Arrange overlay={overlay} onClose={closeGantry}
+        onCancel={(unsaved) => guard(unsaved, "Cancel this gantry? Its changes will be lost.", () => arrange({ op: "cancel" }))}
+        onEditSign={(index, d) => { load(clone(d)); setContext({ kind: "gantrySign", index }); }}
+        onAddSign={() => { load(blankFor(themeOf(themes, design))); setContext({ kind: "gantryAdd" }); }} />,
+      () => closeGantry(gantryUnsaved),
     );
   }
   if (mode === "posts" || mode === "pickRoad") {
@@ -80,33 +114,38 @@ export const SignEditor = () => {
     case "postsEdit":
       title = "Edit roadside sign";
       actions = replacing
-        ? [{ label: "Save", primary: true, onSelect: () => savePosts(design) },
-          { label: "Stop editing", title: "Keep the placed sign as it is", onSelect: () => { cancelTool(); setContext({ kind: "new" }); } }]
-        : [{ label: "Place Standalone", primary: true, onSelect: () => startPosts(design) }];
+        ? [{ label: "Save", primary: true, onSelect: () => { settle(); savePosts(design); } },
+          { label: "Stop editing", title: "Keep the placed sign as it is",
+            onSelect: () => guard(dirty, "Stop editing? Your changes to this sign will be lost.", () => { cancelTool(); settle(); setContext({ kind: "new" }); }) }]
+        : [{ label: "Place Standalone", primary: true, onSelect: () => { settle(); startPosts(design); } }];
       break;
     case "gantrySign":
       title = `Edit gantry sign ${context.index + 1}`;
       actions = [
         { label: "Done", primary: true, onSelect: () => { arrange({ op: "replaceSign", index: context.index, design }); setContext({ kind: "new" }); } },
-        { label: "Cancel", onSelect: () => setContext({ kind: "new" }) },
+        { label: "Cancel", onSelect: () => guard(dirty, "Discard your changes to this sign?", () => setContext({ kind: "new" })) },
       ];
       break;
     case "gantryAdd":
       title = "Add a sign to the gantry";
       actions = [
         { label: "Add to gantry", primary: true, onSelect: () => { arrange({ op: "addSign", design }); setContext({ kind: "new" }); } },
-        { label: "Cancel", onSelect: () => setContext({ kind: "new" }) },
+        { label: "Cancel", onSelect: () => guard(dirty, "Discard this sign?", () => setContext({ kind: "new" })) },
       ];
       break;
     default:
       actions = [
-        { label: "Place Standalone", primary: true, onSelect: () => startPosts(design) },
-        { label: "Place on gantry", primary: true, onSelect: () => startGantry([design]) },
+        { label: "Place Standalone", primary: true, onSelect: () => { settle(); startPosts(design); } },
+        { label: "Place on gantry", primary: true, onSelect: () => { settle(); startGantry([design]); } },
       ];
   }
 
-  return (
-    <Designer design={design} setDesign={setDesign} templates={templates} themes={themes} title={title} actions={actions}
-      status={mode === "off" ? status : ""} onClose={close} />
+  // Closing while one of a gantry's signs is open loses the whole gantry.
+  const inGantry = context.kind === "gantrySign" || context.kind === "gantryAdd";
+  const requestClose = () => guard(dirty || inGantry, inGantry ? LOSE_GANTRY : "Close the Sign Builder? Your changes to this sign will be lost.", close);
+  return withBack(
+    <Designer design={design} setDesign={setDesign} onLoad={load} onTemplateSaved={settle} templates={templates} themes={themes}
+      title={title} actions={actions} onClose={requestClose} overlay={overlay} />,
+    requestClose,
   );
 };

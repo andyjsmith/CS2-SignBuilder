@@ -66,6 +66,7 @@ namespace SignBuilder.Assemblies
             {
                 if (used.Contains(record.PrefabName)) continue;
                 DeleteAsset<GeometryAsset>(db, record.GeometryId, null);
+                if (record.LodGeometryId != null) DeleteAsset<GeometryAsset>(db, record.LodGeometryId, null);
                 // Surface 0 is the shared steel; the rest are this structure's sign faces (with their textures).
                 foreach (var id in record.SurfaceIds.Skip(1)) DeleteAsset<SurfaceAsset>(db, id, s =>
                 {

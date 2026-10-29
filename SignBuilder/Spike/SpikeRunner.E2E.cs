@@ -70,6 +70,7 @@ namespace SignBuilder.Spike
             yield return Test("e2e.infopanel", TestInfoPanel(ui, tool));
             yield return Test("e2e.free", TestFreePlacement(tool));
             yield return Test("e2e.standalone", TestStandalone(tool));
+            yield return Test("e2e.features", TestFeatures(tool));
             yield return Test("e2e.templates", TestTemplates(ui));
             yield return Test("e2e.themes", TestThemes(ui, tool));
             yield return Test("e2e.uipause", TestDesignerPause(ui));
@@ -254,6 +255,15 @@ namespace SignBuilder.Spike
             yield return new WaitForSecondsRealtime(0.5f);
             tool.Arrange("{\"op\":\"view\",\"value\":\"front\"}");
             yield return new WaitForSecondsRealtime(1f);
+            // Duplicate a sign (it lands beside the original), and lights under every sign.
+            tool.Arrange("{\"op\":\"duplicateSign\",\"index\":0}");
+            tool.Arrange("{\"op\":\"lights\",\"value\":true}");
+            yield return WaitArrange(tool, ui);
+            yield return new WaitForSecondsRealtime(1f);
+            var all = JObject.Parse(ui.ArrangeInfoJson);
+            SpikeReport.Set("e2e.arrange.duplicate", $"total={all["total"]} allLanes={all["allLanes"]?.Count()} dirty={all["dirty"]} {Arrangement(ui)}");
+            SpikeReport.Screenshot("e2e_arrange_duplicate.png");
+            yield return new WaitForSecondsRealtime(0.5f);
 
             var before = SignPlacementToolSystem.LastPlaced;
             tool.Arrange("{\"op\":\"build\"}");
@@ -396,6 +406,45 @@ namespace SignBuilder.Spike
         }
 
         /// <summary>
+        /// Newer placement options: a roadside sign close to the road, a free-placed one lowered below the default,
+        /// a gantry lowered almost to the road with lights, and the split-arrow template on a lit gantry.
+        /// </summary>
+        private IEnumerator TestFeatures(SignPlacementToolSystem tool)
+        {
+            var spot = m_Placed.FirstOrDefault(p => p.support == "straight-full");
+            if (spot.record == null) yield break;
+            var t = math.clamp(spot.t - 0.3f, 0.05f, 0.95f);
+            var close = Options("ground", "single");
+            close.RoadGap = 0.5f;
+            yield return PlaceAndWait(() => tool.PlaceForTest(spot.edge, t, new List<JObject> { Template("advance-guide") }, close));
+            SpikeReport.Set("e2e.features.roadGap", Describe(SignPlacementToolSystem.LastPlaced));
+            yield return Shoot(SignPlacementToolSystem.LastPlaced, "e2e_features_roadgap.png", 25f, 22f);
+
+            var em = World.DefaultGameObjectInjectionWorld.EntityManager;
+            var first = InstancesOf(m_Placed[0].record.PrefabName).FirstOrDefault();
+            var tr = em.GetComponentData<Game.Objects.Transform>(first);
+            var p = tr.m_Position + math.mul(tr.m_Rotation, new float3(1, 0, 0)) * 85f;
+            p.y = AssemblyBuilder.TerrainHeight(p);
+            var low = Options("ground", "single");
+            low.Elevation = -1.5f;
+            yield return PlaceAndWait(() => tool.PlaceFreeForTest(p, new List<JObject> { Template("gore-exit") }, low));
+            SpikeReport.Set("e2e.features.lowFree", Describe(SignPlacementToolSystem.LastPlaced));
+
+            var lowGantry = Options("singleTruss", "single");
+            lowGantry.Lift = -5f;
+            lowGantry.Lights = true;
+            yield return PlaceAndWait(() => tool.PlaceForTest(spot.edge, math.clamp(t + 0.12f, 0.05f, 0.95f), new List<JObject> { Template("guide-exit-only") }, lowGantry));
+            SpikeReport.Set("e2e.features.lowGantry", Describe(SignPlacementToolSystem.LastPlaced));
+            yield return Shoot(SignPlacementToolSystem.LastPlaced, "e2e_features_lowgantry.png", 160f, 25f);
+
+            var lit = Options("straight", "single");
+            lit.Lights = true;
+            yield return PlaceAndWait(() => tool.PlaceForTest(spot.edge, math.clamp(t + 0.24f, 0.05f, 0.95f), new List<JObject> { Template("split-lane-arrows") }, lit));
+            SpikeReport.Set("e2e.features.splitArrows", Describe(SignPlacementToolSystem.LastPlaced));
+            yield return Shoot(SignPlacementToolSystem.LastPlaced, "e2e_features_split.png", 180f, 30f);
+        }
+
+        /// <summary>
         /// Themes: every theme's templates in the designer (UI renderer), and a gantry mixing German, UK and Nordic
         /// signs (baked renderer) to check fonts, plates and metric sizes end to end.
         /// </summary>
@@ -507,7 +556,7 @@ namespace SignBuilder.Spike
         }
 
         private static string Describe(AssemblyRecord r) =>
-            $"spec={r.SupportSpec?.Kind}{(r.SupportSpec?.Mirror == true ? "(mirrored)" : "")}({string.Join(",", r.SupportSpec?.Args?.Select(a => a.ToString("F2")) ?? Array.Empty<string>())}) centers=[{string.Join(" ", r.Centers.Select(c => $"({c.x:F2},{c.y:F2})"))}]";
+            r == null ? "(none)" : $"lod={r.LodGeometryId != null} lights={r.Context?.Options?.Lights} spec={r.SupportSpec?.Kind}{(r.SupportSpec?.Mirror == true ? "(mirrored)" : "")}({string.Join(",", r.SupportSpec?.Args?.Select(a => a.ToString("F2")) ?? Array.Empty<string>())}) centers=[{string.Join(" ", r.Centers.Select(c => $"({c.x:F2},{c.y:F2})"))}]";
 
         private static void LookAt(Entity entity, float distance = 55f)
         {

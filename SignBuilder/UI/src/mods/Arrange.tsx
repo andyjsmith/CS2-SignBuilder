@@ -1,6 +1,6 @@
 import { useValue } from "cs2/api";
 import { Panel } from "cs2/ui";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { ReactNode, useEffect, useMemo, useRef, useState } from "react";
 import { adjust, arrange, arrangeInfo$, toolStatus$ } from "./bindings";
 import { Choice } from "./Controls";
 import { Design, SPANS, STRUCTURES } from "./designModel";
@@ -10,10 +10,10 @@ import styles from "./SignEditor.module.scss";
 
 type Sign = { index: number; x: number; w: number; h: number; ready: boolean; mode: string; lane: number; fromRight: boolean; offset: number; design: Design };
 type Info = {
-  lanes: number[]; deck: number[]; roads: [number, number, boolean][]; structure: number[]; posts: number[]; signs: Sign[];
-  type: string; span: string; side: string; reverse: boolean; free: boolean; scale: number; lift: number;
+  lanes: number[]; allLanes: [number, boolean][]; deck: number[]; roads: [number, number, boolean][]; structure: number[]; posts: number[]; signs: Sign[];
+  type: string; span: string; side: string; reverse: boolean; free: boolean; scale: number; lift: number; lights: boolean;
   view: string; otherSide: number; total: number;
-  angle: number; elevation: number; width: number; replacing: boolean; busy: boolean;
+  angle: number; elevation: number; width: number; replacing: boolean; busy: boolean; dirty: boolean;
 };
 
 const nth = (n: number) => (n === 2 ? "2nd" : n === 3 ? "3rd" : `${n}th`);
@@ -26,10 +26,18 @@ export function anchorLabel(s: Sign): string {
 }
 
 /**
- * The gantry arrangement panel: a to-scale view of the structure over the lanes it faces, as drivers see it.
- * Drag signs sideways (they snap to lane centers); pick the structure; Build makes it at the pinned road spot.
+ * The gantry arrangement panel, docked at the bottom of the screen: a to-scale view of the structure over the
+ * lanes it crosses, as drivers see it. Drag signs sideways (they snap to lane centers); pick the structure; Build
+ * makes it at the pinned road spot.
  */
-export const Arrange = (props: { onEditSign: (index: number, design: Design) => void; onAddSign: () => void; onClose: () => void }) => {
+export const Arrange = (props: {
+  onEditSign: (index: number, design: Design) => void;
+  onAddSign: () => void;
+  /** Close (X) or Cancel; the argument says whether anything would be lost. */
+  onClose: (unsaved: boolean) => void;
+  onCancel: (unsaved: boolean) => void;
+  overlay?: ReactNode;
+}) => {
   const json = useValue(arrangeInfo$);
   const status = useValue(toolStatus$);
   const info: Info | null = useMemo(() => { try { return json ? JSON.parse(json) : null; } catch { return null; } }, [json]);
@@ -43,9 +51,10 @@ export const Arrange = (props: { onEditSign: (index: number, design: Design) => 
   });
 
   const PanelAny: any = Panel;
+  const position = { x: 0.5, y: 0.995 };
   if (!info) {
     return (
-      <PanelAny draggable initialPosition={{ x: 0.5, y: 0.62 }} header="Gantry" className={styles.arrange} onClose={props.onClose}>
+      <PanelAny draggable initialPosition={position} header="Gantry" className={styles.arrange} onClose={() => props.onClose(true)}>
         <div className={styles.compactBody}><div className={styles.status}>{status || "Preparing..."}</div></div>
       </PanelAny>
     );
@@ -56,18 +65,20 @@ export const Arrange = (props: { onEditSign: (index: number, design: Design) => 
   const selPos = Math.max(0, signs.findIndex((s) => s.index === selected));
   const sel = Math.min(selPos, Math.max(0, signs.length - 1));
   const xOf = (i: number) => (drag && drag.index === i ? drag.x : signs[i].x);
+  const allLanes = info.allLanes ?? info.lanes.map((x) => [x, true] as [number, boolean]);
   // Visible range: deck, structure and signs, with a margin.
   const lefts = [info.deck[0], info.structure[0], ...info.roads.map((r) => r[0]), ...signs.map((s, i) => xOf(i) - s.w / 2)];
   const rights = [info.deck[1], info.structure[1], ...info.roads.map((r) => r[1]), ...signs.map((s, i) => xOf(i) + s.w / 2)];
   const min = Math.min(...lefts) - 1.5;
   const max = Math.max(...rights) + 1.5;
   const maxH = Math.max(2.5, ...signs.map((s) => s.h));
-  const scale = Math.min(areaWidth / (max - min), 150 / maxH);
+  const scale = Math.min(areaWidth / (max - min), 100 / maxH);
   const px = (x: number) => (x - min) * scale;
-  const beamY = 20 + (maxH * scale) / 2;
-  const roadY = beamY + (maxH * scale) / 2 + 34;
-  const height = roadY + 34;
-  const nearestLane = (x: number) => (info.lanes.length ? info.lanes.reduce((b, l, k) => (Math.abs(l - x) < Math.abs(info.lanes[b] - x) ? k : b), 0) : -1);
+  const beamY = 12 + (maxH * scale) / 2;
+  const roadY = beamY + (maxH * scale) / 2 + 26;
+  const height = roadY + 30;
+  const nearest = (xs: number[], x: number) => (xs.length ? xs.reduce((b, l, k) => (Math.abs(l - x) < Math.abs(xs[b] - x) ? k : b), 0) : -1);
+  const nearestLane = (x: number) => nearest(info.lanes, x);
 
   const startDrag = (e: any, i: number) => {
     setSelected(signs[i].index);
@@ -105,30 +116,52 @@ export const Arrange = (props: { onEditSign: (index: number, design: Design) => 
     arrange({ op: "slot", index: s.index, mode: "lane", lane: fromRight ? n - 1 - next : next, fromRight, offset: 0 });
   };
   const Step = (p: { onClick: () => void; children: any; title?: string }) => <div className={styles.step} title={p.title} onClick={p.onClick}>{p.children}</div>;
-  const dragLane = drag ? nearestLane(drag.x) : -1;
-  const snapping = drag && dragLane >= 0 && Math.abs(info.lanes[dragLane] - drag.x) < 0.75;
+  const Gap = () => <div className={styles.barGap} />;
+  const laneXs = allLanes.map((l) => l[0]);
+  const dragLane = drag ? nearest(laneXs, drag.x) : -1;
+  const snapping = drag && dragLane >= 0 && Math.abs(laneXs[dragLane] - drag.x) < 0.75;
+  // Lanes in order across the view; markings between neighbors on the same road.
+  const ordered = allLanes.map((l, k) => ({ x: l[0], faces: l[1], k })).sort((a, b) => a.x - b.x);
+  const unsaved = info.dirty !== false;
+  const ready = info.total > 0 && !info.busy && !signs.some((s) => !s.ready);
 
   return (
-    <PanelAny draggable initialPosition={{ x: 0.5, y: 0.62 }} header={info.replacing ? "Edit gantry" : "Gantry"} className={styles.arrange} onClose={props.onClose}>
+    <PanelAny draggable initialPosition={position} header={info.replacing ? "Edit gantry" : "Gantry"} className={styles.arrange} onClose={() => props.onClose(unsaved)}>
       <div className={styles.arrangeBody}>
         <div className={styles.barRow}>
+          <div className={ready ? styles.primaryButton : styles.primaryButtonOff} onClick={() => ready && arrange({ op: "build" })}>{info.replacing ? "Save" : "Build"}</div>
+          <div className={styles.chip} style={{ alignSelf: "center" }} onClick={props.onAddSign}>Add sign</div>
+          <div className={styles.chip} style={{ alignSelf: "center" }} onClick={() => arrange({ op: "auto" })}>Auto arrange</div>
+          <div className={styles.chip} style={{ alignSelf: "center" }} title="Click another spot on a road to move the gantry there" onClick={() => arrange({ op: "repick" })}>Move gantry</div>
+          <div className={styles.chip} style={{ alignSelf: "center" }} onClick={() => props.onCancel(unsaved)}>Cancel</div>
+          <Gap />
+          <Choice options={[
+            { value: "front", label: `Front side (${info.view === "back" ? info.otherSide : signs.length})` },
+            { value: "back", label: `Back side (${info.view === "back" ? signs.length : info.otherSide})`, title: "Signs on the other face of the structure, for traffic the other way" },
+          ]} value={info.view} onChange={(value) => { arrange({ op: "view", value }); setSelected(-1); }} />
+          {status && <div className={styles.status} style={{ marginLeft: "12rem" }}>{status}</div>}
+        </div>
+        <div className={styles.barRow}>
           <Choice options={STRUCTURES.map((s) => ({ value: s.id, label: s.label }))} value={info.type} onChange={(value) => arrange({ op: "type", value })} />
-          <div className={styles.barGap} />
+          <Gap />
           <Choice options={SPANS.map((s) => ({ value: s.id, label: s.label, title: s.hint }))} value={info.span} onChange={(value) => arrange({ op: "span", value })} />
           {info.span === "cantilever" && (
             <>
-              <div className={styles.barGap} />
-              <Choice options={[{ value: "right", label: "Post on right" }, { value: "left", label: "Post on left" }]} value={info.side}
+              <Gap />
+              <Choice options={[{ value: "left", label: "Post on left" }, { value: "right", label: "Post on right" }]} value={info.side}
                 onChange={(value) => arrange({ op: "side", value })} />
+            </>
+          )}
+          {!info.free && (
+            <>
+              <Gap />
+              <Choice options={[{ value: "forward", label: "Forward", title: "Faces the clicked road's traffic" }, { value: "reverse", label: "Reverse", title: "Faces the other direction" }]}
+                value={info.reverse ? "reverse" : "forward"} onChange={(v) => arrange({ op: "reverse", value: v === "reverse" })} />
             </>
           )}
         </div>
         <div className={styles.barRow}>
-          {!info.free && (
-            <Choice options={[{ value: "forward", label: "Forward", title: "Faces the clicked road's traffic" }, { value: "reverse", label: "Reverse", title: "Faces the other direction" }]}
-              value={info.reverse ? "reverse" : "forward"} onChange={(v) => arrange({ op: "reverse", value: v === "reverse" })} />
-          )}
-          <div className={styles.barLabel} style={{ marginLeft: "16rem" }}>Height</div>
+          <div className={styles.barLabel}>Height</div>
           <Step onClick={() => arrange({ op: "lift", value: -0.25 })}><ArrowIcon direction="down" size={12} /></Step>
           <div className={styles.barValueSmall}>{`${info.lift >= 0 ? "+" : ""}${info.lift.toFixed(2)} m`}</div>
           <Step onClick={() => arrange({ op: "lift", value: 0.25 })}><ArrowIcon direction="up" size={12} /></Step>
@@ -136,15 +169,18 @@ export const Arrange = (props: { onEditSign: (index: number, design: Design) => 
           <Step onClick={() => arrange({ op: "scale", value: -1 })}>-</Step>
           <div className={styles.barValueSmall}>{`${Math.round(info.scale * 100)}%`}</div>
           <Step onClick={() => arrange({ op: "scale", value: 1 })}>+</Step>
+          <Gap />
+          <Choice options={[{ value: "off", label: "No lights" }, { value: "on", label: "Sign lights", title: "Light fixtures on arms below each sign; the signs glow brighter at night" }]}
+            value={info.lights ? "on" : "off"} onChange={(v) => arrange({ op: "lights", value: v === "on" })} />
           {info.free && (
             <>
               <div className={styles.barLabel} style={{ marginLeft: "16rem" }}>Rotate</div>
               <Step onClick={() => adjust("rotateLeft")}>-15°</Step>
               <div className={styles.barValueSmall}>{`${Math.round(info.angle)}°`}</div>
               <Step onClick={() => adjust("rotateRight")}>+15°</Step>
-              <div className={styles.barLabel} style={{ marginLeft: "16rem" }}>Height</div>
+              <div className={styles.barLabel} style={{ marginLeft: "16rem" }}>Base</div>
               <Step onClick={() => adjust("lower")}><ArrowIcon direction="down" size={12} /></Step>
-              <div className={styles.barValueSmall}>{`${info.elevation.toFixed(1)} m`}</div>
+              <div className={styles.barValueSmall}>{`${info.elevation >= 0 ? "+" : ""}${info.elevation.toFixed(2)} m`}</div>
               <Step onClick={() => adjust("raise")}><ArrowIcon direction="up" size={12} /></Step>
               <div className={styles.barLabel} style={{ marginLeft: "16rem" }}>Road width</div>
               <Step onClick={() => adjust("narrower")}>-</Step>
@@ -154,25 +190,26 @@ export const Arrange = (props: { onEditSign: (index: number, design: Design) => 
           )}
         </div>
 
-        <div className={styles.barRow}>
-          <Choice options={[
-            { value: "front", label: info.view === "back" ? `Front side (${info.otherSide})` : `Front side (${signs.length})` },
-            { value: "back", label: info.view === "back" ? `Back side (${signs.length})` : `Back side (${info.otherSide})`, title: "Signs on the other face of the structure, for traffic the other way" },
-          ]} value={info.view} onChange={(value) => { arrange({ op: "view", value }); setSelected(-1); }} />
-          <div className={styles.hintInline} style={{ marginLeft: "10rem" }}>{info.view === "back" ? "Seen by traffic going the other way." : "Seen by the traffic the structure faces."}</div>
-        </div>
         <div ref={area} className={styles.diagram} style={{ height: height + "px" }}>
           {(info.roads.length ? info.roads : [[info.deck[0], info.deck[1], true] as [number, number, boolean]]).map((r, k) => (
             <div key={`r${k}`} className={r[2] ? styles.deck : styles.deckOther}
               style={{ left: px(r[0]) + "px", width: (r[1] - r[0]) * scale + "px", top: roadY + "px" }} />
           ))}
-          {info.lanes.map((l, k) => (
-            <div key={k} className={k === dragLane && snapping ? styles.laneOn : styles.lane}
-              style={{ left: px(l) - 18 + "px", top: roadY + 4 + "px" }}>{`L${k + 1}`}</div>
+          {ordered.slice(1).map((l, k) => Math.abs(l.x - ordered[k].x) < 5.5 && (
+            <div key={`d${k}`} className={ordered[k].faces === l.faces ? styles.laneLine : styles.laneLineCenter}
+              style={{ left: px((l.x + ordered[k].x) / 2) - 1 + "px", top: roadY + "px" }} />
           ))}
-          {info.lanes.slice(1).map((l, k) => (
-            <div key={`d${k}`} className={styles.laneLine} style={{ left: px((l + info.lanes[k]) / 2) + "px", top: roadY + "px" }} />
-          ))}
+          {allLanes.map((l, k) => {
+            const faced = info.lanes.findIndex((x) => Math.abs(x - l[0]) < 0.01);
+            return (
+              <div key={k} className={k === dragLane && snapping ? styles.laneOn : l[1] ? styles.lane : styles.laneOther}
+                style={{ left: px(l[0]) - 18 + "px", top: roadY + 3 + "px" }}
+                title={l[1] ? "A lane this side's signs face" : "Traffic the other way"}>
+                <ArrowIcon direction={l[1] ? "up" : "down"} size={10} color={k === dragLane && snapping ? "#ffd400" : "rgba(255,255,255,0.8)"} />
+                {faced >= 0 && <span style={{ marginLeft: "2px" }}>{`${faced + 1}`}</span>}
+              </div>
+            );
+          })}
           <div className={styles.beam} style={{ left: px(info.structure[0]) + "px", width: (info.structure[1] - info.structure[0]) * scale + "px", top: beamY - 3 + "px" }} />
           {info.posts.map((p, k) => (
             <div key={`p${k}`} className={styles.post} style={{ left: px(p) - 3 + "px", top: beamY + "px", height: roadY - beamY + "px" }} />
@@ -185,10 +222,11 @@ export const Arrange = (props: { onEditSign: (index: number, design: Design) => 
             </div>
           ))}
         </div>
-        <div className={styles.hint}>
-          {"Drag signs sideways; they snap to the lane centers (remembered from the nearer edge)."}
-          {info.span !== "cantilever" && info.roads.length > 1 ? ` The span covers ${info.roads.filter((r) => r[2]).length} of ${info.roads.length} roads here: click a road alongside in the world to add or remove it (lighter = not spanned).` : ""}
-        </div>
+        {info.span !== "cantilever" && info.roads.length > 1 && (
+          <div className={styles.hint}>
+            {`The span crosses ${info.roads.filter((r) => r[2]).length} of ${info.roads.length} roads here: click a road alongside in the world to add or remove it.`}
+          </div>
+        )}
 
         {signs.length > 0 && (
           <div className={styles.barRow}>
@@ -206,19 +244,11 @@ export const Arrange = (props: { onEditSign: (index: number, design: Design) => 
             <Step onClick={() => arrange({ op: "nudge", index: signs[sel].index, value: -0.25 })}><ArrowIcon direction="left" size={12} /></Step>
             <Step onClick={() => arrange({ op: "nudge", index: signs[sel].index, value: 0.25 })}><ArrowIcon direction="right" size={12} /></Step>
             <div className={styles.chip} style={{ marginLeft: "12rem" }} onClick={() => props.onEditSign(signs[sel].index, signs[sel].design)}>Edit sign</div>
+            <div className={styles.chip} onClick={() => arrange({ op: "duplicateSign", index: signs[sel].index })}>Duplicate</div>
             <div className={styles.chip} onClick={() => { arrange({ op: "removeSign", index: signs[sel].index }); setSelected(0); }}>Remove</div>
           </div>
         )}
-
-        <div className={styles.actions}>
-          <div className={info.total === 0 || info.busy || signs.some((s) => !s.ready) ? styles.primaryButtonOff : styles.primaryButton}
-            onClick={() => arrange({ op: "build" })}>{info.replacing ? "Save" : "Build"}</div>
-          <div className={styles.chip} style={{ alignSelf: "center" }} onClick={props.onAddSign}>Add sign</div>
-          <div className={styles.chip} style={{ alignSelf: "center" }} onClick={() => arrange({ op: "auto" })}>Auto arrange</div>
-          <div className={styles.chip} style={{ alignSelf: "center" }} onClick={() => arrange({ op: "repick" })}>Pick another spot</div>
-          <div className={styles.chip} style={{ alignSelf: "center" }} onClick={() => arrange({ op: "cancel" })}>Cancel</div>
-        </div>
-        {status && <div className={styles.status}>{status}</div>}
+        {props.overlay}
       </div>
     </PanelAny>
   );

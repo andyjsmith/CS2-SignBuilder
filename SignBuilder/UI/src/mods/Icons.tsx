@@ -4,16 +4,36 @@ const ARROW_ROTATION: Record<string, number> = {
   down: 0, up: 180, left: 90, right: -90, "down-left": 45, "down-right": -45, "up-left": 135, "up-right": -135,
 };
 
-/** The same arrow shape the sign renderer draws. */
+// Lane-use arrows, as in the renderer: pointing up, bending left ("-right" mirrors them).
+const CURVED: Record<string, string> = {
+  turn: "M54 150 V82 A24 24 0 0 0 30 58 V78 L0 46 L30 14 V34 A48 48 0 0 1 78 82 V150 Z",
+  split: "M54 150 V128 A24 24 0 0 0 30 104 V124 L0 92 L30 60 V80 A48 48 0 0 1 54 86.4 V34 H34 L66 0 L98 34 H78 V150 Z",
+};
+
+/** The same arrow shapes the sign renderer draws, in a square box. */
 export const ArrowIcon = (props: { direction: string; size?: number; color?: string }) => {
   const size = props.size ?? 18;
+  const curved = /^(turn|split)-(left|right)$/.exec(props.direction);
   return (
-    <svg width={size * 0.67 + "rem"} height={size + "rem"} viewBox="0 0 100 150">
-      <path d="M32 0 H68 V88 H100 L50 150 L0 88 H32 Z" fill={props.color ?? "#ffffff"}
-        transform={`rotate(${ARROW_ROTATION[props.direction] ?? 0} 50 75)`} />
+    <svg width={size + "rem"} height={size + "rem"} viewBox="-25 0 150 150">
+      {curved ? (
+        <path d={CURVED[curved[1]]} fill={props.color ?? "#ffffff"} transform={curved[2] === "right" ? "translate(100 0) scale(-1 1)" : undefined} />
+      ) : (
+        <path d="M32 0 H68 V88 H100 L50 150 L0 88 H32 Z" fill={props.color ?? "#ffffff"}
+          transform={`rotate(${ARROW_ROTATION[props.direction] ?? 0} 50 75)`} />
+      )}
     </svg>
   );
 };
+
+/** A small trash can, for delete buttons. */
+export const TrashIcon = (props: { size?: number }) => (
+  <svg width={(props.size ?? 12) + "rem"} height={(props.size ?? 12) + "rem"} viewBox="0 0 12 12">
+    <rect x="1" y="2" width="10" height="1.5" fill="#ffffff" />
+    <rect x="4.5" y="0.5" width="3" height="1.5" fill="#ffffff" />
+    <path d="M2.5 4 H9.5 L9 11.5 H3 Z" fill="#ffffff" />
+  </svg>
+);
 
 /** Text-alignment icon: four lines aligned left, center or right. */
 export const AlignIcon = (props: { align: string }) => {

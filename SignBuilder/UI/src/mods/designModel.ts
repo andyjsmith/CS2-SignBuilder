@@ -148,9 +148,10 @@ export function describe(item: Item, labels?: Record<string, string>): string {
     case "text": return `Text "${item.text}"`;
     case "shield": return `${labels?.[item.network] ?? item.network} ${item.number}`;
     case "panel": return `Panel (${item.items?.length ?? 0})`;
-    case "arrow": return `Arrow ${item.direction}`;
+    case "arrow": return `Arrow ${String(item.direction ?? "up").replace("-", " ")}`;
     case "row": return `Row (${item.items.length})`;
-    case "stack": return `Stack (${item.items.length})`;
+    case "stack": return `Column (${item.items.length})`;
+    case "divider": return "Divider";
     default: return item.type;
   }
 }

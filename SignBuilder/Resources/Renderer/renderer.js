@@ -130,18 +130,24 @@
     return { scale: (f && f.scale) || 1.75, offset: f && f.offset != null ? f.offset : 0.125 };
   }
 
-  function textBox(text, h, family, color) {
+  // <tracking>: extra space between letters, in hundredths of the letter height (negative tightens).
+  function textBox(text, h, family, color, tracking) {
     var m = metrics(family);
     var e = el("div", "sb-text", {
       fontFamily: family, fontSize: px(h * m.scale), lineHeight: px(h), height: px(h), top: px(h * m.offset), color: color,
     });
+    if (tracking) {
+      // Letter spacing also follows the last letter: take it back so the text stays centered.
+      e.style.letterSpacing = px(h * tracking / 100);
+      e.style.marginRight = px(-h * tracking / 100);
+    }
     e.textContent = text;
     return e;
   }
 
   function renderText(item, ctx) {
     var h = item.height || DEFAULTS.textHeight;
-    var e = textBox(item.text || "", h, item.font || ctx.font, item.color || ctx.fg);
+    var e = textBox(item.text || "", h, item.font || ctx.font, item.color || ctx.fg, item.tracking);
     return e;
   }
 
@@ -206,20 +212,59 @@
     // Shapes drawn pointing down in a 100 x 150 box, rotated for other directions.
     down: 0, up: 180, left: 90, right: -90, "down-left": 45, "down-right": -45, "up-left": 135, "up-right": -135,
   };
+  // Lane-use arrows drawn pointing up in a 100 x 150 box (filled outlines, so no stroke support is needed):
+  // a shaft that bends off to the left, and a straight arrow with a branch bending left. "-right" mirrors them.
+  var CURVED = {
+    turn: "M54 150 V82 A24 24 0 0 0 30 58 V78 L0 46 L30 14 V34 A48 48 0 0 1 78 82 V150 Z",
+    split: "M54 150 V128 A24 24 0 0 0 30 104 V124 L0 92 L30 60 V80 A48 48 0 0 1 54 86.4 V34 H34 L66 0 L98 34 H78 V150 Z",
+  };
 
+  // Corner points of a path made of absolute M/L/H/V commands (enough to find a rotated arrow's bounds).
+  function pathPoints(d) {
+    var pts = [], x = 0, y = 0, re = /([MLHVZ])([^MLHVZ]*)/gi, m;
+    while ((m = re.exec(d))) {
+      var n = (m[2].match(/-?[\d.]+/g) || []).map(Number);
+      var c = m[1].toUpperCase();
+      if (c === "M" || c === "L") { for (var i = 0; i + 1 < n.length; i += 2) { x = n[i]; y = n[i + 1]; pts.push([x, y]); } }
+      else if (c === "H") { n.forEach(function (v) { x = v; pts.push([x, y]); }); }
+      else if (c === "V") { n.forEach(function (v) { y = v; pts.push([x, y]); }); }
+    }
+    return pts.length ? pts : [[0, 0], [100, 150]];
+  }
+
+  // Arrows are as tall as their height when pointing up or down; turned arrows keep the same shape size and
+  // get a box that fits them (so diagonal and sideways arrows are never clipped).
   function renderArrow(item, ctx) {
     var h = item.height || DEFAULTS.arrowHeight;
-    var w = h * 0.67;
-    var rot = ARROWS[item.direction || "down"] || 0;
+    var dir = item.direction || "down";
     var ns = "http://www.w3.org/2000/svg";
     var svg = document.createElementNS(ns, "svg");
-    svg.setAttribute("viewBox", "0 0 100 150");
-    svg.setAttribute("width", String(w * ppu));
-    svg.setAttribute("height", String(h * ppu));
     var path = document.createElementNS(ns, "path");
-    path.setAttribute("d", T.def.arrow || DEFAULT_ARROW);
+    var curved = /^(turn|split)-(left|right)$/.exec(dir);
+    var vb;
+    if (curved) {
+      path.setAttribute("d", CURVED[curved[1]]);
+      if (curved[2] === "right") path.setAttribute("transform", "translate(100 0) scale(-1 1)");
+      vb = [0, 0, 100, 150];
+    } else {
+      var d = T.def.arrow || DEFAULT_ARROW;
+      var rot = ARROWS[dir] || 0;
+      path.setAttribute("d", d);
+      if (rot) path.setAttribute("transform", "rotate(" + rot + " 50 75)");
+      var r = rot * Math.PI / 180, cos = Math.cos(r), sin = Math.sin(r);
+      var x0 = 1e9, y0 = 1e9, x1 = -1e9, y1 = -1e9;
+      pathPoints(d).forEach(function (p) {
+        var dx = p[0] - 50, dy = p[1] - 75;
+        var X = 50 + dx * cos - dy * sin, Y = 75 + dx * sin + dy * cos;
+        x0 = Math.min(x0, X); y0 = Math.min(y0, Y); x1 = Math.max(x1, X); y1 = Math.max(y1, Y);
+      });
+      vb = [x0, y0, x1 - x0, y1 - y0];
+    }
+    var unit = h / 150;
+    svg.setAttribute("viewBox", vb.join(" "));
+    svg.setAttribute("width", String(vb[2] * unit * ppu));
+    svg.setAttribute("height", String(vb[3] * unit * ppu));
     path.setAttribute("fill", item.color || ctx.fg);
-    if (rot) path.setAttribute("transform", "rotate(" + rot + " 50 75)");
     svg.appendChild(path);
     return svg;
   }
@@ -246,11 +291,13 @@
   function renderContainer(item, ctx, horizontal, path) {
     var e = el("div", horizontal ? "sb-row" : "sb-stack");
     var align = { start: "flex-start", left: "flex-start", center: "center", end: "flex-end", right: "flex-end" }[item.align || (horizontal ? "center" : "start")];
+    // A spread-out row ("between") fills the width of its column and puts the space between its parts.
     if (horizontal) e.style.justifyContent = item.justify === "between" ? "space-between" : "flex-start";
+    if (horizontal && item.justify === "between") e.style.alignSelf = "stretch";
     e.style.alignItems = align;
     var items = item.items || [];
     items.forEach(function (child, i) {
-      var c = renderItem(child, ctx, path == null ? null : (path === "" ? String(i) : path + "." + i));
+      var c = renderItem(child, ctx, path == null ? null : (path === "" ? String(i) : path + "." + i), horizontal);
       if (!c) return;
       // A part in a column can override the column's alignment ("place": start, center or end).
       if (!horizontal && child.place) c.style.alignSelf = { start: "flex-start", center: "center", end: "flex-end" }[child.place] || "auto";
@@ -267,7 +314,8 @@
     return e;
   }
 
-  function renderItem(item, ctx, path) {
+  // <inRow>: the item sits in a row (a divider there is a vertical line between columns).
+  function renderItem(item, ctx, path, inRow) {
     var e;
     switch (item && item.type) {
       case "text": e = renderText(item, ctx); break;
@@ -277,7 +325,11 @@
       case "stack": e = renderContainer(item, ctx, false, path); break;
       case "panel": e = renderPanel(item, ctx, path); break;
       case "spacer": e = el("div", null, { width: px(item.width || 0), height: px(item.height || 0) }); break;
-      case "divider": e = el("div", null, { alignSelf: "stretch", height: px(item.thickness || DEFAULTS.border), backgroundColor: item.color || ctx.fg }); break;
+      case "divider":
+        e = el("div", null, inRow
+          ? { alignSelf: "stretch", width: px(item.thickness || DEFAULTS.border), backgroundColor: item.color || ctx.fg }
+          : { alignSelf: "stretch", height: px(item.thickness || DEFAULTS.border), backgroundColor: item.color || ctx.fg });
+        break;
       default: return null;
     }
     return tag(e, path);
@@ -345,8 +397,8 @@
     var sign = el("div", "sb-sign");
 
     if (tab) {
-      // MUTCD exit plaques use 12" capitals on most guide signs (15" on the largest freeway signs).
-      var th = tab.height || (T.def.exitTab && T.def.exitTab.height) || 12;
+      // Exit plaque letters, smaller than the sign's legends so the tab stays in proportion with game-sized signs.
+      var th = tab.height || (T.def.exitTab && T.def.exitTab.height) || 9;
       var tabRow = el("div", "sb-tab-row", { justifyContent: { left: "flex-start", center: "center", right: "flex-end" }[tabSide] });
       var tabBox = el("div", "sb-tab", {
         backgroundColor: s.bg, padding: px(border) + " " + px(border) + " 0px " + px(border),
@@ -401,7 +453,7 @@
     },
     registerTheme: registerTheme,
     themes: THEMES,
-    arrows: Object.keys(ARROWS),
+    arrows: Object.keys(ARROWS).concat(["turn-left", "turn-right", "split-left", "split-right"]),
   };
 
   window.hsRender = function (doc, pixelsPerInch) {

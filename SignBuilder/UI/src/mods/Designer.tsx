@@ -1,16 +1,19 @@
 import { Panel } from "cs2/ui";
-import { useState } from "react";
+import { ReactNode, useState } from "react";
 import { ArrowIcon, AlignIcon, ExitOnlyIcon, ExitTabIcon, ThemeShieldIcon } from "./Icons";
-import { Choice, ColorBox, Field, NumberBox, Option, Swatches, TextBox } from "./Controls";
+import { Choice, ColorBox, Field, NumberBox, Option, Select, Swatches, TextBox } from "./Controls";
 import { Design, Item, clone, describe, getItem, insertItem, removeItem, updateItem } from "./designModel";
 import { PartsList } from "./PartsList";
 import { SignPreview } from "./SignPreview";
 import { Template, TemplateLibrary } from "./TemplateLibrary";
-import { Theme, blankFor, convertDesign, laneMinWidth, themeOf, unitLabel } from "./themeModel";
+import { Theme, blankFor, convertDesign, laneMinWidth, themeOf } from "./themeModel";
 import styles from "./SignEditor.module.scss";
 
-const ARROWS = ["up-left", "up", "up-right", "left", "right", "down-left", "down", "down-right"];
+const ARROWS = ["up-left", "up", "up-right", "left", "right", "down-left", "down", "down-right", "turn-left", "split-left", "split-right", "turn-right"];
 const ALIGN: Option[] = ["start", "center", "end"].map((a) => ({ value: a, icon: <AlignIcon align={a} />, title: a }));
+// Parts side by side in a row line up by their tops, middles or bottoms.
+const ROW_ALIGN: Option[] = [{ value: "start", label: "Top" }, { value: "center", label: "Middle" }, { value: "end", label: "Bottom" }];
+const ROW_SPACING: Option[] = [{ value: "", label: "Packed" }, { value: "between", label: "Spread out", title: "Fill the width, with the space between the parts" }];
 const PLACE: Option[] = [{ value: "", label: "Sign default" }, ...ALIGN];
 
 /** Alignment of one part within its column, overriding the sign's "Align lines". */
@@ -21,8 +24,6 @@ const PlaceField = (props: { item: Item; onChange: (patch: Partial<Item>) => voi
 function ItemProperties(props: { item: Item; onChange: (patch: Partial<Item>) => void; focusToken: number; inRow: boolean; theme?: Theme }) {
   const { item, onChange, theme } = props;
   const def = theme?.def;
-  const unit = unitLabel(theme);
-  const metric = def?.units === "mm";
   const place = props.inRow ? null : <PlaceField item={item} onChange={onChange} />;
   const fonts: Option[] = (def?.fonts ?? []).filter((f) => !f.hidden).map((f) => ({ value: f.family, label: f.label ?? f.family, style: { fontFamily: f.family } }));
   const networks: Option[] = Object.entries(def?.shields ?? {}).map(([id, s]) => ({ value: id, icon: <ThemeShieldIcon theme={theme} network={id} />, title: s.label ?? id }));
@@ -34,17 +35,18 @@ function ItemProperties(props: { item: Item; onChange: (patch: Partial<Item>) =>
       return (
         <>
           <Field label="Text"><TextBox value={item.text ?? ""} focusToken={props.focusToken} onChange={(text) => onChange({ text })} /></Field>
-          <Field label="Letter height"><NumberBox value={item.height ?? def?.defaults?.textHeight ?? 16} unit={unit} step={metric ? 10 : 1} onChange={(height) => onChange({ height })} /></Field>
-          {fonts.length > 1 && <Field label="Font"><Choice options={fonts} value={item.font ?? def?.defaults?.font ?? ""} onChange={(font) => onChange({ font })} /></Field>}
+          <Field label="Letter height"><NumberBox value={item.height ?? def?.defaults?.textHeight ?? 16} onChange={(height) => onChange({ height })} /></Field>
+          <Field label="Letter spacing"><NumberBox value={item.tracking ?? 0} step={2} min={-20} onChange={(tracking) => onChange({ tracking: tracking || undefined })} /></Field>
+          {fonts.length > 1 && <Field label="Font"><Choice options={fonts} perRow={3} value={item.font ?? def?.defaults?.font ?? ""} onChange={(font) => onChange({ font })} /></Field>}
           {place}
         </>
       );
     case "shield":
       return (
         <>
-          <Field label="Route"><Choice options={networks} value={item.network} onChange={(network) => onChange({ network })} /></Field>
+          <Field label="Route"><Choice options={networks} perRow={5} value={item.network} onChange={(network) => onChange({ network })} /></Field>
           <Field label="Number"><TextBox value={String(item.number ?? "")} focusToken={props.focusToken} onChange={(number) => onChange({ number })} /></Field>
-          <Field label="Size"><NumberBox value={item.height ?? def?.defaults?.shieldHeight ?? 36} unit={unit} step={metric ? 20 : 6} onChange={(height) => onChange({ height })} /></Field>
+          <Field label="Size"><NumberBox value={item.height ?? def?.defaults?.shieldHeight ?? 36} step={2} onChange={(height) => onChange({ height })} /></Field>
           {place}
         </>
       );
@@ -52,24 +54,32 @@ function ItemProperties(props: { item: Item; onChange: (patch: Partial<Item>) =>
       return (
         <>
           <Field label="Direction">
-            <Choice options={ARROWS.map((a) => ({ value: a, icon: <ArrowIcon direction={a} />, title: a }))}
+            <Choice options={ARROWS.map((a) => ({ value: a, icon: <ArrowIcon direction={a} />, title: a }))} perRow={6}
               value={item.direction ?? "up"} onChange={(direction) => onChange({ direction })} />
           </Field>
-          <Field label="Size"><NumberBox value={item.height ?? def?.defaults?.arrowHeight ?? 24} unit={unit} step={metric ? 20 : 2} onChange={(height) => onChange({ height })} /></Field>
+          <Field label="Size"><NumberBox value={item.height ?? def?.defaults?.arrowHeight ?? 24} step={2} onChange={(height) => onChange({ height })} /></Field>
           {place}
         </>
       );
     case "row":
       return (
         <>
-          <Field label="Align within the row"><Choice options={ALIGN} value={item.align ?? "center"} onChange={(align) => onChange({ align })} /></Field>
+          <Field label="Line up parts by their"><Choice options={ROW_ALIGN} value={item.align ?? "center"} onChange={(align) => onChange({ align })} /></Field>
+          <Field label="Spacing"><Choice options={ROW_SPACING} value={item.justify ?? ""} onChange={(justify) => onChange({ justify: justify || undefined })} /></Field>
+          {place}
+        </>
+      );
+    case "stack":
+      return (
+        <>
+          <Field label="Align within the column"><Choice options={ALIGN} value={item.align ?? "start"} onChange={(align) => onChange({ align })} /></Field>
           {place}
         </>
       );
     case "panel":
       return (
         <>
-          <Field label="Panel color"><Choice options={schemes} value={item.scheme ?? ""} onChange={(scheme) => onChange({ scheme })} /></Field>
+          <Field label="Panel color"><Choice options={schemes} perRow={6} value={item.scheme ?? ""} onChange={(scheme) => onChange({ scheme })} /></Field>
           <Field label="Border"><Choice options={[{ value: "no", label: "None" }, { value: "yes", label: "Legend color" }]} value={item.border ? "yes" : "no"}
             onChange={(v) => onChange({ border: v === "yes" ? true : undefined })} /></Field>
           <Field label="Align within the panel"><Choice options={ALIGN} value={item.align ?? "center"} onChange={(align) => onChange({ align })} /></Field>
@@ -91,12 +101,16 @@ export type DesignerAction = { label: string; primary?: boolean; onSelect: () =>
 export const Designer = (props: {
   design: Design;
   setDesign: (d: Design) => void;
+  /** Loads a fresh design (template or blank sign), which starts out with no unsaved changes. */
+  onLoad: (d: Design) => void;
+  onTemplateSaved: () => void;
   templates: Template[];
   themes: Theme[];
   title: string;
   actions: DesignerAction[];
-  status: string;
   onClose: () => void;
+  /** Drawn over the dialog's content (the discard-changes question). */
+  overlay?: ReactNode;
 }) => {
   const { design, setDesign } = props;
   const [selected, setSelected] = useState<string | null>(null);
@@ -123,12 +137,12 @@ export const Designer = (props: {
       <div className={styles.body}>
         <div className={styles.column}>
           <div className={styles.heading}>Theme</div>
-          <Choice options={props.themes.map((t) => ({ value: t.id, label: t.name, title: t.def.description }))} value={theme?.id ?? "us"}
-            onChange={(id) => { const to = props.themes.find((t) => t.id === id); if (to) { setDesign(convertDesign(design, theme, to)); setSelected(null); } }} />
+          <Select options={props.themes.map((t) => ({ value: t.id, label: t.name, title: t.def.description }))} value={theme?.id ?? "us"}
+            onChange={(id) => { const to = props.themes.find((t) => t.id === id); if (to) { setDesign(convertDesign(design, to)); setSelected(null); } }} />
           <div className={styles.heading}>Templates</div>
           <TemplateLibrary templates={templates} current={design}
-            onPick={(t) => { setDesign(clone(t.design)); setSelected(null); }} />
-          <div className={styles.chip} style={{ alignSelf: "flex-start" }} onClick={() => { setDesign(blankFor(theme)); setSelected(null); }}>New blank sign</div>
+            onPick={(t) => { props.onLoad(clone(t.design)); setSelected(null); }} onSaved={props.onTemplateSaved} />
+          <div className={styles.chip} style={{ alignSelf: "flex-start", marginTop: "6rem" }} onClick={() => { props.onLoad(blankFor(theme)); setSelected(null); }}>New blank sign</div>
         </div>
 
         <div className={styles.center}>
@@ -169,7 +183,7 @@ export const Designer = (props: {
                   { value: "custom", label: "At least" }]} value={widthMode}
                   onChange={(v) => setDesign({ ...design, minWidth: v === "auto" ? undefined : v === "lane" ? lane : design.minWidth && design.minWidth !== lane ? design.minWidth : Math.round(lane / 2) })} />
                 {widthMode === "custom" && (
-                  <NumberBox value={design.minWidth} unit={unitLabel(theme)} step={def?.units === "mm" ? 250 : 12} onChange={(minWidth) => setDesign({ ...design, minWidth })} />
+                  <NumberBox value={design.minWidth} step={12} onChange={(minWidth) => setDesign({ ...design, minWidth })} />
                 )}
               </div>
             </Field>
@@ -182,7 +196,6 @@ export const Designer = (props: {
               <div key={a.label} className={styles.chip} title={a.title} style={{ alignSelf: "center", marginLeft: i === 0 ? "0rem" : "6rem" }} onClick={a.onSelect}>{a.label}</div>
             ))}
           </div>
-          {props.status && <div className={styles.status}>{props.status}</div>}
         </div>
 
         <div className={styles.column}>
@@ -192,7 +205,8 @@ export const Designer = (props: {
           </div>
           <div className={styles.heading}>Parts</div>
           <PartsList design={design} selected={selected} onSelect={setSelected} labels={labels}
-            onChange={(d, path) => { setDesign(d); setSelected(path); }} />
+            onChange={(d, path) => { setDesign(d); setSelected(path); }}
+            onDelete={(path) => { setDesign(path === "exitTab" ? { ...design, exitTab: null } : removeItem(design, path)); setSelected(null); }} />
           {selected === "exitTab" && design.exitTab && (
             <>
               <div className={styles.heading}>Exit tab</div>
@@ -200,7 +214,7 @@ export const Designer = (props: {
                 <TextBox value={design.exitTab.text} focusToken={focusToken} onChange={(text) => setDesign({ ...design, exitTab: { ...design.exitTab!, text } })} />
               </Field>
               <Field label="Letter height">
-                <NumberBox value={design.exitTab.height ?? 12} onChange={(height) => setDesign({ ...design, exitTab: { ...design.exitTab!, height } })} />
+                <NumberBox value={design.exitTab.height ?? 9} onChange={(height) => setDesign({ ...design, exitTab: { ...design.exitTab!, height } })} />
               </Field>
             </>
           )}
@@ -209,12 +223,10 @@ export const Designer = (props: {
               <div className={styles.heading}>{describe(item, labels)}</div>
               <ItemProperties item={item} onChange={update} focusToken={focusToken} theme={theme}
                 inRow={selected!.includes(".") && getItem(design, selected!.split(".").slice(0, -1).join("."))?.type === "row"} />
-              <div className={styles.palette}>
-                <div className={styles.chip} onClick={() => { setDesign(removeItem(design, selected!)); setSelected(null); }}>Delete part</div>
-              </div>
             </>
           )}
         </div>
+        {props.overlay}
       </div>
     </Panel>
   );

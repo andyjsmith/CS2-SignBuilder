@@ -44,12 +44,17 @@ namespace SignBuilder.Assemblies
         public float FreeWidth = 14f;
         /// <summary>Physical size of the signs relative to full MUTCD size.</summary>
         public float SignScale = kDefaultScale;
-        /// <summary>Raises (or lowers) the structure's beam and its signs, meters.</summary>
+        /// <summary>Raises (or lowers) the structure's beam and its signs, meters (down to the road surface).</summary>
         public float Lift;
+        /// <summary>Roadside signs: gap between the road's edge and the nearer edge of the sign, meters.</summary>
+        public float RoadGap = kDefaultRoadGap;
+        /// <summary>Overhead signs get light fixtures on arms below them, and their faces glow brighter at night.</summary>
+        public bool Lights;
         public List<SignSlot> Signs = new();
 
         /// <summary>Default sign size, shown to players as 100%: full MUTCD size is too big for the game's 4 m lanes.</summary>
         public const float kDefaultScale = 0.7f;
+        public const float kDefaultRoadGap = 2.5f;
 
         public SignSlot Slot(int sign) => sign < Signs.Count ? Signs[sign] : new SignSlot();
 

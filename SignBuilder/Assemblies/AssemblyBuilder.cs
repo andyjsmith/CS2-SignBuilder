@@ -37,6 +37,8 @@ namespace SignBuilder.Assemblies
         public float[] PostXs;
         public float2 StructureX;
         public float2 DeckX;
+        /// <summary>Every lane of every road alongside: x in structure space, and +1 if its traffic faces the front, -1 the back.</summary>
+        public float2[] AllLanes;
     }
 
     /// <summary>
@@ -164,16 +166,21 @@ namespace SignBuilder.Assemblies
             // Mounting height and depth per structure type. Overhead signs are each centered on the beam (a short
             // sign beside a tall one still crosses it), raised only as far as their clearance needs; curved tube
             // structures carry their signs bolted in front of the horizontal pipe. Back signs mirror in Z.
-            var lift = type == "ground" ? 0f : o.Lift;
-            var curvedHeight = math.max(7.0f + lift, kMinClearance + maxH * 0.5f);
+            // Lowering the structure lowers the signs' minimum clearance with it (down to the road surface).
+            var lift = type == "ground" ? 0f : math.max(o.Lift, -kMinClearance);
+            var clearance = kMinClearance + math.min(lift, 0f);
+            var curvedHeight = math.max(7.0f + lift, clearance + maxH * 0.5f);
             var beamHeight = GantryFactory.kMountHeight + lift;
-            Func<float, float> centerY = type == "curved" ? (h => curvedHeight) : (h => math.max(beamHeight, kMinClearance + h * 0.5f));
+            Func<float, float> centerY = type == "curved" ? (h => curvedHeight) : (h => math.max(beamHeight, clearance + h * 0.5f));
+            // Signs sit just in front of the member they are bolted to: its front surface, half the panel's
+            // thickness and a few centimeters, so they never clip but do not float.
+            const float mount = GantryFactory.kPanelThickness * 0.5f + 0.03f;
             var depth = type switch
             {
-                "doubleTruss" => GantryFactory.kTrussDepth * 0.5f + 0.15f,
-                "singleTruss" => 0.3f,
-                "curved" => 0.4f,
-                _ => 0.45f,
+                "doubleTruss" => GantryFactory.kTrussDepth * 0.5f + GantryFactory.kChordRadius + mount,
+                "singleTruss" => GantryFactory.kPlanarChordRadius + mount,
+                "curved" => GantryFactory.kCurvedPipeRadius + mount,
+                _ => (cantilever ? GantryFactory.kCantileverArmRadius : GantryFactory.kMonotubeRadius) + mount,
             };
             Vector3[] Centers(float[] xs) =>
                 Enumerable.Range(0, n).Select(i => new Vector3(xs[i], centerY(sizes[i].y), IsBack(i) ? depth : -depth)).ToArray();
@@ -185,7 +192,7 @@ namespace SignBuilder.Assemblies
             if (type == "ground")
             {
                 var total = sizes.Sum(z2 => z2.x) + kSignGap * Math.Max(0, n - 1);
-                var lateral = o.Free ? 0f : dir * (baseWidth * 0.5f + 2.5f + total * 0.5f);
+                var lateral = o.Free ? 0f : dir * (baseWidth * 0.5f + o.RoadGap + total * 0.5f);
                 var origin = basePoint + s.Right * lateral;
                 // On a raised road the posts reach down to the terrain instead of floating.
                 var drop = o.Free ? o.Elevation : math.clamp(origin.y - TerrainHeight(origin), 0f, 20f);
@@ -291,6 +298,8 @@ namespace SignBuilder.Assemblies
                 return new float3(e.x, e.y, roads.Contains(i) ? 1f : 0f);
             }).ToArray();
             result.LaneCount = frontLanes.Count;
+            var laneOrigin = math.dot(result.Origin - s.Point, s.Right);
+            result.AllLanes = s.Lanes.Select(l => new float2((l.Offset - laneOrigin) * dir, l.Direction == dir ? 1f : -1f)).ToArray();
             return result;
         }
 
@@ -425,22 +434,35 @@ namespace SignBuilder.Assemblies
             var prefabs = new RuntimePrefabs();
             var options = record.Context?.Options;
             var back = Enumerable.Range(0, faces.Count).Select(i => options != null && options.Type != "ground" && options.Slot(i).Back).ToArray();
-            var mesh = Merge(support, faces, record.Centers, options?.SignScale ?? 1f, back);
+            var lights = options != null && options.Lights && options.Type != "ground";
+            var mesh = Merge(support, faces, record.Centers, options?.SignScale ?? 1f, back, lights);
+            // The distant model: the same structure with far fewer sides on every tube.
+            var lowSupport = GantryFactory.FromSpec(record.SupportSpec, lowDetail: true);
+            var lowMesh = Merge(lowSupport, faces, record.Centers, options?.SignScale ?? 1f, back, lights, lowDetail: true);
+            UnityEngine.Object.Destroy(lowSupport);
             var db = SignBuilderRuntime.Database;
             var donor = SignBuilderRuntime.Donor(prefabs);
             var steel = SignBuilderRuntime.Steel(prefabs);
             var surfaces = new List<Colossal.IO.AssetDatabase.SurfaceAsset> { steel };
-            surfaces.AddRange(faces.Select(f => SurfaceFactory.SignFace(db, SignBuilderRuntime.SurfaceFolder, donor, f.Texture, f.Key)));
+            surfaces.AddRange(faces.Select(f => SurfaceFactory.SignFace(db, SignBuilderRuntime.SurfaceFolder, donor, f.Texture, f.Key, lights ? 1.2f : 0.3f)));
             var bounds = new Bounds3(mesh.bounds.min, mesh.bounds.max);
             var indexCount = 0;
             for (var i = 0; i < mesh.subMeshCount; i++) indexCount += (int)mesh.GetIndexCount(i);
             var geometry = RuntimePrefabs.SaveGeometry(mesh, db, SignBuilderRuntime.MeshFolder, record.PrefabName);
             record.GeometryId = geometry.id.guid.ToString();
+            var lowGeometry = RuntimePrefabs.SaveGeometry(lowMesh, db, SignBuilderRuntime.MeshFolder, record.PrefabName + "_LOD1");
+            record.LodGeometryId = lowGeometry.id.guid.ToString();
+            record.LodIndexCount = 0;
+            for (var i = 0; i < lowMesh.subMeshCount; i++) record.LodIndexCount += (int)lowMesh.GetIndexCount(i);
+            record.LodVertexCount = lowMesh.vertexCount;
             record.SurfaceIds = surfaces.Select(x => x.id.guid.ToString()).ToList();
             record.Bounds = new[] { bounds.min.x, bounds.min.y, bounds.min.z, bounds.max.x, bounds.max.y, bounds.max.z };
             record.IndexCount = indexCount;
             record.VertexCount = mesh.vertexCount;
-            var prefab = prefabs.Register(record.PrefabName, geometry, surfaces.ToArray(), bounds, indexCount, mesh.vertexCount);
+            var prefab = prefabs.Register(record.PrefabName, geometry, surfaces.ToArray(), bounds, indexCount, mesh.vertexCount,
+                (lowGeometry, record.LodIndexCount, record.LodVertexCount));
+            UnityEngine.Object.Destroy(mesh);
+            UnityEngine.Object.Destroy(lowMesh);
             AssemblyLibrary.Add(record);
             Core.AssetNames.Add(record.PrefabName); // again, now that the record (and its legend) is stored
             AssemblyBootstrapSystem.TrackNewPrefab(prefab);
@@ -484,9 +506,10 @@ namespace SignBuilder.Assemblies
         /// <summary>
         /// Merges the support (one submesh) with a panel per sign (panel submesh 0 = face, 1 = back and
         /// edges) at <paramref name="centers"/>: output submesh 0 is everything steel/aluminum,
-        /// submesh i + 1 the face of sign i.
+        /// submesh i + 1 the face of sign i. <paramref name="lights"/> adds light fixtures under each sign.
         /// </summary>
-        public static Mesh Merge(Mesh support, IReadOnlyList<BakedFace> faces, IReadOnlyList<Vector3> centers, float scale = 1f, IReadOnlyList<bool> back = null)
+        public static Mesh Merge(Mesh support, IReadOnlyList<BakedFace> faces, IReadOnlyList<Vector3> centers, float scale = 1f, IReadOnlyList<bool> back = null,
+            bool lights = false, bool lowDetail = false)
         {
             var vertices = new List<Vector3>();
             var normals = new List<Vector3>();
@@ -511,6 +534,14 @@ namespace SignBuilder.Assemblies
                 var panel = GantryFactory.Panel(faces[i].WidthMeters * scale, faces[i].HeightMeters * scale, shape);
                 var turned = back != null && i < back.Count && back[i];
                 Append(panel, centers[i], 1, submeshes[0], turned);
+                if (lights)
+                {
+                    MeshBuilder.LowDetail = lowDetail;
+                    var fixtures = GantryFactory.SignLights(faces[i].WidthMeters * scale, faces[i].HeightMeters * scale);
+                    MeshBuilder.LowDetail = false;
+                    Append(fixtures, centers[i], 0, submeshes[0], turned);
+                    UnityEngine.Object.Destroy(fixtures);
+                }
                 var face = new List<int>();
                 Append(panel, centers[i], 0, face, turned);
                 submeshes.Add(face);
