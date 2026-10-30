@@ -291,6 +291,18 @@ namespace SignBuilder.Spike
             b.AddTube(center - axis * 0.04f, center + axis * 0.04f, kCurvedPipeRadius + 0.09f, 20);
         }
 
+        /// <summary>Where the light fixtures under a sign sit (local to the sign's center): one per 2.4 m of width.</summary>
+        public static Vector3[] LightHeads(float width, float height)
+        {
+            var count = Mathf.Max(1, Mathf.RoundToInt(width / 2.4f));
+            var heads = new Vector3[count];
+            for (var i = 0; i < count; i++) heads[i] = new Vector3((i + 0.5f) / count * width - width * 0.5f, -height * 0.5f - 0.35f, -0.85f);
+            return heads;
+        }
+
+        /// <summary>Which way a fixture shines (local to the sign): back and up, onto the face.</summary>
+        public static readonly Vector3 kLightAim = new Vector3(0f, 0.75f, 1f).normalized;
+
         /// <summary>
         /// Sign lighting under one sign (local to the sign's center, face toward -Z): fixtures spaced along its bottom
         /// edge, each on an arm reaching forward and down from the bottom edge, its housing tilted up at the face.
@@ -298,14 +310,12 @@ namespace SignBuilder.Spike
         public static Mesh SignLights(float width, float height)
         {
             var b = new MeshBuilder();
-            var count = Mathf.Max(1, Mathf.RoundToInt(width / 2.4f));
             var bottom = -height * 0.5f;
-            for (var i = 0; i < count; i++)
+            foreach (var head in LightHeads(width, height))
             {
-                var x = (i + 0.5f) / count * width - width * 0.5f;
+                var x = head.x;
                 var root = new Vector3(x, bottom + 0.1f, 0.06f);
                 var elbow = new Vector3(x, bottom - 0.25f, 0.02f);
-                var head = new Vector3(x, bottom - 0.35f, -0.85f);
                 b.AddTube(root, elbow, 0.035f, 8);
                 b.AddTube(elbow, head, 0.035f, 8);
                 b.AddBox(head + new Vector3(0, 0.03f, -0.05f), new Vector3(0.55f, 0.1f, 0.32f), Quaternion.Euler(-25f, 0, 0));

@@ -98,89 +98,95 @@
   },
   "arrow": "M42 0 H58 V100 H82 L50 150 L18 100 H42 Z",
   "laneWidth": 157.48031496062993,
-  "parts": [
+  "presets": [
     {
-      "label": "Text",
+      "label": "Exit number",
+      "item": {
+        "type": "shield",
+        "network": "AS",
+        "number": "12"
+      }
+    },
+    {
+      "label": "Distance",
       "item": {
         "type": "text",
-        "text": "Ziel",
+        "text": "45 km",
         "height": 15.5
       }
     },
     {
-      "label": "Shield",
-      "item": {
-        "type": "shield",
-        "network": "A",
-        "number": "7",
-        "height": 17.0
-      }
-    },
-    {
-      "label": "Arrow",
-      "item": {
-        "type": "arrow",
-        "direction": "up",
-        "height": 23.5
-      }
-    },
-    {
-      "label": "Divider",
-      "item": {
-        "type": "divider"
-      }
-    },
-    {
-      "label": "Row",
-      "item": {
-        "type": "row",
-        "align": "center",
-        "items": []
-      }
-    },
-    {
-      "label": "Column",
-      "item": {
-        "type": "stack",
-        "align": "center",
-        "items": []
-      }
-    },
-    {
-      "label": "Chip",
+      "label": "White chip",
       "item": {
         "type": "chip",
         "scheme": "white",
         "items": [
           {
             "type": "text",
-            "text": "Text",
-            "height": 11.6
+            "text": "Messe",
+            "height": 12
           }
         ]
       }
     },
     {
-      "label": "Panel",
+      "label": "Split columns",
       "item": {
-        "type": "panel",
-        "scheme": "yellow",
-        "align": "center",
-        "items": []
-      }
-    },
-    {
-      "label": "Tab",
-      "item": {
-        "type": "tab",
-        "align": "right",
+        "type": "row",
+        "align": "start",
         "items": [
           {
-            "type": "text",
-            "text": "12",
-            "height": 10.1
+            "type": "stack",
+            "align": "center",
+            "items": [
+              {
+                "type": "text",
+                "text": "Destination",
+                "height": 15.5
+              }
+            ]
+          },
+          {
+            "type": "divider"
+          },
+          {
+            "type": "stack",
+            "align": "center",
+            "items": [
+              {
+                "type": "text",
+                "text": "Destination",
+                "height": 15.5
+              }
+            ]
           }
-        ]
+        ],
+        "justify": "even"
+      }
+    },
+    {
+      "label": "Lane arrows",
+      "item": {
+        "type": "row",
+        "align": "center",
+        "items": [
+          {
+            "type": "arrow",
+            "direction": "turn-left",
+            "height": 29.375
+          },
+          {
+            "type": "arrow",
+            "direction": "up",
+            "height": 29.375
+          },
+          {
+            "type": "arrow",
+            "direction": "up",
+            "height": 29.375
+          }
+        ],
+        "justify": "even"
       }
     }
   ]

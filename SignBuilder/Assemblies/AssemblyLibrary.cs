@@ -53,6 +53,8 @@ namespace SignBuilder.Assemblies
 
         // Local asset ids (this PC's cache database).
         public string GeometryId;
+        /// <summary>Sign lights: position and aim (x y z, dx dy dz) per fixture, in assembly space; they shine at night.</summary>
+        public float[] LightSpots;
         /// <summary>The low-detail model shown at a distance (same submeshes and surfaces).</summary>
         public string LodGeometryId;
         public int LodIndexCount;

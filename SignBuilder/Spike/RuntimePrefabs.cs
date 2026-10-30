@@ -86,7 +86,7 @@ namespace SignBuilder.Spike
         /// (optional) is a low-detail geometry with the same submeshes, shown at a distance.
         /// </summary>
         public StaticObjectPrefab Register(string name, GeometryAsset geometry, SurfaceAsset[] surfaces, Bounds3 bounds, int indexCount, int vertexCount,
-            (GeometryAsset geometry, int indexCount, int vertexCount)? lod = null)
+            (GeometryAsset geometry, int indexCount, int vertexCount)? lod = null, float[] lightSpots = null)
         {
             if (name.StartsWith("SignBuilder_A_")) Core.AssetNames.Add(name);
             if (m_PrefabSystem.TryGetPrefab(new PrefabID(nameof(StaticObjectPrefab), name), out var existing)) return existing as StaticObjectPrefab;
@@ -119,11 +119,65 @@ namespace SignBuilder.Spike
             var objectPrefab = ScriptableObject.CreateInstance<StaticObjectPrefab>();
             objectPrefab.name = name;
             objectPrefab.m_Meshes = new[] { new ObjectMeshInfo { m_Mesh = renderPrefab, m_Position = float3.zero, m_Rotation = quaternion.identity } };
+            if (lightSpots != null && lightSpots.Length >= 6)
+            {
+                // Real lights: a spot light per fixture, shining onto the sign at night (as street lights do).
+                var source = objectPrefab.AddComponent<EffectSource>();
+                source.m_Effects = new List<EffectSource.EffectSettings>();
+                source.m_AnimationCurves = new List<EffectSource.AnimationProperties>();
+                var effect = SignLightEffect();
+                for (var i = 0; i + 5 < lightSpots.Length; i += 6)
+                {
+                    var aim = new float3(lightSpots[i + 3], lightSpots[i + 4], lightSpots[i + 5]);
+                    source.m_Effects.Add(new EffectSource.EffectSettings
+                    {
+                        m_Effect = effect, m_PositionOffset = new float3(lightSpots[i], lightSpots[i + 1], lightSpots[i + 2]),
+                        m_Rotation = quaternion.LookRotationSafe(aim, new float3(0, 1, 0)), m_Scale = new float3(1f), m_Intensity = 1f,
+                        m_ParentMesh = 0, m_AnimationIndex = -1,
+                    });
+                }
+            }
             if (!m_PrefabSystem.AddPrefab(renderPrefab) || !m_PrefabSystem.AddPrefab(objectPrefab))
             {
                 throw new InvalidOperationException($"PrefabSystem.AddPrefab failed for {name}");
             }
             return objectPrefab;
+        }
+
+        private static EffectPrefab s_SignLight;
+
+        /// <summary>
+        /// The light every sign fixture uses: a warm-white spot light, on at night only. Created once and registered
+        /// as a prefab of its own (effects are prefabs the object's EffectSource refers to).
+        /// </summary>
+        private EffectPrefab SignLightEffect()
+        {
+            if (s_SignLight != null) return s_SignLight;
+            if (m_PrefabSystem.TryGetPrefab(new PrefabID(nameof(EffectPrefab), "SignBuilder_SignLight"), out var known) && known is EffectPrefab existing)
+            {
+                return s_SignLight = existing;
+            }
+            var effect = ScriptableObject.CreateInstance<EffectPrefab>();
+            effect.name = "SignBuilder_SignLight";
+            effect.m_Conditions = new EffectCondition { m_RequiredFlags = EffectConditionFlags.Night };
+            var light = effect.AddComponent<Game.Prefabs.Effects.LightEffect>();
+            light.m_Type = Game.Rendering.LightType.Spot;
+            light.m_SpotShape = Game.Rendering.SpotLightShape.Cone;
+            light.m_SpotAngle = 75f;
+            light.m_InnerSpotPercentage = 40f;
+            light.m_Range = 7f;
+            light.m_LightUnit = Game.Rendering.LightUnit.Lumen;
+            light.m_Intensity = 2500f;
+            light.m_UseColorTemperature = true;
+            light.m_ColorTemperature = 4200f;
+            light.m_Color = Color.white;
+            light.m_AffectDiffuse = true;
+            light.m_AffectSpecular = true;
+            light.m_ApplyRangeAttenuation = true;
+            light.m_LightDimmer = 1f;
+            light.m_LodBias = 1f;
+            m_PrefabSystem.AddPrefab(effect);
+            return s_SignLight = effect;
         }
 
         /// <summary>

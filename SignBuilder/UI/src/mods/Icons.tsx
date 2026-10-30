@@ -41,6 +41,14 @@ export const PencilIcon = () => (
   </svg>
 );
 
+/** Two overlapping sheets, for duplicate buttons. */
+export const DuplicateIcon = (props: { size?: number }) => (
+  <svg width={(props.size ?? 12) + "rem"} height={(props.size ?? 12) + "rem"} viewBox="0 0 12 12">
+    <rect x="0.75" y="0.75" width="7" height="7" rx="1" fill="none" stroke="#ffffff" strokeWidth="1.5" />
+    <rect x="4" y="4" width="7.25" height="7.25" rx="1" fill="#ffffff" />
+  </svg>
+);
+
 /** A small trash can, for delete buttons. */
 export const TrashIcon = (props: { size?: number }) => (
   <svg width={(props.size ?? 12) + "rem"} height={(props.size ?? 12) + "rem"} viewBox="0 0 12 12">

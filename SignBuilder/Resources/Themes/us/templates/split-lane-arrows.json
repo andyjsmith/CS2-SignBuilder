@@ -68,7 +68,8 @@
           ]
         }
       ],
-      "align": "start"
+      "align": "start",
+      "justify": "even"
     },
     {
       "type": "row",

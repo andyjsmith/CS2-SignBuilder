@@ -117,79 +117,9 @@
     "height": 10
   },
   "laneWidth": 157.48031496062993,
-  "parts": [
+  "presets": [
     {
-      "label": "Text",
-      "item": {
-        "type": "text",
-        "text": "Destination",
-        "height": 16
-      }
-    },
-    {
-      "label": "Shield",
-      "item": {
-        "type": "shield",
-        "network": "ON",
-        "number": "401",
-        "height": 36
-      }
-    },
-    {
-      "label": "Arrow",
-      "item": {
-        "type": "arrow",
-        "direction": "up",
-        "height": 24
-      }
-    },
-    {
-      "label": "Divider",
-      "item": {
-        "type": "divider"
-      }
-    },
-    {
-      "label": "Row",
-      "item": {
-        "type": "row",
-        "align": "center",
-        "items": []
-      }
-    },
-    {
-      "label": "Column",
-      "item": {
-        "type": "stack",
-        "align": "center",
-        "items": []
-      }
-    },
-    {
-      "label": "Chip",
-      "item": {
-        "type": "chip",
-        "scheme": "white",
-        "items": [
-          {
-            "type": "text",
-            "text": "Text",
-            "height": 12.0
-          }
-        ]
-      }
-    },
-    {
-      "label": "Panel",
-      "item": {
-        "type": "panel",
-        "scheme": "yellow",
-        "align": "center",
-        "items": []
-      }
-    },
-    {
-      "label": "Tab",
+      "label": "Exit tab",
       "item": {
         "type": "tab",
         "align": "right",
@@ -201,6 +131,125 @@
             "font": "RG2014E"
           }
         ]
+      }
+    },
+    {
+      "label": "Sortie tab",
+      "item": {
+        "type": "tab",
+        "align": "right",
+        "items": [
+          {
+            "type": "text",
+            "text": "SORTIE 1",
+            "height": 10,
+            "font": "RG2014E"
+          }
+        ]
+      }
+    },
+    {
+      "label": "EXIT ONLY",
+      "item": {
+        "type": "panel",
+        "scheme": "yellow",
+        "align": "center",
+        "items": [
+          {
+            "type": "arrow",
+            "direction": "down",
+            "height": 18
+          },
+          {
+            "type": "text",
+            "text": "EXIT ONLY",
+            "height": 12,
+            "font": "RG2014E"
+          },
+          {
+            "type": "arrow",
+            "direction": "down",
+            "height": 18
+          }
+        ]
+      }
+    },
+    {
+      "label": "Cardinal",
+      "item": {
+        "type": "text",
+        "text": "NORTH",
+        "height": 15,
+        "font": "RG2014D"
+      }
+    },
+    {
+      "label": "Distance",
+      "item": {
+        "type": "text",
+        "text": "2 km",
+        "height": 12,
+        "font": "RG2014D"
+      }
+    },
+    {
+      "label": "Split columns",
+      "item": {
+        "type": "row",
+        "align": "start",
+        "items": [
+          {
+            "type": "stack",
+            "align": "center",
+            "items": [
+              {
+                "type": "text",
+                "text": "Destination",
+                "height": 16
+              }
+            ]
+          },
+          {
+            "type": "divider"
+          },
+          {
+            "type": "stack",
+            "align": "center",
+            "items": [
+              {
+                "type": "text",
+                "text": "Destination",
+                "height": 16
+              }
+            ]
+          }
+        ],
+        "justify": "even"
+      }
+    },
+    {
+      "label": "Lane arrows",
+      "item": {
+        "type": "row",
+        "align": "center",
+        "items": [
+          {
+            "type": "arrow",
+            "direction": "turn-left",
+            "height": 30.0
+          },
+          {
+            "type": "arrow",
+            "direction": "up",
+            "height": 30.0
+          },
+          {
+            "type": "arrow",
+            "direction": "up",
+            "height": 30.0
+          }
+        ],
+        "justify": "even"
       }
     }
   ]

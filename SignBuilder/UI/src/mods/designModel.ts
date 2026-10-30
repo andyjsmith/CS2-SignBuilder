@@ -98,6 +98,13 @@ export function insertItem(design: Design, selected: string | null, item: Item):
   return { design: next, path: String(next.items.length - 1) };
 }
 
+/** Copies the part at <path> (with everything inside it) right after itself; returns the copy's path. */
+export function duplicateItem(design: Design, path: string): { design: Design; path: string } {
+  const item = getItem(design, path);
+  if (!item) return { design, path };
+  return insertItem(design, path, clone(item));
+}
+
 /** Where something is dropped relative to a target part: before it, after it, or inside it (rows and stacks). */
 export type DropPosition = "before" | "after" | "inside";
 

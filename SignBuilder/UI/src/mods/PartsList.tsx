@@ -1,6 +1,6 @@
 import { useRef, useState } from "react";
 import { Design, DropPosition, describe, getItem, moveTo, outline } from "./designModel";
-import { TrashIcon } from "./Icons";
+import { DuplicateIcon, TrashIcon } from "./Icons";
 import styles from "./SignEditor.module.scss";
 
 // <path>/<position>: where the part goes; <shown>: the row the drop line is drawn on.
@@ -18,6 +18,7 @@ export const PartsList = (props: {
   onChange: (design: Design, selected: string) => void;
   labels?: Record<string, string>;
   onDelete: (path: string) => void;
+  onDuplicate: (path: string) => void;
 }) => {
   const listRef = useRef<HTMLDivElement>(null);
   const [dragging, setDragging] = useState<string | null>(null);
@@ -58,6 +59,7 @@ export const PartsList = (props: {
       if (y > last.getBoundingClientRect().bottom) best = { path: String(props.design.items.length - 1), position: "after", shown: last.getAttribute("data-part-path")! };
     }
     if (best && (best.path === from || best.path.startsWith(from + "."))) return null;
+    if (best && best.position !== "inside" && getItem(props.design, best.path)?.type === "tab") return null;
     return best;
   };
 
@@ -67,7 +69,18 @@ export const PartsList = (props: {
       onClick={(e) => { e.stopPropagation(); props.onDelete(p.path); }}><TrashIcon /></div>
   );
 
+  // Duplicate button left of the delete button (copies the part with everything inside it).
+  const Duplicate = (p: { path: string }) => (
+    <div className={styles.rowDelete} title="Duplicate this part" onMouseDown={(e) => e.stopPropagation()}
+      onClick={(e) => { e.stopPropagation(); props.onDuplicate(p.path); }}><DuplicateIcon /></div>
+  );
+
   const startDrag = (e: any, path: string) => {
+    // Tabs always sit on top of the sign, so they are not moved around (only selected).
+    if (getItem(props.design, path)?.type === "tab") {
+      props.onSelect(path);
+      return;
+    }
     const startY = e.clientY;
     let moved = false;
     let current: Drop = null;
@@ -120,6 +133,7 @@ export const PartsList = (props: {
               {describe(item, props.labels)}
               {item.items && item.items.length === 0 && <span className={styles.hintInline}> drop parts here</span>}
             </div>
+            <Duplicate path={path} />
             <Delete path={path} />
           </div>
         );

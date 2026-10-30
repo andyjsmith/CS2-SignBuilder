@@ -127,13 +127,48 @@ export const TextBox = (props: { value: string; onChange: (v: string) => void; f
 };
 
 /** A number with - and + buttons; sizes are in the sign's own units (shown without a unit). */
-export const NumberBox = (props: { value: number; onChange: (v: number) => void; step?: number; unit?: string; min?: number; compact?: boolean }) => (
-  <div className={props.compact ? styles.stepperCompact : styles.stepper}>
-    <div className={styles.step} onClick={() => props.onChange(Math.max(props.min ?? 1, Math.round((props.value - (props.step ?? 1)) * 100) / 100))}>-</div>
-    <div className={styles.stepValue}>{`${props.value}${props.unit ?? ""}`}</div>
-    <div className={styles.step} onClick={() => props.onChange(Math.round((props.value + (props.step ?? 1)) * 100) / 100)}>+</div>
-  </div>
-);
+/**
+ * A number: type it, or step it with - and + (Shift: 10 steps, Ctrl: a tenth of a step), or with the mouse wheel
+ * while the field has the caret and the pointer is over it.
+ */
+export const NumberBox = (props: { value: number; onChange: (v: number) => void; step?: number; unit?: string; min?: number; max?: number; compact?: boolean }) => {
+  const [text, setText] = useState<string | null>(null);
+  const wrap = useRef<HTMLDivElement>(null);
+  const field = () => wrap.current?.querySelector("input") as HTMLInputElement | null;
+  const step = props.step ?? 1;
+  const clamp = (v: number) => Math.min(props.max ?? Infinity, Math.max(props.min ?? 1, Math.round(v * 100) / 100));
+  const factor = (e: { shiftKey?: boolean; ctrlKey?: boolean }) => (e.shiftKey ? 10 : e.ctrlKey ? 0.1 : 1);
+  const nudge = (direction: number, e: { shiftKey?: boolean; ctrlKey?: boolean }) => {
+    setText(null);
+    props.onChange(clamp(props.value + direction * step * factor(e)));
+  };
+  const commit = () => {
+    if (text == null) return;
+    const v = parseFloat(text.replace(",", "."));
+    setText(null);
+    if (!isNaN(v)) props.onChange(clamp(v));
+  };
+  return (
+    <div className={props.compact ? styles.stepperCompact : styles.stepper}>
+      <div className={styles.step} title="Shift: x10, Ctrl: x0.1" onClick={(e) => nudge(-1, e)}>-</div>
+      <div ref={wrap} className={styles.stepValue}
+        onWheel={(e) => { if (document.activeElement === field()) { e.preventDefault(); nudge(e.deltaY < 0 ? 1 : -1, e); } }}>
+        {(() => {
+          // The game's own text input keeps typed keys from reaching game hotkeys; a plain input is the fallback.
+          const inputProps = {
+            className: styles.numberInput, type: "text", value: text ?? `${props.value}`,
+            onChange: (e: any) => setText((e.target as HTMLInputElement).value),
+            onBlur: commit,
+            onKeyDown: (e: any) => { if (e.key === "Enter") { commit(); field()?.blur(); } if (e.key === "Escape") setText(null); },
+          };
+          return VanillaTextInput ? <VanillaTextInput {...inputProps} /> : <input {...inputProps} />;
+        })()}
+        {props.unit && <span>{props.unit}</span>}
+      </div>
+      <div className={styles.step} title="Shift: x10, Ctrl: x0.1" onClick={(e) => nudge(1, e)}>+</div>
+    </div>
+  );
+};
 
 const hexToColor = (hex: string) => {
   const h = (hex || "#000000").replace("#", "");

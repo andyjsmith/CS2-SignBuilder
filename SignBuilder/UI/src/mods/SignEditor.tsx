@@ -121,7 +121,7 @@ export const SignEditor = () => {
         ? [{ label: "Save", primary: true, onSelect: () => { settle(); savePosts(design); } },
           { label: "Stop editing", title: "Keep the placed sign as it is",
             onSelect: () => guard(dirty, "Stop editing? Your changes to this sign will be lost.", () => { cancelTool(); settle(); setContext({ kind: "new" }); }) }]
-        : [{ label: "Place Standalone", primary: true, onSelect: () => { settle(); startPosts(design); } }];
+        : [{ label: "Roadside", primary: true, onSelect: () => { settle(); startPosts(design); } }];
       break;
     case "gantrySign":
       title = `Edit gantry sign ${context.index + 1}`;
@@ -139,9 +139,9 @@ export const SignEditor = () => {
       break;
     default:
       actions = [
-        { label: "Place Standalone", primary: true, onSelect: () => { settle(); startPosts(design); } },
-        { label: "Surface mount", primary: true, title: "Just the sign, no supports: place it like a prop on any surface", onSelect: () => { settle(); startPosts(design, "surface"); } },
-        { label: "Place on gantry", primary: true, onSelect: () => { settle(); startGantry([design]); } },
+        { label: "Gantry", primary: true, title: "Over the road on a truss or tube structure", onSelect: () => { settle(); startGantry([design]); } },
+        { label: "Roadside", primary: true, title: "On posts beside the road", onSelect: () => { settle(); startPosts(design); } },
+        { label: "Prop", primary: true, title: "Just the sign, no supports: on any surface or the side of an elevated road", onSelect: () => { settle(); startPosts(design, "surface"); } },
       ];
   }
 

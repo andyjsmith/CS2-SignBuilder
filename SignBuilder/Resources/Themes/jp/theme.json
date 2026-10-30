@@ -103,89 +103,78 @@
   },
   "arrow": "M42 0 H58 V100 H82 L50 150 L18 100 H42 Z",
   "laneWidth": 157.48031496062993,
-  "parts": [
+  "presets": [
     {
-      "label": "Text",
-      "item": {
-        "type": "text",
-        "text": "Destination",
-        "height": 16
-      }
-    },
-    {
-      "label": "Shield",
-      "item": {
-        "type": "shield",
-        "network": "N",
-        "number": "20",
-        "height": 20
-      }
-    },
-    {
-      "label": "Arrow",
-      "item": {
-        "type": "arrow",
-        "direction": "up",
-        "height": 23.5
-      }
-    },
-    {
-      "label": "Divider",
-      "item": {
-        "type": "divider"
-      }
-    },
-    {
-      "label": "Row",
-      "item": {
-        "type": "row",
-        "align": "center",
-        "items": []
-      }
-    },
-    {
-      "label": "Column",
+      "label": "Japanese + English",
       "item": {
         "type": "stack",
         "align": "center",
-        "items": []
+        "items": [
+          {
+            "type": "text",
+            "text": "東京",
+            "height": 16
+          },
+          {
+            "type": "text",
+            "text": "Tokyo",
+            "height": 8.8,
+            "gapBefore": 2.4
+          }
+        ]
       }
     },
     {
-      "label": "Chip",
+      "label": "Exit plate",
       "item": {
         "type": "chip",
         "scheme": "white",
         "items": [
           {
             "type": "text",
-            "text": "Text",
-            "height": 12.0
-          }
-        ]
-      }
-    },
-    {
-      "label": "Panel",
-      "item": {
-        "type": "panel",
-        "scheme": "yellow",
-        "align": "center",
-        "items": []
-      }
-    },
-    {
-      "label": "Tab",
-      "item": {
-        "type": "tab",
-        "align": "right",
-        "items": [
+            "text": "出口",
+            "height": 10
+          },
           {
             "type": "text",
-            "text": "12",
-            "height": 10.4
+            "text": "EXIT",
+            "height": 7
           }
-        ]
+        ],
+        "radius": 1.5
+      }
+    },
+    {
+      "label": "Distance",
+      "item": {
+        "type": "text",
+        "text": "2km",
+        "height": 16
+      }
+    },
+    {
+      "label": "Lane arrows",
+      "item": {
+        "type": "row",
+        "align": "center",
+        "items": [
+          {
+            "type": "arrow",
+            "direction": "turn-left",
+            "height": 29.375
+          },
+          {
+            "type": "arrow",
+            "direction": "up",
+            "height": 29.375
+          },
+          {
+            "type": "arrow",
+            "direction": "up",
+            "height": 29.375
+          }
+        ],
+        "justify": "even"
       }
     }
   ]

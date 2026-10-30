@@ -77,7 +77,8 @@
           ]
         }
       ],
-      "align": "start"
+      "align": "start",
+      "justify": "even"
     }
   ]
 }

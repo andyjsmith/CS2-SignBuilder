@@ -111,89 +111,63 @@
   },
   "arrow": "M32 0 H68 V88 H100 L50 150 L0 88 H32 Z",
   "laneWidth": 157.48031496062993,
-  "parts": [
+  "presets": [
     {
-      "label": "Text",
-      "item": {
-        "type": "text",
-        "text": "Destination",
-        "height": 15.5
-      }
-    },
-    {
-      "label": "Shield",
-      "item": {
-        "type": "shield",
-        "network": "M",
-        "number": "1",
-        "height": 17.0
-      }
-    },
-    {
-      "label": "Arrow",
-      "item": {
-        "type": "arrow",
-        "direction": "up",
-        "height": 23.5
-      }
-    },
-    {
-      "label": "Divider",
-      "item": {
-        "type": "divider"
-      }
-    },
-    {
-      "label": "Row",
-      "item": {
-        "type": "row",
-        "align": "center",
-        "items": []
-      }
-    },
-    {
-      "label": "Column",
-      "item": {
-        "type": "stack",
-        "align": "center",
-        "items": []
-      }
-    },
-    {
-      "label": "Chip",
-      "item": {
-        "type": "chip",
-        "scheme": "white",
-        "items": [
-          {
-            "type": "text",
-            "text": "Text",
-            "height": 11.6
-          }
-        ]
-      }
-    },
-    {
-      "label": "Panel",
-      "item": {
-        "type": "panel",
-        "scheme": "yellow",
-        "align": "center",
-        "items": []
-      }
-    },
-    {
-      "label": "Tab",
+      "label": "Exit tab",
       "item": {
         "type": "tab",
         "align": "right",
         "items": [
           {
             "type": "text",
-            "text": "12",
-            "height": 10.1
+            "text": "EXIT 1",
+            "height": 10,
+            "font": "RG2014E"
           }
         ]
+      }
+    },
+    {
+      "label": "Distance",
+      "item": {
+        "type": "text",
+        "text": "2 km",
+        "height": 15.5
+      }
+    },
+    {
+      "label": "Split columns",
+      "item": {
+        "type": "row",
+        "align": "start",
+        "items": [
+          {
+            "type": "stack",
+            "align": "center",
+            "items": [
+              {
+                "type": "text",
+                "text": "Destination",
+                "height": 15.5
+              }
+            ]
+          },
+          {
+            "type": "divider"
+          },
+          {
+            "type": "stack",
+            "align": "center",
+            "items": [
+              {
+                "type": "text",
+                "text": "Destination",
+                "height": 15.5
+              }
+            ]
+          }
+        ],
+        "justify": "even"
       }
     }
   ]

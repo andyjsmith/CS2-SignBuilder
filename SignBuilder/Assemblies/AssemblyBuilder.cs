@@ -50,6 +50,8 @@ namespace SignBuilder.Assemblies
     {
         /// <summary>Structure types (C# ids used by the UI).</summary>
         public static readonly string[] Types = { "doubleTruss", "singleTruss", "curved", "straight", "ground", "surface" };
+        /// <summary>A sign hung on an elevated road's side: its top this far above the road surface.</summary>
+        private const float kDeckSignTop = 0.3f;
         private const float kSignGap = 0.3f;
         /// <summary>Road surface this far above the terrain counts as elevated (bridge, viaduct, embankment).</summary>
         private const float kElevatedDrop = 2f;
@@ -200,11 +202,13 @@ namespace SignBuilder.Assemblies
             AssemblyPlacement result;
             if (type == "surface")
             {
-                // Just the sign, placed like a prop: at the cursor (always a free placement), turned by the placement
-                // angle, its bottom on the clicked surface plus the base height.
+                // Just the sign, placed like a prop: at the cursor, turned by the placement angle, its bottom on the
+                // clicked surface plus the base height. On an elevated road it hangs on the side instead, facing away
+                // from the road, its top just below the deck (the base height moves it up or down).
                 var total = sizes.Sum(z2 => z2.x) + kSignGap * Math.Max(0, n - 1);
-                var origin = s.Point;
-                var facing = quaternion.LookRotationSafe(s.Tangent, new float3(0, 1, 0));
+                var outward = o.LeftSide ? -s.Right : s.Right;
+                var origin = o.Free ? s.Point : s.Point + outward * (baseWidth * 0.5f + 0.06f);
+                var facing = o.Free ? quaternion.LookRotationSafe(s.Tangent, new float3(0, 1, 0)) : quaternion.LookRotationSafe(-outward, new float3(0, 1, 0));
                 var xs = new float[n];
                 var x = -total * 0.5f;
                 for (var i = 0; i < n; i++)
@@ -212,7 +216,7 @@ namespace SignBuilder.Assemblies
                     xs[i] = x + sizes[i].x * 0.5f + o.Slot(i).Offset;
                     x += sizes[i].x + kSignGap;
                 }
-                var centers = Enumerable.Range(0, n).Select(i => new Vector3(xs[i], sizes[i].y * 0.5f, 0f)).ToArray();
+                var centers = Enumerable.Range(0, n).Select(i => new Vector3(xs[i], o.Free ? sizes[i].y * 0.5f : kDeckSignTop + o.Elevation - sizes[i].y * 0.5f, 0f)).ToArray();
                 result = new AssemblyPlacement
                 {
                     Origin = origin, Rotation = facing, Spec = SupportSpec.Of("none"),
@@ -491,13 +495,32 @@ namespace SignBuilder.Assemblies
             record.Bounds = new[] { bounds.min.x, bounds.min.y, bounds.min.z, bounds.max.x, bounds.max.y, bounds.max.z };
             record.IndexCount = indexCount;
             record.VertexCount = mesh.vertexCount;
+            record.LightSpots = lights ? LightSpots(faces, record.Centers, options.SignScale, back) : null;
             var prefab = prefabs.Register(record.PrefabName, geometry, surfaces.ToArray(), bounds, indexCount, mesh.vertexCount,
-                (lowGeometry, record.LodIndexCount, record.LodVertexCount));
+                (lowGeometry, record.LodIndexCount, record.LodVertexCount), record.LightSpots);
             UnityEngine.Object.Destroy(mesh);
             UnityEngine.Object.Destroy(lowMesh);
             AssemblyLibrary.Add(record);
             Core.AssetNames.Add(record.PrefabName); // again, now that the record (and its legend) is stored
             AssemblyBootstrapSystem.TrackNewPrefab(prefab);
+        }
+
+        /// <summary>Every light fixture's position and aim in assembly space (signs on the back are turned around).</summary>
+        private static float[] LightSpots(IReadOnlyList<BakedFace> faces, IReadOnlyList<Vector3> centers, float scale, IReadOnlyList<bool> back)
+        {
+            var spots = new List<float>();
+            for (var i = 0; i < faces.Count; i++)
+            {
+                var turned = back != null && i < back.Count && back[i];
+                Vector3 Turn(Vector3 v) => turned ? new Vector3(-v.x, v.y, -v.z) : v;
+                var aim = Turn(GantryFactory.kLightAim);
+                foreach (var head in GantryFactory.LightHeads(faces[i].WidthMeters * scale, faces[i].HeightMeters * scale))
+                {
+                    var p = centers[i] + Turn(head);
+                    spots.AddRange(new[] { p.x, p.y, p.z, aim.x, aim.y, aim.z });
+                }
+            }
+            return spots.ToArray();
         }
 
         /// <summary>

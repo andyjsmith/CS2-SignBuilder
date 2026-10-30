@@ -1,20 +1,29 @@
-import { Panel, Scrollable } from "cs2/ui";
+import { Scrollable } from "cs2/ui";
+import { Dialog } from "./Dialog";
 import { openThemesFolder } from "./bindings";
 import { ReactNode, useState } from "react";
 import { ArrowIcon, AlignIcon, ThemeShieldIcon } from "./Icons";
 import { Choice, ColorBox, Field, NumberBox, Option, Select, Swatches, TextBox } from "./Controls";
-import { Design, Item, clone, getItem, insertItem, kindOf, removeItem, updateItem } from "./designModel";
+import { Design, Item, clone, duplicateItem, getItem, insertItem, kindOf, removeItem, updateItem } from "./designModel";
 import { PartsList } from "./PartsList";
 import { SignPreview } from "./SignPreview";
 import { Template, TemplateLibrary } from "./TemplateLibrary";
-import { Theme, blankFor, convertDesign, themeOf } from "./themeModel";
+import { Theme, baseParts, blankFor, convertDesign, themeOf } from "./themeModel";
 import styles from "./SignEditor.module.scss";
 
 const ARROWS = ["up-left", "up", "up-right", "left", "right", "down-left", "down", "down-right", "turn-left", "split-left", "split-right", "turn-right"];
 const ALIGN: Option[] = ["start", "center", "end"].map((a) => ({ value: a, icon: <AlignIcon align={a} />, title: a }));
 // Parts side by side in a row line up by their tops, middles or bottoms.
 const ROW_ALIGN: Option[] = [{ value: "start", label: "Top" }, { value: "center", label: "Middle" }, { value: "end", label: "Bottom" }];
-const ROW_SPACING: Option[] = [{ value: "", label: "Packed" }, { value: "between", label: "Spread out", title: "Fill the width, with the space between the parts" }];
+const ROW_SPACING: Option[] = [
+  { value: "", label: "Packed" },
+  { value: "between", label: "Spread out", title: "Fill the width, with the space between the parts" },
+  { value: "even", label: "Even", title: "Fill the width, each part centered in an equal share of it (dividers keep their width)" },
+];
+const LANE_KIND: Option[] = [
+  { value: "", label: "Highway", title: "Highway lanes (4 m)" },
+  { value: "local", label: "Local", title: "Local road lanes (3 m)" },
+];
 const PLACE: Option[] = [{ value: "", label: "Sign default" }, ...ALIGN];
 const CHIP_SPAN: Option[] = [{ value: "", label: "Fit" }, { value: "full", label: "Full width", title: "As wide as the column it is in" }];
 const TAB_SIDE: Option[] = [{ value: "left", label: "Left" }, { value: "center", label: "Center" }, { value: "right", label: "Right" }];
@@ -212,12 +221,12 @@ export const Designer = (props: {
   const templates = props.templates.filter((t) => (t.design.theme ?? "us") === (theme?.id ?? "us"));
 
   return (
-    <Panel draggable header={props.title} className={styles.panel} onClose={props.onClose}>
+    <Dialog dock="center" title={props.title} className={styles.panel} onClose={props.onClose}>
       <div className={styles.body}>
         <div className={styles.column}>
           <div className={styles.heading}>Theme</div>
           <div className={styles.inlineRow}>
-            <Select options={props.themes.map((t) => ({ value: t.id, label: t.name, title: t.def.description }))} value={theme?.id ?? "us"}
+            <Select options={[...props.themes].sort((a, b) => a.name.localeCompare(b.name)).map((t) => ({ value: t.id, label: t.name, title: t.def.description }))} value={theme?.id ?? "us"}
               onChange={(id) => { const to = props.themes.find((t) => t.id === id); if (to) { setDesign(convertDesign(design, to)); setSelected(null); } }} />
             <div className={styles.chip} style={{ margin: "0 0 0 6rem" }} title="Add your own themes here (one folder each); they appear when the Sign Builder is opened again"
               onClick={() => openThemesFolder()}>Folder</div>
@@ -248,9 +257,16 @@ export const Designer = (props: {
             )}
             <Field label="Add part">
               <div className={styles.palette}>
-                {(def?.parts ?? []).map((p) => <div key={p.label} className={styles.chip} onClick={() => add(p.item)}>{p.label}</div>)}
+                {baseParts(theme).map((p) => <div key={p.label} className={styles.chip} onClick={() => add(p.item)}>{p.label}</div>)}
               </div>
             </Field>
+            {(def?.presets ?? []).length > 0 && (
+              <Field label="Add preset">
+                <div className={styles.palette}>
+                  {def!.presets!.map((p) => <div key={p.label} className={styles.chip} onClick={() => add(p.item)}>{p.label}</div>)}
+                </div>
+              </Field>
+            )}
             <Field label="Width">
               <div className={styles.inlineRow}>
                 <Choice options={[{ value: "auto", label: "Fit text" }, { value: "lanes", label: "Lanes", title: "At least this many lanes wide (4 m lanes at 100% size)" },
@@ -259,11 +275,13 @@ export const Designer = (props: {
                     const d: Design = { ...design };
                     delete d.minLanes;
                     delete d.minWidth;
+                    delete d.laneKind;
                     if (v === "lanes") d.minLanes = 1;
                     if (v === "custom") d.minWidth = 96;
                     setDesign(d);
                   }} />
                 {widthMode === "lanes" && <NumberBox compact value={design.minLanes} min={1} onChange={(minLanes) => setDesign({ ...design, minLanes })} />}
+                {widthMode === "lanes" && <Choice options={LANE_KIND} value={design.laneKind ?? ""} onChange={(laneKind) => setDesign({ ...design, laneKind: laneKind || undefined })} />}
                 {widthMode === "custom" && <NumberBox compact value={design.minWidth} step={12} onChange={(minWidth) => setDesign({ ...design, minWidth })} />}
               </div>
             </Field>
@@ -271,6 +289,7 @@ export const Designer = (props: {
           </div>
           </Scrollable>
           <div className={styles.actions}>
+            {props.actions.some((a) => a.primary) && props.actions.length > 2 && <div className={styles.placeAs}>Place as:</div>}
             {props.actions.map((a, i) => a.primary ? (
               <div key={a.label} className={styles.primaryButton} title={a.title} onClick={a.onSelect}>{a.label}</div>
             ) : (
@@ -284,7 +303,8 @@ export const Designer = (props: {
           <div className={styles.heading}>Parts</div>
           <PartsList design={design} selected={selected} onSelect={setSelected} labels={labels}
             onChange={(d, path) => { setDesign(d); setSelected(path); }}
-            onDelete={(path) => { setDesign(removeItem(design, path)); setSelected(null); }} />
+            onDelete={(path) => { setDesign(removeItem(design, path)); setSelected(null); }}
+            onDuplicate={(path) => { const r = duplicateItem(design, path); setDesign(r.design); setSelected(r.path); }} />
           {item && (
             <>
               <div className={styles.heading}>{kindOf(item, labels)}</div>
@@ -296,6 +316,6 @@ export const Designer = (props: {
         </div>
         {props.overlay}
       </div>
-    </Panel>
+    </Dialog>
   );
 };

@@ -13,7 +13,8 @@ export type ThemeDef = {
   schemes?: Record<string, { bg: string; fg: string; label?: string }>;
   shields?: Record<string, ThemeShield>;
   exitTab?: { font?: string };
-  parts?: { label: string; item: Item }[];
+  /** Ready-made combinations of the basic parts that suit the theme's signs ("Add preset"). */
+  presets?: { label: string; item: Item }[];
   laneWidth?: number;
 };
 export type Theme = { id: string; name: string; builtIn: boolean; base: string; def: ThemeDef };
@@ -21,6 +22,30 @@ export type Theme = { id: string; name: string; builtIn: boolean; base: string; 
 export const themeOf = (themes: Theme[], design: Design): Theme | undefined =>
   themes.find((t) => t.id === (design.theme ?? "us")) ?? themes.find((t) => t.id === "us") ?? themes[0];
 
+
+/**
+ * The basic parts every theme has, sized and colored for the theme: text at its letter height, its first route plate,
+ * a panel in its yellow (or white), a tab with exit text where the theme has exit tabs.
+ */
+export function baseParts(theme?: Theme): { label: string; item: Item }[] {
+  const d = theme?.def;
+  const th = d?.defaults?.textHeight ?? 16;
+  const first = Object.keys(d?.shields ?? {})[0];
+  const schemes = d?.schemes ?? {};
+  const small = Math.round(th * 0.75 * 10) / 10;
+  const tabFont = d?.exitTab?.font;
+  return [
+    { label: "Text", item: { type: "text", text: "Destination", height: th } },
+    { label: "Shield", item: { type: "shield", network: first, number: (d?.shields ?? {})[first]?.default ?? "1", height: d?.defaults?.shieldHeight } },
+    { label: "Arrow", item: { type: "arrow", direction: "up", height: d?.defaults?.arrowHeight } },
+    { label: "Divider", item: { type: "divider" } },
+    { label: "Row", item: { type: "row", align: "center", items: [] } },
+    { label: "Column", item: { type: "stack", align: "center", items: [] } },
+    { label: "Chip", item: { type: "chip", scheme: schemes.white ? "white" : undefined, items: [{ type: "text", text: "Text", height: small }] } },
+    { label: "Panel", item: { type: "panel", scheme: schemes.yellow ? "yellow" : schemes.white ? "white" : undefined, align: "center", items: [] } },
+    { label: "Tab", item: { type: "tab", align: "right", items: [{ type: "text", text: tabFont ? "EXIT 1" : "1", height: tabFont ? 10 : Math.round(th * 0.65 * 10) / 10, font: tabFont }] } },
+  ];
+}
 
 /** A new sign in the theme: its default colors and one line of text. */
 export function blankFor(theme?: Theme): Design {

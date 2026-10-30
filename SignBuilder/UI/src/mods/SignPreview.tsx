@@ -82,10 +82,33 @@ export const SignPreview = (props: {
     sign.style.left = "0px";
     sign.style.top = "0px";
     el.appendChild(sign);
-    if (props.selected != null) {
-      const hit = el.querySelector(`[data-sb-path="${props.selected}"]`) as HTMLElement | null;
-      if (hit) hit.style.boxShadow = "0px 0px 0px 3px #ffd400";
+    // The selected part gets a yellow outline, and a dashed one around its margins when it has any.
+    const hit = props.selected != null ? (el.querySelector(`[data-sb-path="${props.selected}"]`) as HTMLElement | null) : null;
+    let marginBox: HTMLDivElement | null = null;
+    if (hit) {
+      hit.style.boxShadow = "0px 0px 0px 3px #ffd400";
+      marginBox = document.createElement("div");
+      marginBox.style.position = "absolute";
+      marginBox.style.pointerEvents = "none";
+      marginBox.style.border = "2px dashed #ffd400";
+      marginBox.style.display = "none";
+      sign.appendChild(marginBox);
     }
+    const placeMarginBox = () => {
+      if (!hit || !marginBox) return;
+      const cs = getComputedStyle(hit);
+      const m = [cs.marginTop, cs.marginRight, cs.marginBottom, cs.marginLeft].map((v) => parseFloat(v) || 0);
+      if (!m.some((v) => Math.abs(v) > 0.5)) { marginBox.style.display = "none"; return; }
+      let x = 0;
+      let y = 0;
+      let node: HTMLElement | null = hit;
+      while (node && node !== sign) { x += node.offsetLeft; y += node.offsetTop; node = node.offsetParent as HTMLElement | null; }
+      marginBox.style.display = "block";
+      marginBox.style.left = x - m[3] + "px";
+      marginBox.style.top = y - m[0] + "px";
+      marginBox.style.width = hit.offsetWidth + m[1] + m[3] + "px";
+      marginBox.style.height = hit.offsetHeight + m[0] + m[2] + "px";
+    };
     // Fit the sign into the preview box. Layout is not ready on the first frame (offsetWidth 0) and
     // grows when the sign fonts and shield images finish loading, so keep measuring for a while.
     let frames = 0;
@@ -98,6 +121,7 @@ export const SignPreview = (props: {
       const h = sign.offsetHeight;
       const bw = box?.clientWidth || props.maxWidth;
       const bh = box?.clientHeight || props.maxHeight;
+      placeMarginBox();
       if (w > 1 && h > 1 && bw > 1 && bh > 1) {
         const scale = Math.min(1, (bw - padding) / w, (bh - padding) / h);
         const next = { scale, x: (bw - w * scale) / 2, y: (bh - h * scale) / 2, shown: true };

@@ -192,11 +192,11 @@ namespace SignBuilder.Tools
                 case "farther": m_Options.RoadGap = math.min(m_Options.RoadGap + 0.25f, 30f); break;
                 // Snapped to a road the sign or structure itself goes up and down; freely placed, its base does.
                 case "up":
-                    if (m_Options.Free) goto case "raise";
+                    if (m_Options.Free || m_Options.Type == "surface") goto case "raise";
                     m_Options.Lift = math.min(m_Options.Lift + 0.25f, 6f);
                     break;
                 case "down":
-                    if (m_Options.Free) goto case "lower";
+                    if (m_Options.Free || m_Options.Type == "surface") goto case "lower";
                     m_Options.Lift = math.max(m_Options.Lift - 0.25f, m_Options.Type == "ground" ? AssemblyBuilder.kMinGroundLift : -kMinOverheadClearance);
                     break;
                 case "wider": m_Options.FreeWidth = math.min(m_Options.FreeWidth + 1f, 60f); break;
@@ -467,8 +467,8 @@ namespace SignBuilder.Tools
         public override void InitializeRaycast()
         {
             base.InitializeRaycast();
-            var free = m_Options.Free;
-            // Surface-mounted signs also go on buildings and other objects when placed freely.
+            var free = m_Options.Free || Surface;
+            // Surface-mounted signs go on anything: the ground, buildings and other objects, roads and bridges.
             m_ToolRaycastSystem.typeMask = free ? TypeMask.Terrain | TypeMask.Net | (Surface ? TypeMask.StaticObjects : TypeMask.None) : TypeMask.Net;
             m_ToolRaycastSystem.netLayerMask = free ? Layer.All : Layer.Road;
             m_ToolRaycastSystem.collisionMask = CollisionMask.OnGround | CollisionMask.Overground;
@@ -500,7 +500,30 @@ namespace SignBuilder.Tools
             Hovered = hit ? entity : Entity.Null;
             RoadProbe.Snap snap = null;
             string key = null;
-            if (hit && m_Options.Free)
+            // A surface-mounted sign hovering an elevated road hangs on that road's side (the edge nearer the cursor);
+            // anywhere else it stands where it is clicked.
+            if (hit && Surface)
+            {
+                var onDeck = false;
+                if (EntityManager.HasComponent<Edge>(entity) && EntityManager.HasComponent<Curve>(entity))
+                {
+                    var deck = new RoadProbe(EntityManager, m_PrefabSystem).SnapAt(entity, raycast.m_CurvePosition);
+                    if (deck.Point.y - AssemblyBuilder.TerrainHeight(deck.Point) > 2f)
+                    {
+                        onDeck = true;
+                        snap = deck;
+                        m_Options.LeftSide = math.dot(raycast.m_HitPosition - deck.Point, deck.Right) < 0f;
+                        key = $"deck {entity} {math.round(raycast.m_CurvePosition * 100f)} {m_Options.LeftSide}";
+                    }
+                }
+                m_Options.Free = !onDeck;
+                if (!onDeck)
+                {
+                    snap = PlacementContext.FreeSnap(raycast.m_HitPosition, m_Options.Angle, m_Options);
+                    key = $"free {math.round(raycast.m_HitPosition * 10f)}";
+                }
+            }
+            else if (hit && m_Options.Free)
             {
                 snap = PlacementContext.FreeSnap(raycast.m_HitPosition, m_Options.Angle, m_Options);
                 key = $"free {math.round(raycast.m_HitPosition * 10f)}";
@@ -567,15 +590,15 @@ namespace SignBuilder.Tools
         {
             var keyboard = UnityEngine.InputSystem.Keyboard.current;
             if (keyboard == null) return;
-            // Shift + mouse wheel: distance from the road; Ctrl + mouse wheel: height.
+            // Alt + mouse wheel: distance from the road; Ctrl + mouse wheel: height. (Shift is left to the camera.)
             var mouse = UnityEngine.InputSystem.Mouse.current;
             var wheel = mouse?.scroll.ReadValue().y ?? 0f;
             if (math.abs(wheel) > 0.01f)
             {
-                if (keyboard.shiftKey.isPressed && !m_Options.Free) Adjust(wheel > 0 ? "farther" : "closer");
+                if (keyboard.altKey.isPressed && !m_Options.Free) Adjust(wheel > 0 ? "farther" : "closer");
                 else if (keyboard.ctrlKey.isPressed) Adjust(wheel > 0 ? "up" : "down");
             }
-            if (!m_Options.Free) return;
+            if (!m_Options.Free && m_Options.Type != "surface") return;
             if (keyboard.pageUpKey.wasPressedThisFrame) Adjust("raise");
             if (keyboard.pageDownKey.wasPressedThisFrame) Adjust("lower");
         }

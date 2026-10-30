@@ -304,9 +304,11 @@
   function renderContainer(item, ctx, horizontal, path, only) {
     var e = el("div", horizontal ? "sb-row" : "sb-stack");
     var align = { start: "flex-start", left: "flex-start", center: "center", end: "flex-end", right: "flex-end" }[item.align || (horizontal ? "center" : "start")];
-    // A spread-out row ("between") fills the width of its column and puts the space between its parts.
+    // A spread-out row ("between") fills the width of its column and puts the space between its parts; an "even"
+    // row fills it too and centers each part in an equal share of it (dividers keep their own width).
+    var spread = horizontal && (item.justify === "between" || item.justify === "even");
     if (horizontal) e.style.justifyContent = item.justify === "between" ? "space-between" : "flex-start";
-    if (horizontal && item.justify === "between") e.style.alignSelf = "stretch";
+    if (spread) e.style.alignSelf = "stretch";
     e.style.alignItems = align;
     var items = item.items || [];
     var previous = null;
@@ -331,6 +333,15 @@
       c.style.marginBottom = px(m.bottom || 0);
       c.style.marginRight = px((c.sbMarginRight || 0) + (m.right || 0));
       previous = child;
+      if (horizontal && item.justify === "even" && child.type !== "divider") {
+        var cell = el("div", null, {
+          flexGrow: "1", flexShrink: "1", flexBasis: "0px", display: "flex", flexDirection: "row",
+          justifyContent: "center", alignItems: align,
+        });
+        c.style.marginLeft = px(m.left || 0);
+        cell.appendChild(c);
+        c = cell;
+      }
       e.appendChild(c);
     });
     return e;
@@ -429,9 +440,11 @@
     return tag(box, path);
   }
 
-  // Minimum sign width for "at least N lanes": a 4 m lane at the default 70% sign size, less a little clearance.
-  function laneWidth() {
-    return ((T.def.laneWidth || 4 / 0.0254) / 0.7) * 0.92;
+  // Minimum sign width for "at least N lanes", at the default 70% sign size less a little clearance: highway lanes
+  // (the theme's lane width, 4 m) or the narrower lanes of local roads (3 m).
+  function laneWidth(kind) {
+    var lane = kind === "local" ? 3 / 0.0254 : (T.def.laneWidth || 4 / 0.0254);
+    return (lane / 0.7) * 0.92;
   }
 
   function renderSign(doc) {
@@ -445,7 +458,7 @@
     var legend = spacingHeight({ type: "stack", items: items.filter(inBody) }) || DEFAULTS.textHeight;
     var margin = doc.margin != null ? doc.margin : legend * DEFAULTS.margin;
     var ctx = { font: doc.font || DEFAULTS.font, fg: s.fg, bg: s.bg };
-    var minWidth = doc.minLanes ? doc.minLanes * laneWidth() : doc.minWidth;
+    var minWidth = doc.minLanes ? doc.minLanes * laneWidth(doc.laneKind) : doc.minWidth;
 
     var sign = el("div", "sb-sign");
 
@@ -500,7 +513,8 @@
       if (!isPanel(items[i])) { stretch.push(i); return; }
       flush();
       var corners = { top: k === 0, bottom: k === drawn.length - 1, topLeft: !sides.left.length, topRight: !sides.right.length };
-      inner.appendChild(tag(renderPanel(items[i], ctx, String(i), corners, innerRadius), String(i)));
+      // The panel sits inside the legend border, so its corners follow that border's inner edge.
+      inner.appendChild(tag(renderPanel(items[i], ctx, String(i), corners, Math.max(innerRadius - border, 0)), String(i)));
       first = false;
     });
     flush();

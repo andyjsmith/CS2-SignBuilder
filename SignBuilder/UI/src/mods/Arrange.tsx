@@ -1,5 +1,5 @@
 import { useValue } from "cs2/api";
-import { Panel } from "cs2/ui";
+import { Dialog } from "./Dialog";
 import { ReactNode, useEffect, useMemo, useRef, useState } from "react";
 import { adjust, arrange, arrangeInfo$, toolStatus$ } from "./bindings";
 import { Choice } from "./Controls";
@@ -16,8 +16,6 @@ type Info = {
   angle: number; elevation: number; width: number; replacing: boolean; busy: boolean; dirty: boolean;
 };
 
-/** Height of the game's bottom bar, as a fraction of the screen. */
-const kBottomBar = 0.092;
 
 const nth = (n: number) => (n === 2 ? "2nd" : n === 3 ? "3rd" : `${n}th`);
 /** "Rightmost lane", "2nd lane from left", "+1.25 m from center", "With others". */
@@ -53,36 +51,11 @@ export const Arrange = (props: {
     if (w && Math.abs(w - areaWidth) > 2) setAreaWidth(w);
   });
 
-  // Docked just above the game's bottom bar. The panel's start position is a fraction of the free space, so the full panel is measured once laid out and placed again (remounted) with its bottom edge
-  // where it belongs; again if its height changes (free placement adds controls). Dragging it afterwards sticks.
-  const body = useRef<HTMLDivElement>(null);
-  const [placement, setPlacement] = useState({ y: 0.7, key: 0, height: 0, tries: 0 });
-  useEffect(() => {
-    if (!info || !body.current) return;
-    const timer = setTimeout(() => {
-      let panel: HTMLElement = body.current!;
-      while (panel.parentElement && panel.parentElement.getBoundingClientRect().height < window.innerHeight * 0.95) panel = panel.parentElement;
-      const r = panel.getBoundingClientRect();
-      const H = window.innerHeight;
-      if (r.height <= 0 || H <= 0) return;
-      const changed = Math.abs(r.height - placement.height) > 8;
-      if (!changed && placement.tries >= 3) return;
-      const off = H * (1 - kBottomBar) - 6 - r.bottom;
-      if (Math.abs(off) < 4) { if (changed) setPlacement({ ...placement, height: r.height, tries: 3 }); return; }
-      // initialPosition.y places the panel's top at y * (screen height - panel height).
-      const top = r.top + off;
-      setPlacement({ y: Math.max(0, Math.min(1, top / Math.max(1, H - r.height))), key: placement.key + 1, height: r.height, tries: changed ? 1 : placement.tries + 1 });
-    }, 60);
-    return () => clearTimeout(timer);
-  });
-
-  const PanelAny: any = Panel;
-  const position = { x: 0.5, y: placement.y };
   if (!info) {
     return (
-      <PanelAny key={placement.key} draggable initialPosition={position} header="Gantry" className={styles.arrange} onClose={() => props.onClose(true)}>
-        <div ref={body} className={styles.compactBody}><div className={styles.status}>{status || "Preparing..."}</div></div>
-      </PanelAny>
+      <Dialog dock="bottom" title="Gantry" className={styles.arrange} onClose={() => props.onClose(true)}>
+        <div className={styles.compactBody}><div className={styles.status}>{status || "Preparing..."}</div></div>
+      </Dialog>
     );
   }
 
@@ -154,14 +127,24 @@ export const Arrange = (props: {
   const ready = info.total > 0 && !info.busy && !signs.some((s) => !s.ready);
 
   return (
-    <PanelAny key={placement.key} draggable initialPosition={position} header={info.replacing ? "Edit gantry" : "Gantry"} className={styles.arrange} onClose={() => props.onClose(unsaved)}>
-      <div ref={body} className={styles.arrangeBody}>
-        <div className={styles.barRow}>
+    <Dialog dock="bottom" title={info.replacing ? "Edit gantry" : "Gantry"} className={styles.arrange} onClose={() => props.onClose(unsaved)}
+      header={
+        <>
           <div className={ready ? styles.primaryButton : styles.primaryButtonOff} onClick={() => ready && arrange({ op: "build" })}>{info.replacing ? "Save" : "Build"}</div>
           <div className={styles.chip} style={{ alignSelf: "center" }} onClick={() => arrange({ op: "auto" })}>Auto arrange</div>
           <div className={styles.chip} style={{ alignSelf: "center" }} title="Click another spot on a road to move the gantry there" onClick={() => arrange({ op: "repick" })}>Move gantry</div>
           <div className={styles.chip} style={{ alignSelf: "center" }} onClick={() => props.onCancel(unsaved)}>Cancel</div>
-          <Label>Structure</Label>
+          <Label>Showing</Label>
+          <Choice options={[
+            { value: "front", label: `Front (${info.view === "back" ? info.otherSide : signs.length})` },
+            { value: "back", label: `Back (${info.view === "back" ? signs.length : info.otherSide})`, title: "Signs on the other face of the structure, for traffic the other way" },
+          ]} value={info.view} onChange={(value) => { arrange({ op: "view", value }); setSelected(-1); }} />
+          {status && <div className={styles.status} style={{ marginLeft: "12rem" }}>{status}</div>}
+        </>
+      }>
+      <div className={styles.arrangeBody}>
+        <div className={styles.barRow}>
+          <div className={styles.barLabel}>Structure</div>
           <Choice options={STRUCTURES.map((s) => ({ value: s.id, label: s.label }))} value={info.type} onChange={(value) => arrange({ op: "type", value })} />
           <Label>Type</Label>
           <Choice options={SPANS.map((s) => ({ value: s.id, label: s.label, title: s.hint }))} value={info.span} onChange={(value) => arrange({ op: "span", value })} />
@@ -173,7 +156,6 @@ export const Arrange = (props: {
             <div className={styles.chip} style={{ alignSelf: "center", marginLeft: "12rem" }} title="Face the signs the other way"
               onClick={() => arrange({ op: "swap" })}>Swap directions</div>
           )}
-          {status && <div className={styles.status} style={{ marginLeft: "12rem" }}>{status}</div>}
         </div>
         <div className={styles.barRow}>
           <div className={styles.barLabel}>Height</div>
@@ -183,9 +165,9 @@ export const Arrange = (props: {
           {!info.free && (
             <>
               <Label>Posts from road</Label>
-              <Step title="Closer (Shift + mouse wheel)" onClick={() => adjust("closer")}>-</Step>
+              <Step title="Closer (Alt + mouse wheel)" onClick={() => adjust("closer")}>-</Step>
               <div className={styles.barValueSmall}>{`${(info.gap ?? 2).toFixed(2)} m`}</div>
-              <Step title="Farther (Shift + mouse wheel)" onClick={() => adjust("farther")}>+</Step>
+              <Step title="Farther (Alt + mouse wheel)" onClick={() => adjust("farther")}>+</Step>
             </>
           )}
           <Label>Sign size</Label>
@@ -195,11 +177,6 @@ export const Arrange = (props: {
           <Label>Lights</Label>
           <Choice options={[{ value: "off", label: "Off" }, { value: "on", label: "On", title: "Light fixtures on arms below each sign; the signs glow brighter at night" }]}
             value={info.lights ? "on" : "off"} onChange={(v) => arrange({ op: "lights", value: v === "on" })} />
-          <Label>Showing</Label>
-          <Choice options={[
-            { value: "front", label: `Front (${info.view === "back" ? info.otherSide : signs.length})` },
-            { value: "back", label: `Back (${info.view === "back" ? signs.length : info.otherSide})`, title: "Signs on the other face of the structure, for traffic the other way" },
-          ]} value={info.view} onChange={(value) => { arrange({ op: "view", value }); setSelected(-1); }} />
           {info.free && (
             <>
               <Label>Rotate</Label>
@@ -277,6 +254,6 @@ export const Arrange = (props: {
         </div>
         {props.overlay}
       </div>
-    </PanelAny>
+    </Dialog>
   );
 };

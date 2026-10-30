@@ -20,10 +20,11 @@ Players can add their own themes and templates as files, or publish them as mods
    colors (or custom colors), width (fit, a number of lanes, or at least a size) and alignment.
    **Save current as template** keeps the sign as a JSON file in
    `ModsData/SignBuilder/Templates`.
-3. **Place Standalone** puts the sign on roadside posts, snapped beside a road or freely placed (right-drag
-   rotates). While placing a sign or a gantry, Shift + mouse wheel sets the distance from the road and
-   Ctrl + mouse wheel (or Page Up / Page Down) the height.
-4. **Place on gantry** asks for a road, pins the structure there with a live preview and opens the
+3. **Place as:** **Roadside** puts the sign on posts, snapped beside a road or freely placed (right-drag
+   rotates); **Prop** places just the sign, no supports, on any surface or hung on the side of an elevated
+   road. While placing, Alt + mouse wheel sets the distance from the road and Ctrl + mouse wheel (or
+   Page Up / Page Down) the height.
+4. **Gantry** asks for a road, pins the structure there with a live preview and opens the
    arrangement panel: a to-scale view of the lanes as drivers see them. Add signs (any theme), drag them
    sideways (they snap to lane centers, remembered from the nearer edge: "rightmost lane", "2nd lane from
    left"), choose the structure (double truss, single truss, curved or straight tube), Span or Cantilever
@@ -99,8 +100,9 @@ label, and `scale`/`offset`: em size and vertical offset per letter height, from
 no file and a `weight` uses a family the game ships, such as "Noto Sans JP"; `@us/fonts/…` borrows another
 theme's file),
 color schemes, route plates (`img` artwork, `ellipse`, colored `rect` plates with optional border and
-prefix such as "A " or "E ", or `plain` colored text), the arrow outline, features (exit tab, EXIT ONLY),
-the parts palette and a `templates/` folder. Built-in themes live in `SignBuilder/Resources/Themes`;
+prefix such as "A " or "E ", or `plain` colored text), the arrow outline, `presets` (ready-made
+combinations of the basic parts shown under **Add preset**, such as an exit tab or an EXIT ONLY panel) and a
+`templates/` folder. Built-in themes live in `SignBuilder/Resources/Themes`;
 players add theirs in `ModsData/SignBuilder/Themes/<id>`. A player folder with a built-in theme's id and
 no `theme.json` supplies extra files for it, such as fonts that cannot ship with the mod (the Nordic theme
 picks up `Tratex.ttf` or `Trafikkalfabetet.ttf` there). Switching a sign's theme in the designer keeps its
@@ -127,5 +129,4 @@ folder, so players only subscribe to the theme pack. A folder with the same id i
 ## Roadmap
 
 - More themes (and per-country spacing rules); lane arrows placed automatically over the detected lanes
-- Sign lights are fixtures and a brighter face at night; they do not cast light into the scene yet
 - Structures placed before the save-recipe change cannot be rebuilt on other PCs (re-place them)

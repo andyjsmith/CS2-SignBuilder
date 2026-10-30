@@ -1,5 +1,6 @@
 import { useValue } from "cs2/api";
-import { Button, Panel } from "cs2/ui";
+import { Button } from "cs2/ui";
+import { Dialog } from "./Dialog";
 import { useMemo } from "react";
 import { adjust, placeInfo$ } from "./bindings";
 import { Choice } from "./Controls";
@@ -16,14 +17,13 @@ export const PlacementBar = (props: { status: string; onBack: () => void; onClos
   const Step = (p: { action: string; children: any; title?: string }) => (
     <div className={styles.step} title={p.title} onClick={() => adjust(p.action)}>{p.children}</div>
   );
-  const PanelAny: any = Panel;
   return (
-    <PanelAny draggable initialPosition={{ x: 0.5, y: 0.05 }} header={info.surface ? "Surface-mount sign" : info.posts ? "Place standalone sign" : "Place gantry"} className={styles.compact} onClose={props.onClose}>
+    <Dialog dock="top" title={info.surface ? "Prop sign" : info.posts ? "Roadside sign" : "Place gantry"} className={styles.compact} onClose={props.onClose}>
       <div className={styles.compactBody}>
         <div className={styles.status}>{props.status}</div>
         <div className={styles.hint}>{info.free
           ? "Right-drag to rotate; Page Up / Page Down or Ctrl + mouse wheel to raise and lower."
-          : "Shift + mouse wheel: distance from the road. Ctrl + mouse wheel: height."}</div>
+          : "Alt + mouse wheel: distance from the road. Ctrl + mouse wheel: height."}</div>
         {!info.surface && (
           <div className={styles.barRow}>
             <Choice options={[{ value: "road", label: "Snap to road" }, { value: "free", label: "Free placement" }]}
@@ -50,9 +50,9 @@ export const PlacementBar = (props: { status: string; onBack: () => void; onClos
           {!info.free && (
             <>
               <div className={styles.barLabel} style={{ marginLeft: "16rem" }}>{info.posts ? "From road" : "Posts from road"}</div>
-              <Step action="closer" title="Closer to the road (Shift + mouse wheel)">-</Step>
+              <Step action="closer" title="Closer to the road (Alt + mouse wheel)">-</Step>
               <div className={styles.barValueSmall}>{`${(info.gap ?? 0).toFixed(2)} m`}</div>
-              <Step action="farther" title="Farther from the road (Shift + mouse wheel)">+</Step>
+              <Step action="farther" title="Farther from the road (Alt + mouse wheel)">+</Step>
             </>
           )}
         </div>
@@ -68,6 +68,6 @@ export const PlacementBar = (props: { status: string; onBack: () => void; onClos
           <Button variant="flat" onSelect={props.onBack}><div className={styles.flatLabel}>Back to editor</div></Button>
         </div>
       </div>
-    </PanelAny>
+    </Dialog>
   );
 };

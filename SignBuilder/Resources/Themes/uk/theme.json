@@ -131,89 +131,101 @@
   },
   "arrow": "M42 0 H58 V100 H82 L50 150 L18 100 H42 Z",
   "laneWidth": 157.48031496062993,
-  "parts": [
+  "presets": [
     {
-      "label": "Text",
-      "item": {
-        "type": "text",
-        "text": "Destination",
-        "height": 14.0
-      }
-    },
-    {
-      "label": "Shield",
+      "label": "Junction number",
       "item": {
         "type": "shield",
-        "network": "AP",
-        "number": "1",
-        "height": 15.0
+        "network": "J",
+        "number": "12"
       }
     },
     {
-      "label": "Arrow",
+      "label": "Motorway patch",
       "item": {
-        "type": "arrow",
-        "direction": "up",
-        "height": 19.5
+        "type": "chip",
+        "scheme": "blue",
+        "items": [
+          {
+            "type": "shield",
+            "network": "M",
+            "number": "1",
+            "height": 14
+          },
+          {
+            "type": "text",
+            "text": "Leeds",
+            "height": 12
+          }
+        ]
       }
     },
     {
-      "label": "Divider",
+      "label": "Distance",
       "item": {
-        "type": "divider"
+        "type": "text",
+        "text": "1 mile",
+        "height": 12
       }
     },
     {
-      "label": "Row",
+      "label": "Split columns",
+      "item": {
+        "type": "row",
+        "align": "start",
+        "items": [
+          {
+            "type": "stack",
+            "align": "center",
+            "items": [
+              {
+                "type": "text",
+                "text": "Destination",
+                "height": 14
+              }
+            ]
+          },
+          {
+            "type": "divider"
+          },
+          {
+            "type": "stack",
+            "align": "center",
+            "items": [
+              {
+                "type": "text",
+                "text": "Destination",
+                "height": 14
+              }
+            ]
+          }
+        ],
+        "justify": "even"
+      }
+    },
+    {
+      "label": "Lane arrows",
       "item": {
         "type": "row",
         "align": "center",
-        "items": []
-      }
-    },
-    {
-      "label": "Column",
-      "item": {
-        "type": "stack",
-        "align": "center",
-        "items": []
-      }
-    },
-    {
-      "label": "Chip",
-      "item": {
-        "type": "chip",
-        "scheme": "white",
         "items": [
           {
-            "type": "text",
-            "text": "Text",
-            "height": 10.5
-          }
-        ]
-      }
-    },
-    {
-      "label": "Panel",
-      "item": {
-        "type": "panel",
-        "scheme": "yellow",
-        "align": "center",
-        "items": []
-      }
-    },
-    {
-      "label": "Tab",
-      "item": {
-        "type": "tab",
-        "align": "right",
-        "items": [
+            "type": "arrow",
+            "direction": "turn-left",
+            "height": 24.375
+          },
           {
-            "type": "text",
-            "text": "12",
-            "height": 9.1
+            "type": "arrow",
+            "direction": "up",
+            "height": 24.375
+          },
+          {
+            "type": "arrow",
+            "direction": "up",
+            "height": 24.375
           }
-        ]
+        ],
+        "justify": "even"
       }
     }
   ]

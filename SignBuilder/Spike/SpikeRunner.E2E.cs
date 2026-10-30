@@ -172,6 +172,14 @@ namespace SignBuilder.Spike
                 SpikeReport.Set($"e2e.elevated.{cases[i].Type}-{cases[i].Span}", $"{Describe(r)} lanes=[{string.Join(" ", placement.LaneXs.Select(x => x.ToString("F1")))}]");
                 yield return Shoot(r, $"e2e_elevated_{cases[i].Type}_{cases[i].Span}.png", 35f, 40f);
             }
+            // A prop sign hung on an elevated road's side.
+            if (spots.Count > 0)
+            {
+                var side = Options("surface", "single");
+                yield return PlaceAndWait(() => tool.PlaceForTest(spots[0].edge, math.clamp(spots[0].t + 0.2f, 0.05f, 0.95f), new List<JObject> { Template("services-blue") }, side));
+                SpikeReport.Set("e2e.elevated.prop", Describe(SignPlacementToolSystem.LastPlaced));
+                yield return Shoot(SignPlacementToolSystem.LastPlaced, "e2e_elevated_prop.png", 60f, 25f);
+            }
         }
 
         private string Arrangement(SignBuilderUISystem ui)
@@ -584,7 +592,7 @@ namespace SignBuilder.Spike
         }
 
         private static string Describe(AssemblyRecord r) =>
-            r == null ? "(none)" : $"lod={r.LodGeometryId != null} lights={r.Context?.Options?.Lights} spec={r.SupportSpec?.Kind}{(r.SupportSpec?.Mirror == true ? "(mirrored)" : "")}({string.Join(",", r.SupportSpec?.Args?.Select(a => a.ToString("F2")) ?? Array.Empty<string>())}) centers=[{string.Join(" ", r.Centers.Select(c => $"({c.x:F2},{c.y:F2})"))}]";
+            r == null ? "(none)" : $"lod={r.LodGeometryId != null} lights={r.Context?.Options?.Lights}/{(r.LightSpots?.Length ?? 0) / 6} spec={r.SupportSpec?.Kind}{(r.SupportSpec?.Mirror == true ? "(mirrored)" : "")}({string.Join(",", r.SupportSpec?.Args?.Select(a => a.ToString("F2")) ?? Array.Empty<string>())}) centers=[{string.Join(" ", r.Centers.Select(c => $"({c.x:F2},{c.y:F2})"))}]";
 
         private static void LookAt(Entity entity, float distance = 55f)
         {

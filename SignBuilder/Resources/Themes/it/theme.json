@@ -100,89 +100,67 @@
   },
   "arrow": "M42 0 H58 V100 H82 L50 150 L18 100 H42 Z",
   "laneWidth": 157.48031496062993,
-  "parts": [
+  "presets": [
     {
-      "label": "Text",
-      "item": {
-        "type": "text",
-        "text": "Destination",
-        "height": 14.0
-      }
-    },
-    {
-      "label": "Shield",
-      "item": {
-        "type": "shield",
-        "network": "A",
-        "number": "1",
-        "height": 15.0
-      }
-    },
-    {
-      "label": "Arrow",
-      "item": {
-        "type": "arrow",
-        "direction": "up",
-        "height": 20.0
-      }
-    },
-    {
-      "label": "Divider",
-      "item": {
-        "type": "divider"
-      }
-    },
-    {
-      "label": "Row",
+      "label": "Uscita",
       "item": {
         "type": "row",
         "align": "center",
-        "items": []
-      }
-    },
-    {
-      "label": "Column",
-      "item": {
-        "type": "stack",
-        "align": "center",
-        "items": []
-      }
-    },
-    {
-      "label": "Chip",
-      "item": {
-        "type": "chip",
-        "scheme": "white",
         "items": [
           {
             "type": "text",
-            "text": "Text",
-            "height": 10.5
+            "text": "Uscita",
+            "height": 11
+          },
+          {
+            "type": "shield",
+            "network": "USCITA",
+            "number": "12"
           }
         ]
       }
     },
     {
-      "label": "Panel",
+      "label": "Distance",
       "item": {
-        "type": "panel",
-        "scheme": "yellow",
-        "align": "center",
-        "items": []
+        "type": "text",
+        "text": "2 km",
+        "height": 14
       }
     },
     {
-      "label": "Tab",
+      "label": "Split columns",
       "item": {
-        "type": "tab",
-        "align": "right",
+        "type": "row",
+        "align": "start",
         "items": [
           {
-            "type": "text",
-            "text": "12",
-            "height": 9.1
+            "type": "stack",
+            "align": "center",
+            "items": [
+              {
+                "type": "text",
+                "text": "Destination",
+                "height": 14
+              }
+            ]
+          },
+          {
+            "type": "divider"
+          },
+          {
+            "type": "stack",
+            "align": "center",
+            "items": [
+              {
+                "type": "text",
+                "text": "Destination",
+                "height": 14
+              }
+            ]
           }
-        ]
+        ],
+        "justify": "even"
       }
     }
   ]
