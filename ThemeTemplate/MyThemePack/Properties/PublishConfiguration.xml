@@ -1,0 +1,23 @@
+<Publish>
+	<!--Empty for the first publish (PublishNewMod); then the id Paradox Mods gave it, for new versions-->
+	<ModId Value="" />
+	<DisplayName Value="Sign Builder Themes: Exampleland" />
+	<ShortDescription Value="Exampleland road sign theme for Sign Builder" />
+	<LongDescription>
+A theme for Sign Builder: Exampleland's guide signs, route plates and templates.
+
+Requires Sign Builder. Subscribe, then pick "Exampleland" from the Theme list in the sign designer.
+	</LongDescription>
+	<Thumbnail Value="Properties/Thumbnail.png" />
+	<Screenshot Value="" />
+	<Tag Value="Code Mod" />
+	<ForumLink Value="" />
+	<ModVersion Value="1.0" />
+	<GameVersion Value="1.*" />
+	<!--Sign Builder's Paradox Mods id, so players get it with your pack-->
+	<Dependency Id="" />
+	<RequiredDLC Value="" />
+	<ChangeLog Value="" />
+	<ExternalLink Type="" Url="" />
+	<AccessLevel Value="Public" />
+</Publish>

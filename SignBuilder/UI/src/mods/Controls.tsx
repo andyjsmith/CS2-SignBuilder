@@ -184,16 +184,32 @@ export const ColorBox = (props: { value: string; onChange: (hex: string) => void
     <TextBox value={props.value} onChange={props.onChange} />
   );
 
+/**
+ * Color swatches in rows of <perRow> (a wrapped flex row does not grow in Gameface, so a second line would
+ * overlap what follows): any leading buttons, the colors, then "any color" (rainbow).
+ */
+export const ColorRows = (props: {
+  lead?: any[]; colors: { color: string; title?: string; border?: string; on: boolean; onClick: () => void }[];
+  custom: { on: boolean; onClick: () => void; title?: string }; perRow?: number;
+}) => {
+  const cells: any[] = [...(props.lead ?? [])];
+  props.colors.forEach((c, i) => cells.push(
+    <div key={i} title={c.title ?? c.color} className={c.on ? styles.swatchOn : styles.swatch}
+      style={{ backgroundColor: c.color, borderColor: c.on ? undefined : c.border }} onClick={c.onClick} />,
+  ));
+  cells.push(<div key="custom" title={props.custom.title ?? "Any color"} className={props.custom.on ? styles.swatchOn : styles.swatch}
+    style={{ backgroundImage: "linear-gradient(90deg, #e53935, #fdd835, #43a047, #1e88e5, #8e24aa)" }} onClick={props.custom.onClick} />);
+  const per = props.perRow ?? 7;
+  const rows: any[][] = [];
+  for (let i = 0; i < cells.length; i += per) rows.push(cells.slice(i, i + per));
+  return <div className={styles.choiceRows}>{rows.map((r, i) => <div key={i} className={styles.choices}>{r}</div>)}</div>;
+};
+
 /** The theme's sign colors as swatches (named on hover), plus Custom (any background and legend color). */
 export const Swatches = (props: {
   schemes: Record<string, { bg: string; fg: string; label?: string }>; scheme: string; custom: boolean; onScheme: (s: string) => void; onCustom: () => void;
 }) => (
-  <div className={styles.choices}>
-    {Object.entries(props.schemes).map(([id, s]) => (
-      <div key={id} title={s.label ?? id} className={!props.custom && id === props.scheme ? styles.swatchOn : styles.swatch}
-        style={{ backgroundColor: s.bg, borderColor: props.custom || id !== props.scheme ? s.fg : undefined }} onClick={() => props.onScheme(id)} />
-    ))}
-    <div title="Custom colors" className={props.custom ? styles.swatchOn : styles.swatch} onClick={props.onCustom}
-      style={{ backgroundImage: "linear-gradient(90deg, #e53935, #fdd835, #43a047, #1e88e5, #8e24aa)" }} />
-  </div>
+  <ColorRows perRow={13}
+    colors={Object.entries(props.schemes).map(([id, s]) => ({ color: s.bg, title: s.label ?? id, border: s.fg, on: !props.custom && id === props.scheme, onClick: () => props.onScheme(id) }))}
+    custom={{ on: props.custom, onClick: props.onCustom, title: "Custom colors" }} />
 );

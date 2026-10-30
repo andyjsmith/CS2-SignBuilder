@@ -4,20 +4,26 @@
 	<!--Name of the mod to display to players-->
 	<DisplayName Value="Sign Builder" />
 	<!--Short description of the mod-->
-	<ShortDescription Value="Design custom road signs in-game and place them on gantries or posts" />
+	<ShortDescription Value="Design road signs in game and place them on gantries, posts or any surface" />
 	<!--Long description of the mod. Single line or multi line. Supports minimal markdown subset-->
-	<!--LongDescription Value="This is a long description" /-->
 	<LongDescription>
-Design road signs in game and place them on your roads.
+Design road signs in game and put them on your roads.
 
-- Editor with templates: green guide signs, blue services and brown attraction signs
-- Interstate, US and state route shields, exit tabs, EXIT ONLY panels, arrows, distances
-- MUTCD-style automatic layout using the Roadgeek 2014 highway fonts
-- Up to four signs per structure
-- Mountings: overhead truss, curved or straight tube spans and cantilevers, roadside posts
-- Click a road to place: the structure is snapped across the road and sized to it
-- Click a placed sign to load it back into the editor and replace it
-- Placed signs are normal props that save with your city
+**Designer**
+- Live, to-scale preview with templates for 13 countries: United States, Canada, Germany, United Kingdom, Nordic, France, Netherlands, Italy, Switzerland, Russia, Australia, Japan and China
+- Parts: text, route shields, arrows, lane diagrams (exits, forks, roundabouts), LED text, dividers, rows and columns, chips, full-width panels (EXIT ONLY) and exit tabs
+- LED message boards with dot-matrix lettering that glows at night
+- Fonts, colors and spacing from each country's sign style; save your own templates
+
+**Placement**
+- Gantries across the road: double or single truss, curved or straight tube, span or cantilever, signs on both sides
+- Arrange signs over lanes, drag them, add lights
+- Roadside signs on posts, or just the sign as a prop on any surface or the side of an elevated road
+- Click a placed sign to edit, move or duplicate it
+
+**Sharing**
+- Placed signs are normal objects saved with your city; the city rebuilds them on any PC with Sign Builder
+- Themes are plain files: make your own, or publish theme packs on Paradox Mods (template included on GitHub)
 	</LongDescription>
 	<!--Thumbnail-->
 	<Thumbnail Value="Properties/Thumbnail.png" />

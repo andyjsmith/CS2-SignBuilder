@@ -109,41 +109,6 @@
         "text": "2 km",
         "height": 15.5
       }
-    },
-    {
-      "label": "Split columns",
-      "item": {
-        "type": "row",
-        "align": "start",
-        "items": [
-          {
-            "type": "stack",
-            "align": "center",
-            "items": [
-              {
-                "type": "text",
-                "text": "Destination",
-                "height": 15.5
-              }
-            ]
-          },
-          {
-            "type": "divider"
-          },
-          {
-            "type": "stack",
-            "align": "center",
-            "items": [
-              {
-                "type": "text",
-                "text": "Destination",
-                "height": 15.5
-              }
-            ]
-          }
-        ],
-        "justify": "even"
-      }
     }
   ]
 }

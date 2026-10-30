@@ -169,41 +169,6 @@
       }
     },
     {
-      "label": "Split columns",
-      "item": {
-        "type": "row",
-        "align": "start",
-        "items": [
-          {
-            "type": "stack",
-            "align": "center",
-            "items": [
-              {
-                "type": "text",
-                "text": "Destination",
-                "height": 14
-              }
-            ]
-          },
-          {
-            "type": "divider"
-          },
-          {
-            "type": "stack",
-            "align": "center",
-            "items": [
-              {
-                "type": "text",
-                "text": "Destination",
-                "height": 14
-              }
-            ]
-          }
-        ],
-        "justify": "even"
-      }
-    },
-    {
       "label": "Lane arrows",
       "item": {
         "type": "row",

@@ -456,6 +456,7 @@ namespace SignBuilder.Assemblies
             if (runtime.PrefabSystem.TryGetPrefab(new PrefabID(nameof(StaticObjectPrefab), record.PrefabName), out var created))
             {
                 AssemblyBootstrapSystem.ClearOverridableNow(created as StaticObjectPrefab);
+                SignBuilderRuntime.Mark("build: placing the object");
                 runtime.Spawn((StaticObjectPrefab)created, placement.Origin, placement.Rotation);
             }
             onDone(record, placement);
@@ -468,9 +469,10 @@ namespace SignBuilder.Assemblies
         private static void CreateAssets(AssemblyRecord record, Mesh support, IReadOnlyList<BakedFace> faces)
         {
             var prefabs = new RuntimePrefabs();
+            SignBuilderRuntime.Mark("build: meshes");
             var options = record.Context?.Options;
             var back = Enumerable.Range(0, faces.Count).Select(i => options != null && !options.Standalone && options.Slot(i).Back).ToArray();
-            var lights = options != null && options.Lights && !options.Standalone;
+            var lights = options != null && options.Lights;
             var mesh = Merge(support, faces, record.Centers, options?.SignScale ?? 1f, back, lights);
             // The distant model: the same structure with far fewer sides on every tube.
             var lowSupport = GantryFactory.FromSpec(record.SupportSpec, lowDetail: true);
@@ -480,10 +482,12 @@ namespace SignBuilder.Assemblies
             var donor = SignBuilderRuntime.Donor(prefabs);
             var steel = SignBuilderRuntime.Steel(prefabs);
             var surfaces = new List<Colossal.IO.AssetDatabase.SurfaceAsset> { steel };
-            surfaces.AddRange(faces.Select(f => SurfaceFactory.SignFace(db, SignBuilderRuntime.SurfaceFolder, donor, f.Texture, f.Key, lights ? 1.2f : 0.3f)));
+            SignBuilderRuntime.Mark("build: materials");
+            surfaces.AddRange(faces.Select(f => SurfaceFactory.SignFace(db, SignBuilderRuntime.SurfaceFolder, donor, f.Texture, f.Key, lights ? 1.2f : 0.3f, f.Glow)));
             var bounds = new Bounds3(mesh.bounds.min, mesh.bounds.max);
             var indexCount = 0;
             for (var i = 0; i < mesh.subMeshCount; i++) indexCount += (int)mesh.GetIndexCount(i);
+            SignBuilderRuntime.Mark("build: saving geometry");
             var geometry = RuntimePrefabs.SaveGeometry(mesh, db, SignBuilderRuntime.MeshFolder, record.PrefabName);
             record.GeometryId = geometry.id.guid.ToString();
             var lowGeometry = RuntimePrefabs.SaveGeometry(lowMesh, db, SignBuilderRuntime.MeshFolder, record.PrefabName + "_LOD1");
@@ -496,6 +500,7 @@ namespace SignBuilder.Assemblies
             record.IndexCount = indexCount;
             record.VertexCount = mesh.vertexCount;
             record.LightSpots = lights ? LightSpots(faces, record.Centers, options.SignScale, back) : null;
+            SignBuilderRuntime.Mark("build: registering the prefab");
             var prefab = prefabs.Register(record.PrefabName, geometry, surfaces.ToArray(), bounds, indexCount, mesh.vertexCount,
                 (lowGeometry, record.LodIndexCount, record.LodVertexCount), record.LightSpots);
             UnityEngine.Object.Destroy(mesh);

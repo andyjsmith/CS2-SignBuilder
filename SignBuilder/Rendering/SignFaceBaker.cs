@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.IO;
+using System.Linq;
 using System.Reflection;
 using System.Security.Cryptography;
 using System.Text;
@@ -24,6 +25,8 @@ namespace SignBuilder.Rendering
         public float PixelsPerInch;
         public bool FromCache;
         public string Key;
+        /// <summary>What glows at night (LED lettering) on a transparent background, the face's size; null if nothing does.</summary>
+        public Texture2D Glow;
     }
 
     /// <summary>
@@ -73,6 +76,9 @@ namespace SignBuilder.Rendering
         /// <summary>How the last face was produced: "script" (ExecuteScript) or "reload" (URL navigation).</summary>
         public string LastMode { get; private set; }
 
+        /// <summary>Lit pixels in the last glow pass (diagnostics for the tests).</summary>
+        public int LastGlowPixels { get; private set; }
+
         /// <summary>Whether ExecuteScript re-rendering works in this game build; null until first tried.</summary>
         public bool? ScriptMode { get; private set; }
 
@@ -91,7 +97,9 @@ namespace SignBuilder.Rendering
             while (m_Busy) yield return null;
             m_Busy = true;
             var start = Time.realtimeSinceStartup;
+            var startFrame = Time.frameCount;
             var cold = m_View == null;
+            m_Timings.Clear();
             var inner = BakeOne(design, pixelsPerInch, onDone);
             try
             {
@@ -101,7 +109,13 @@ namespace SignBuilder.Rendering
             {
                 m_Busy = false;
                 var seconds = Time.realtimeSinceStartup - start;
-                if (seconds > 1f) Mod.log.Info($"Bake took {seconds:F1} s (mode {LastMode}{(cold ? ", first bake: renderer started" : "")}{(LastError != null ? ", " + LastError : "")})");
+                // Where the time went: the frames waited (slow frames are the game's, or another mod's) and our own work.
+                if (seconds > 1f)
+                {
+                    Mod.log.Info($"Bake took {seconds:F1} s over {Time.frameCount - startFrame} frames (mode {LastMode}{(cold ? ", first bake: renderer started" : "")}" +
+                        $"{(LastError != null ? ", " + LastError : "")}; {m_Timings}); legend: {Legend(design)}");
+                }
+                Core.SignBuilderRuntime.Mark("bake finished");
             }
         }
 
@@ -127,9 +141,31 @@ namespace SignBuilder.Rendering
         }
 
         private bool m_Busy;
+        private readonly StringBuilder m_Timings = new();
+
+        /// <summary>Times one synchronous step of a bake (reported with slow bakes).</summary>
+        private T Timed<T>(string step, Func<T> work)
+        {
+            Core.SignBuilderRuntime.Mark("bake: " + step);
+            var watch = System.Diagnostics.Stopwatch.StartNew();
+            var result = work();
+            if (m_Timings.Length > 0) m_Timings.Append(", ");
+            m_Timings.Append($"{step} {watch.ElapsedMilliseconds} ms");
+            return result;
+        }
+
+        private static string Legend(JObject design)
+        {
+            var texts = design.SelectTokens("$..text").Select(t => (string)t).Where(t => !string.IsNullOrEmpty(t)).Take(3);
+            return string.Join(" / ", texts);
+        }
+
+        /// <summary>Whether a design has anything lit (LED lettering: a message board, or LED text parts).</summary>
+        private static bool Glows(JObject design) =>
+            (string)design["board"] == "led" || design.SelectTokens("$..type").Any(t => (string)t == "message");
 
         /// <summary>Bumped when cached faces must not be reused (part of every face's cache key).</summary>
-        private const int kCacheVersion = 3;
+        private const int kCacheVersion = 4;
 
         private IEnumerator BakeOne(JObject design, float pixelsPerInch, Action<BakedFace> onDone)
         {
@@ -163,10 +199,15 @@ namespace SignBuilder.Rendering
                 if (ScriptMode != false)
                 {
                     ScriptProbe = $"readyForBindings={m_View.View.IsReadyForBindings()}";
-                    m_View.View.ExecuteScript($"window.hsRender({json}, {ppiText});");
+                    Timed("script", () => { m_View.View.ExecuteScript($"window.hsRender({json}, {ppiText});"); return 0; });
                     yield return DrawFrames(4);
-                    pixels = Readback(out width, out height);
-                    found = pixels != null && FindBounds(pixels, width, height, out bounds);
+                    int w = 0, h = 0;
+                    pixels = Timed("readback", () => Readback(out w, out h));
+                    width = w;
+                    height = h;
+                    var b = default(RectInt);
+                    found = pixels != null && Timed("bounds", () => FindBounds(pixels, w, h, out b));
+                    bounds = b;
                     if (ScriptMode == null) ScriptMode = found;
                 }
 
@@ -200,15 +241,30 @@ namespace SignBuilder.Rendering
                     continue;
                 }
 
+                var crop = bounds;
                 var face = new BakedFace
                 {
-                    Texture = Crop(pixels, width, bounds),
+                    Texture = Timed("crop", () => Crop(pixels, width, crop)),
                     PixelsPerInch = pixelsPerInch,
                     WidthMeters = bounds.width / pixelsPerInch * kMetersPerInch,
                     HeightMeters = bounds.height / pixelsPerInch * kMetersPerInch,
                     Key = key,
                 };
-                Save(key, face);
+                // What glows at night: the same layout drawn again with only the LED lettering showing.
+                if (LastMode == "script" && Glows(design))
+                {
+                    Timed("glow script", () => { m_View.View.ExecuteScript($"window.hsRender({json}, {ppiText}, true);"); return 0; });
+                    yield return DrawFrames(4);
+                    int gw = 0, gh = 0;
+                    var lit = Timed("glow readback", () => Readback(out gw, out gh));
+                    if (lit != null && gw == width && gh == height)
+                    {
+                        face.Glow = Timed("glow crop", () => Crop(lit, width, crop));
+                        LastGlowPixels = 0;
+                        for (var i = 3; i < lit.Length; i += 4) if (lit[i] > 0) LastGlowPixels++;
+                    }
+                }
+                Timed("save", () => { Save(key, face); return 0; });
                 onDone(face);
                 yield break;
             }
@@ -350,6 +406,17 @@ namespace SignBuilder.Rendering
                 // LoadImage switches the texture to ARGB32, which SurfaceAsset saves but cannot load back.
                 var face = Assemblies.SurfaceFactory.Savable(tex);
                 if (face != tex) UnityEngine.Object.Destroy(tex);
+                Texture2D glow = null;
+                var glowPng = Path.Combine(m_CacheDir, key + "_glow.png");
+                if (File.Exists(glowPng))
+                {
+                    var raw = new Texture2D(2, 2, TextureFormat.RGBA32, mipChain: false);
+                    if (raw.LoadImage(File.ReadAllBytes(glowPng)))
+                    {
+                        glow = raw;
+                        LastGlowPixels = raw.GetPixels32().Count(c => c.a > 0);
+                    }
+                }
                 return new BakedFace
                 {
                     Texture = face,
@@ -357,6 +424,7 @@ namespace SignBuilder.Rendering
                     HeightMeters = (float)info["heightMeters"],
                     PixelsPerInch = (float)info["ppi"],
                     FromCache = true,
+                    Glow = glow,
                     Key = key,
                 };
             }
@@ -371,6 +439,7 @@ namespace SignBuilder.Rendering
             try
             {
                 File.WriteAllBytes(Path.Combine(m_CacheDir, key + ".png"), face.Texture.EncodeToPNG());
+                if (face.Glow != null) File.WriteAllBytes(Path.Combine(m_CacheDir, key + "_glow.png"), face.Glow.EncodeToPNG());
                 File.WriteAllText(Path.Combine(m_CacheDir, key + ".json"), new JObject
                 {
                     ["widthMeters"] = face.WidthMeters,

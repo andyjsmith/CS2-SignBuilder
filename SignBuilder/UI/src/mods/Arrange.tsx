@@ -31,6 +31,9 @@ export function anchorLabel(s: Sign): string {
  * lanes it crosses, as drivers see it. Drag signs sideways (they snap to lane centers); pick the structure; Build
  * makes it at the pinned road spot.
  */
+const Step = (p: { onClick: () => void; children: any; title?: string }) => <div className={styles.step} title={p.title} onClick={p.onClick}>{p.children}</div>;
+const Label = (p: { children: any }) => <div className={styles.barLabel} style={{ marginLeft: "16rem" }}>{p.children}</div>;
+
 export const Arrange = (props: {
   onEditSign: (index: number, design: Design) => void;
   onAddSign: () => void;
@@ -116,9 +119,7 @@ export const Arrange = (props: {
     const fromRight = next >= (n - 1) / 2;
     arrange({ op: "slot", index: s.index, mode: "lane", lane: fromRight ? n - 1 - next : next, fromRight, offset: 0 });
   };
-  const Step = (p: { onClick: () => void; children: any; title?: string }) => <div className={styles.step} title={p.title} onClick={p.onClick}>{p.children}</div>;
   const set = (field: string, value: number) => arrange({ op: "set", field, value });
-  const Label = (p: { children: any }) => <div className={styles.barLabel} style={{ marginLeft: "16rem" }}>{p.children}</div>;
   const laneXs = allLanes.map((l) => l[0]);
   const dragLane = drag ? nearest(laneXs, drag.x) : -1;
   const snapping = drag && dragLane >= 0 && Math.abs(laneXs[dragLane] - drag.x) < 0.75;

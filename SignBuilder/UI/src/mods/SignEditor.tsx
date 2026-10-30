@@ -5,7 +5,7 @@ import { Arrange } from "./Arrange";
 import {
   arrange, arrangeInfo$, cancelTool, editingDesign$, editorOpen$, replacing$, savePosts, setEditorOpen, startGantry, startPosts, templates$, themes$, toolMode$, toolStatus$,
 } from "./bindings";
-import { Confirm } from "./Controls";
+import { Choice, Confirm, Field } from "./Controls";
 import { Designer, DesignerAction } from "./Designer";
 import { registerThemes } from "./SignPreview";
 import { Theme, blankFor, themeOf } from "./themeModel";
@@ -49,7 +49,9 @@ export const SignEditor = () => {
   // The design as last loaded, placed or saved: any difference is an unsaved change.
   const [baseline, setBaseline] = useState(() => JSON.stringify(blankFor()));
   const [question, setQuestion] = useState<Question | null>(null);
-  const dirty = JSON.stringify(design) !== baseline;
+  // A placed roadside sign's lights (as placed, and as changed in the designer).
+  const [lights, setLights] = useState({ placed: false, now: false });
+  const dirty = JSON.stringify(design) !== baseline || lights.placed !== lights.now;
   /** Loads a design (template, placed sign, blank): it starts out unchanged. */
   const load = (d: Design) => {
     setDesign(d);
@@ -70,6 +72,7 @@ export const SignEditor = () => {
       const first = (payload.designs ?? [])[0];
       if (payload.kind === "posts" && first) {
         load(clone(first));
+        setLights({ placed: !!payload.lights, now: !!payload.lights });
         setContext({ kind: "postsEdit" });
       } else if (payload.kind === "new" && first) {
         load(clone(first));
@@ -118,9 +121,9 @@ export const SignEditor = () => {
     case "postsEdit":
       title = "Edit roadside sign";
       actions = replacing
-        ? [{ label: "Save", primary: true, onSelect: () => { settle(); savePosts(design); } },
-          { label: "Stop editing", title: "Keep the placed sign as it is",
-            onSelect: () => guard(dirty, "Stop editing? Your changes to this sign will be lost.", () => { cancelTool(); settle(); setContext({ kind: "new" }); }) }]
+        ? [{ label: "Save", primary: true, onSelect: () => { settle(); setLights({ placed: lights.now, now: lights.now }); savePosts(design, lights.now); } },
+          { label: "Cancel", title: "Keep the placed sign as it is",
+            onSelect: () => guard(dirty, "Discard your changes to this sign?", close) }]
         : [{ label: "Roadside", primary: true, onSelect: () => { settle(); startPosts(design); } }];
       break;
     case "gantrySign":
@@ -152,7 +155,13 @@ export const SignEditor = () => {
   return withBack(
     <Designer design={design} setDesign={setDesign} onTemplateSaved={settle}
       onLoad={(d, then) => guard(dirty, "Load this? Your changes to the current sign will be lost.", () => { load(d); then(); })} templates={templates} themes={themes}
-      title={title} actions={actions} onClose={requestClose} overlay={overlay} />,
+      title={title} actions={actions} onClose={requestClose} overlay={overlay}
+      extra={context.kind === "postsEdit" && replacing ? (
+        <Field label="Lights">
+          <Choice options={[{ value: "off", label: "Off" }, { value: "on", label: "On", title: "A light fixture below the sign, lit at night" }]}
+            value={lights.now ? "on" : "off"} onChange={(v) => setLights({ ...lights, now: v === "on" })} />
+        </Field>
+      ) : undefined} />,
     escape,
   );
 };

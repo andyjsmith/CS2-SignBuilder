@@ -119,21 +119,6 @@
   "laneWidth": 157.48031496062993,
   "presets": [
     {
-      "label": "Exit tab",
-      "item": {
-        "type": "tab",
-        "align": "right",
-        "items": [
-          {
-            "type": "text",
-            "text": "EXIT 1",
-            "height": 10,
-            "font": "RG2014E"
-          }
-        ]
-      }
-    },
-    {
       "label": "Sortie tab",
       "item": {
         "type": "tab",
@@ -149,7 +134,7 @@
       }
     },
     {
-      "label": "EXIT ONLY",
+      "label": "Exit only",
       "item": {
         "type": "panel",
         "scheme": "yellow",
@@ -190,41 +175,6 @@
         "text": "2 km",
         "height": 12,
         "font": "RG2014D"
-      }
-    },
-    {
-      "label": "Split columns",
-      "item": {
-        "type": "row",
-        "align": "start",
-        "items": [
-          {
-            "type": "stack",
-            "align": "center",
-            "items": [
-              {
-                "type": "text",
-                "text": "Destination",
-                "height": 16
-              }
-            ]
-          },
-          {
-            "type": "divider"
-          },
-          {
-            "type": "stack",
-            "align": "center",
-            "items": [
-              {
-                "type": "text",
-                "text": "Destination",
-                "height": 16
-              }
-            ]
-          }
-        ],
-        "justify": "even"
       }
     },
     {

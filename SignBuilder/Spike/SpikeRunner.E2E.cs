@@ -45,6 +45,19 @@ namespace SignBuilder.Spike
 
         private static string Key(string type, string span, bool left) => type == "ground" ? "ground" : $"{type}-{span}{(left ? "-left" : "")}";
 
+        /// <summary>UI only (mode "ui-e2e"): the designer's responsiveness, without placing anything. A couple of minutes.</summary>
+        private IEnumerator RunUIE2E()
+        {
+            yield return WaitForGame();
+            yield return new WaitForSecondsRealtime(5f);
+            var ui = World.DefaultGameObjectInjectionWorld.GetOrCreateSystemManaged<SignBuilderUISystem>();
+            yield return Test("e2e.editor", TestEditorOpens(ui));
+            yield return Test("e2e.ui", TestDesignerPicks(ui));
+            yield return Test("e2e.uipause", TestDesignerPause(ui));
+            ui.SetEditorOpen(false);
+            Finish();
+        }
+
         private IEnumerator RunE2E()
         {
             yield return WaitForGame();
@@ -341,13 +354,17 @@ namespace SignBuilder.Spike
             var edited = (JObject)target.record.Designs[0].DeepClone();
             edited["scheme"] = "blue";
             var before = SignPlacementToolSystem.LastPlaced;
-            tool.SavePosts(edited);
+            tool.SavePosts(edited, lights: true);
             var start = Time.realtimeSinceStartup;
             while ((tool.Busy || SignPlacementToolSystem.LastPlaced == before) && Time.realtimeSinceStartup - start < 20f) yield return null;
             yield return new WaitForSecondsRealtime(2f);
             var saved = SignPlacementToolSystem.LastPlaced;
-            SpikeReport.Set("e2e.editposts.saved", saved == before ? "FAILED: " + ui.Status : $"old remaining={InstancesOf(target.record.PrefabName).Count} new={InstancesOf(saved.PrefabName).Count}");
-            if (saved != before) yield return Shoot(saved, "e2e_editposts_saved.png", 15f, 25f);
+            SpikeReport.Set("e2e.editposts.saved", saved == before ? "FAILED: " + ui.Status : $"old remaining={InstancesOf(target.record.PrefabName).Count} new={InstancesOf(saved.PrefabName).Count} lights={(AssemblyLibrary.FromPrefabName(saved.PrefabName)?.LightSpots?.Length ?? 0) / 6}");
+            if (saved != before)
+            {
+                m_LitRoadside = saved;
+                yield return Shoot(saved, "e2e_editposts_saved.png", 15f, 25f);
+            }
             ui.SetEditorOpen(false);
         }
 
@@ -477,11 +494,18 @@ namespace SignBuilder.Spike
                 var entity = posts;
                 if (entity != Entity.Null)
                 {
-                    tool.EditPlaced(entity);
-                    yield return Watch(2.5f);
-                    results.Add($"editRoadside={worst:F0}");
-                    ui.SetEditorOpen(false);
-                    yield return new WaitForSecondsRealtime(1f);
+                    // Twice: a first-time cost shows as a difference. "Cs" is the C# part alone.
+                    for (var k = 0; k < 2; k++)
+                    {
+                        var cs = System.Diagnostics.Stopwatch.StartNew();
+                        tool.EditPlaced(entity);
+                        results.Add($"editRoadsideCs{k}={cs.ElapsedMilliseconds}");
+                        yield return Watch(2.5f);
+                        results.Add($"editRoadside{k}={worst:F0}");
+                        tool.Deactivate();
+                        ui.SetEditorOpen(false);
+                        yield return new WaitForSecondsRealtime(1f);
+                    }
                 }
             }
             ui.SetEditorOpen(true);
@@ -491,6 +515,59 @@ namespace SignBuilder.Spike
             results.Add($"designerIdle={worst:F0}");
             ui.SetEditorOpen(false);
             SpikeReport.Set("e2e.perf.worstFrameMs", string.Join(" ", results));
+            yield return TestDesignerPicks(ui);
+        }
+
+        /// <summary>
+        /// The slowest frame (ms) after selecting parts in the designer (the properties panel changes: text, panel,
+        /// arrow, nothing), after a quiet baseline with the design loaded; and after opening the designer.
+        /// </summary>
+        private IEnumerator TestDesignerPicks(SignBuilderUISystem ui)
+        {
+            var results = new List<string>();
+            float worst = 0f;
+            IEnumerator Watch(float seconds)
+            {
+                worst = 0f;
+                var end = Time.realtimeSinceStartup + seconds;
+                while (Time.realtimeSinceStartup < end)
+                {
+                    yield return null;
+                    worst = Math.Max(worst, Time.unscaledDeltaTime * 1000f);
+                }
+            }
+            ui.SetEditorOpen(false);
+            yield return new WaitForSecondsRealtime(1f);
+            // The designer as it opens for a placed roadside sign (UI only, no tool), twice: a first-time cost shows.
+            for (var k = 0; k < 2; k++)
+            {
+                ui.OpenForEdit(new AssemblyRecord { Designs = new List<JObject> { Template("gore-exit") } }, "posts", true);
+                yield return Watch(2f);
+                results.Add($"postsEdit{k}={worst:F0}");
+                ui.SetEditorOpen(false);
+                yield return new WaitForSecondsRealtime(1f);
+            }
+            ui.SetEditorOpen(true);
+            yield return Watch(2f);
+            results.Add($"open={worst:F0}");
+            var design = Template("guide-exit-only");
+            ui.OpenForEdit(new AssemblyRecord { Designs = new List<JObject> { design } }, "new");
+            for (var k = 0; k < 3; k++)
+            {
+                yield return Watch(1.2f);
+                results.Add($"loaded{k}={worst:F0}");
+            }
+            var page = GameManager.instance.userInterface.view.View;
+            foreach (var type in new[] { "text", "panel", "text", "arrow", "none", "arrow", "panel", "none", "text", "panel", "arrow", "text" })
+            {
+                var path = type == "none" ? null : PathOf(design, type);
+                if (type != "none" && path == null) continue;
+                page.ExecuteScript($"window.__signBuilderSelect && window.__signBuilderSelect({(path == null ? "null" : "\"" + path + "\"")});");
+                yield return Watch(1.2f);
+                results.Add($"{type}={worst:F0}");
+            }
+            ui.SetEditorOpen(false);
+            SpikeReport.Set("e2e.ui.picksWorstFrameMs", string.Join(" ", results));
         }
 
         /// <summary>
@@ -546,8 +623,43 @@ namespace SignBuilder.Spike
             // A diagrammatic sign and an LED message board side by side.
             yield return PlaceAndWait(() => tool.PlaceForTest(spot.edge, math.clamp(t + 0.36f, 0.05f, 0.95f), new List<JObject> { Template("lane-split"), Template("message-board") }, Options("doubleTruss", "single")));
             SpikeReport.Set("e2e.features.diagramLed", Describe(SignPlacementToolSystem.LastPlaced));
-            yield return Shoot(SignPlacementToolSystem.LastPlaced, "e2e_features_diagram_led.png", 10f, 35f);
+            SpikeReport.Set("e2e.features.glow", $"lit pixels in the last glow pass={Core.SignBuilderRuntime.Baker.LastGlowPixels}");
+            var board = SignPlacementToolSystem.LastPlaced;
+            yield return Shoot(board, "e2e_features_diagram_led.png", 10f, 35f);
+            // At night: the LED board glows, the lit roadside sign (edit test) has its light.
+            var planet = World.DefaultGameObjectInjectionWorld.GetOrCreateSystemManaged<Game.Simulation.PlanetarySystem>();
+            var overridden = planet.overrideTime;
+            var time = planet.normalizedTime;
+            planet.overrideTime = true;
+            planet.normalizedTime = 0.02f;
+            yield return new WaitForSecondsRealtime(3f);
+            yield return Shoot(board, "e2e_night_led.png", 10f, 35f);
+            if (m_LitRoadside != null) yield return Shoot(m_LitRoadside, "e2e_night_roadside.png", 15f, 20f);
+            planet.normalizedTime = time;
+            planet.overrideTime = overridden;
+            yield return new WaitForSecondsRealtime(2f);
         }
+
+        /// <summary>The designer path ("0", "1.2", ...) of the first part of <paramref name="type"/> in a design.</summary>
+        private static string PathOf(JObject design, string type)
+        {
+            string Find(JArray items, string prefix)
+            {
+                if (items == null) return null;
+                for (var i = 0; i < items.Count; i++)
+                {
+                    var path = prefix == null ? i.ToString() : prefix + "." + i;
+                    if ((string)items[i]["type"] == type) return path;
+                    var inner = Find(items[i]["items"] as JArray, path);
+                    if (inner != null) return inner;
+                }
+                return null;
+            }
+            return Find(design["items"] as JArray, null);
+        }
+
+        /// <summary>The roadside sign saved with lights on (edit test), shown at night.</summary>
+        private AssemblyRecord m_LitRoadside;
 
         /// <summary>
         /// Themes: every theme's templates in the designer (UI renderer), and a gantry mixing German, UK and Nordic

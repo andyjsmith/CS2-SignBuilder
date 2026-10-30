@@ -68,7 +68,11 @@ namespace SignBuilder.Systems
             })));
             AddBinding(new TriggerBinding<string>(Group, "adjust", a => m_Tool.Adjust(a)));
             AddBinding(new TriggerBinding<string>(Group, "arrange", json => m_Tool.Arrange(json)));
-            AddBinding(new TriggerBinding<string>(Group, "savePosts", json => Guard(() => m_Tool.SavePosts(JObject.Parse(json)))));
+            AddBinding(new TriggerBinding<string>(Group, "savePosts", json => Guard(() =>
+            {
+                var o = JObject.Parse(json);
+                m_Tool.SavePosts((JObject)o["design"], (bool?)o["lights"] ?? false);
+            })));
             AddBinding(new TriggerBinding(Group, "cancelTool", () => { m_Tool.Deactivate(); SetStatus(""); }));
             AddBinding(new TriggerBinding<string>(Group, "saveTemplate", json => Guard(() => SaveTemplate(JObject.Parse(json)))));
             AddBinding(new TriggerBinding<string, string>(Group, "renameTemplate", (id, name) => Guard(() => RenameTemplate(id, name))));
@@ -82,14 +86,17 @@ namespace SignBuilder.Systems
             AddBinding(new TriggerBinding(Group, "openThemesFolder", () => Setting.OpenFolder(Themes.UserThemesDir)));
         }
 
-        private void Guard(Action action)
+        private void Guard(Action action, [System.Runtime.CompilerServices.CallerLineNumber] int line = 0)
         {
+            Core.SignBuilderRuntime.Mark($"UI action (SignBuilderUISystem.cs line {line})");
+            var watch = System.Diagnostics.Stopwatch.StartNew();
             try { action(); }
             catch (Exception e)
             {
                 Mod.log.Warn(e, "Sign Builder UI action failed");
                 SetStatus("Something went wrong: " + e.Message);
             }
+            if (watch.ElapsedMilliseconds > 250) Mod.log.Info($"UI action (SignBuilderUISystem.cs line {line}) took {watch.ElapsedMilliseconds} ms");
         }
 
         protected override void OnUpdate()
@@ -141,13 +148,13 @@ namespace SignBuilder.Systems
         }
 
         /// <summary>Opens the editor on a placed structure's signs (kind: "posts" or "gantry").</summary>
-        public void OpenForEdit(AssemblyRecord record, string kind)
+        public void OpenForEdit(AssemblyRecord record, string kind, bool lights = false)
         {
             m_EditorOpen.Update(true);
             // A fresh object each time so the React effect fires even for the same structure.
             m_EditingDesign.Update(new JObject
             {
-                ["designs"] = new JArray(record.Designs), ["kind"] = kind, ["nonce"] = Guid.NewGuid().ToString("N"),
+                ["designs"] = new JArray(record.Designs), ["kind"] = kind, ["lights"] = lights, ["nonce"] = Guid.NewGuid().ToString("N"),
             }.ToString(Formatting.None));
         }
 

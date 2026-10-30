@@ -1,0 +1,45 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+	<!--
+		A Sign Builder theme pack: a minimal mod whose only content is its SignBuilderThemes folder.
+		Sign Builder finds the folder in every installed mod (subscribed or local), so players only subscribe.
+		Rename the project (and the namespace in Mod.cs) to your pack's name.
+	-->
+	<PropertyGroup>
+		<Configurations>Debug;Release</Configurations>
+		<PublishConfigurationPath>Properties\PublishConfiguration.xml</PublishConfigurationPath>
+	</PropertyGroup>
+
+	<!--The Cities: Skylines II modding toolchain (installed from the game's Modding options)-->
+	<Import Project="$([System.Environment]::GetEnvironmentVariable('CSII_TOOLPATH', 'EnvironmentVariableTarget.User'))\Mod.props" />
+	<Import Project="$([System.Environment]::GetEnvironmentVariable('CSII_TOOLPATH', 'EnvironmentVariableTarget.User'))\Mod.targets" />
+
+	<ItemGroup>
+		<Reference Include="Game">
+			<Private>false</Private>
+		</Reference>
+		<Reference Include="Colossal.Logging">
+			<Private>false</Private>
+		</Reference>
+		<Reference Update="System">
+			<Private>false</Private>
+		</Reference>
+		<Reference Update="System.Core">
+			<Private>false</Private>
+		</Reference>
+	</ItemGroup>
+
+	<!--Ship the themes next to the dll: <mod folder>/SignBuilderThemes/<theme id>/...-->
+	<Target Name="DeployThemes" AfterTargets="DeployWIP" Condition="'$(NeedBuild)'">
+		<ItemGroup>
+			<ThemeFiles Include="SignBuilderThemes\**\*.*" />
+		</ItemGroup>
+		<Copy SourceFiles="@(ThemeFiles)" DestinationFiles="@(ThemeFiles->'$(DeployDir)\SignBuilderThemes\%(RecursiveDir)%(Filename)%(Extension)')" />
+	</Target>
+
+	<ItemGroup>
+		<None Include="$(ModPropsFile)" Link="Properties\Mod.props" />
+		<None Include="$(ModTargetsFile)" Link="Properties\Mod.targets" />
+	</ItemGroup>
+
+</Project>

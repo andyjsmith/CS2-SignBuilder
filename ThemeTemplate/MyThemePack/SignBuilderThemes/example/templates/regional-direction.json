@@ -1,0 +1,24 @@
+{
+  "theme": "example",
+  "id": "regional-direction",
+  "name": "Regional direction",
+  "scheme": "primary",
+  "items": [
+    {
+      "type": "row",
+      "justify": "between",
+      "items": [
+        { "type": "text", "text": "Riverside" },
+        { "type": "shield", "network": "R", "number": "12" }
+      ]
+    },
+    {
+      "type": "row",
+      "justify": "between",
+      "items": [
+        { "type": "text", "text": "Old Town" },
+        { "type": "arrow", "direction": "right" }
+      ]
+    }
+  ]
+}

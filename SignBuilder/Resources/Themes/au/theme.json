@@ -113,61 +113,11 @@
   "laneWidth": 157.48031496062993,
   "presets": [
     {
-      "label": "Exit tab",
-      "item": {
-        "type": "tab",
-        "align": "right",
-        "items": [
-          {
-            "type": "text",
-            "text": "EXIT 1",
-            "height": 10,
-            "font": "RG2014E"
-          }
-        ]
-      }
-    },
-    {
       "label": "Distance",
       "item": {
         "type": "text",
         "text": "2 km",
         "height": 15.5
-      }
-    },
-    {
-      "label": "Split columns",
-      "item": {
-        "type": "row",
-        "align": "start",
-        "items": [
-          {
-            "type": "stack",
-            "align": "center",
-            "items": [
-              {
-                "type": "text",
-                "text": "Destination",
-                "height": 15.5
-              }
-            ]
-          },
-          {
-            "type": "divider"
-          },
-          {
-            "type": "stack",
-            "align": "center",
-            "items": [
-              {
-                "type": "text",
-                "text": "Destination",
-                "height": 15.5
-              }
-            ]
-          }
-        ],
-        "justify": "even"
       }
     }
   ]

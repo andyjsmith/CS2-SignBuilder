@@ -16,8 +16,8 @@ Players can add their own themes and templates as files, or publish them as mods
    the top, between parts or at the bottom, like an EXIT ONLY panel) and **Tab** (on top of the sign, like
    an exit number plaque). Drag parts in the list to reorder them or drop them into a Row, Column, Chip,
    Panel or Tab. **Diagram** draws the road itself for diagrammatic signs (exit left or right with lane
-   lines, fork, roundabout with chosen exits); **LED text** is a lit pixel display (prices, messages), and
-   **Sign type: Message board** makes the whole sign a black LED board. A row can be spread out across the sign (lane arrows under their lanes); text, arrows and
+   lines, fork, roundabout with chosen exits); **LED text** is a dot-matrix LED display (prices, messages), and
+   **Sign type: Message board** makes the whole sign a black LED board; LED lettering glows at night. A row can be spread out across the sign (lane arrows under their lanes); text, arrows and
    dividers can take any color; text has a letter spacing setting; any part can have margins. Set the
    colors (or custom colors), width (fit, a number of lanes, or at least a size) and alignment.
    **Save current as template** keeps the sign as a JSON file in
@@ -25,7 +25,7 @@ Players can add their own themes and templates as files, or publish them as mods
 3. **Place as:** **Roadside** puts the sign on posts, snapped beside a road or freely placed (right-drag
    rotates); **Prop** places just the sign, no supports, on any surface or hung on the side of an elevated
    road. While placing, Alt + mouse wheel sets the distance from the road and Ctrl + mouse wheel (or
-   Page Up / Page Down) the height.
+   Page Up / Page Down) the height; **Lights** adds a light fixture below the sign, lit at night.
 4. **Gantry** asks for a road, pins the structure there with a live preview and opens the
    arrangement panel: a to-scale view of the lanes as drivers see them. Add signs (any theme), drag them
    sideways (they snap to lane centers, remembered from the nearer edge: "rightmost lane", "2nd lane from
@@ -35,7 +35,8 @@ Players can add their own themes and templates as files, or publish them as mods
    click other roads in the world to add them to (or remove them from) the span. **Build** makes it.
    Esc or the close button asks before discarding anything.
 5. Click a placed sign with the normal selection tool: its panel has **Edit** (gantries reopen in the
-   arrangement panel in place, standalone signs in the designer; **Save** rebuilds them where they stand),
+   arrangement panel in place, standalone signs in the designer, with their lights setting; **Save** rebuilds
+   them where they stand),
    **Move** and **Duplicate**.
 
 Placed signs are ordinary props: they save with the city, can be bulldozed, and render through the
@@ -96,6 +97,10 @@ If the requested save id is stale the harness loads the test save (`ModTest`) by
 
 ## Themes
 
+Making a theme, step by step (with a ready-to-copy theme pack to publish on Paradox Mods):
+[ThemeTemplate/README.md](ThemeTemplate/README.md). How the mod works inside: [DEVELOPING.md](DEVELOPING.md).
+
+
 A theme is a folder with `theme.json`: its name, default sizes (every built-in theme uses the same size unit,
 roughly inches of a full-size sign), fonts (file,
 label, and `scale`/`offset`: em size and vertical offset per letter height, from the font's cap height;
@@ -103,7 +108,7 @@ no file and a `weight` uses a family the game ships, such as "Noto Sans JP"; `@u
 theme's file),
 color schemes, route plates (`img` artwork, `ellipse`, colored `rect` plates with optional border and
 prefix such as "A " or "E ", or `plain` colored text), the arrow outline, `presets` (ready-made
-combinations of the basic parts shown under **Add preset**, such as an exit tab or an EXIT ONLY panel) and a
+combinations of the basic parts shown under **Add preset**, such as an EXIT ONLY panel) and a
 `templates/` folder. Built-in themes live in `SignBuilder/Resources/Themes`;
 players add theirs in `ModsData/SignBuilder/Themes/<id>`. A player folder with a built-in theme's id and
 no `theme.json` supplies extra files for it, such as fonts that cannot ship with the mod (the Nordic theme

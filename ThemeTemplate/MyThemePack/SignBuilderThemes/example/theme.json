@@ -1,0 +1,70 @@
+{
+  "id": "example",
+  "name": "Exampleland",
+  "description": "Template theme: copy this folder, rename it and make it yours",
+  "units": "in",
+  "laneWidth": 157.5,
+  "defaults": {
+    "font": "Noto Sans",
+    "textHeight": 16,
+    "shieldHeight": 24,
+    "arrowHeight": 24,
+    "border": 1.5,
+    "cornerRadius": 4,
+    "lineGap": 0.6,
+    "margin": 0.65,
+    "itemGap": 0.5,
+    "scheme": "motorway"
+  },
+  "fonts": [
+    {
+      "family": "Noto Sans",
+      "label": "Noto Sans Bold",
+      "weight": "bold",
+      "scale": 1.4008,
+      "offset": -0.0434
+    }
+  ],
+  "schemes": {
+    "motorway": { "bg": "#1d4f9c", "fg": "#ffffff", "label": "Motorway" },
+    "primary": { "bg": "#1f6b3a", "fg": "#ffffff", "label": "Primary road" },
+    "local": { "bg": "#ffffff", "fg": "#111111", "label": "Local road" },
+    "detour": { "bg": "#f5c400", "fg": "#111111", "label": "Detour" }
+  },
+  "shields": {
+    "M": {
+      "label": "Motorway",
+      "shape": "img",
+      "img": "shields/motorway.svg",
+      "aspect": 1.2,
+      "fg": "#ffffff",
+      "num": 0.5,
+      "top": 0.3,
+      "default": "1"
+    },
+    "R": {
+      "label": "Regional road",
+      "shape": "rect",
+      "bg": "#f5c400",
+      "fg": "#111111",
+      "border": "#111111",
+      "prefix": "R",
+      "num": 0.6,
+      "radius": 0.12,
+      "default": "12"
+    }
+  },
+  "presets": [
+    {
+      "label": "Exit panel",
+      "item": {
+        "type": "panel",
+        "scheme": "detour",
+        "items": [
+          { "type": "arrow", "direction": "down", "height": 16 },
+          { "type": "text", "text": "EXIT", "height": 12 }
+        ]
+      }
+    }
+  ]
+}

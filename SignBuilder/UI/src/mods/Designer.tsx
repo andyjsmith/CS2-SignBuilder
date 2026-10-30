@@ -1,9 +1,9 @@
 import { Scrollable } from "cs2/ui";
 import { Dialog } from "./Dialog";
 import { openThemesFolder } from "./bindings";
-import { ReactNode, useState } from "react";
+import { ReactNode, useEffect, useState } from "react";
 import { ArrowIcon, AlignIcon, ThemeShieldIcon } from "./Icons";
-import { Choice, ColorBox, Field, NumberBox, Option, Select, Swatches, TextBox } from "./Controls";
+import { Choice, ColorBox, ColorRows, Field, NumberBox, Option, Select, Swatches, TextBox } from "./Controls";
 import { Design, Item, clone, duplicateItem, getItem, insertItem, kindOf, removeItem, updateItem } from "./designModel";
 import { PartsList } from "./PartsList";
 import { SignPreview } from "./SignPreview";
@@ -30,9 +30,22 @@ const DIAGRAM_SHAPES: Option[] = [
   { value: "fork", label: "Fork" }, { value: "roundabout", label: "Roundabout" },
 ];
 const ROUNDABOUT_EXITS: Option[] = ["left", "up-left", "up", "up-right", "right"].map((d) => ({ value: d, icon: <ArrowIcon direction={d} />, title: d }));
-const LED_COLORS: Option[] = [
-  { value: "", label: "Amber" }, { value: "#f4f4f4", label: "White" }, { value: "#46ff74", label: "Green" }, { value: "#ff4031", label: "Red" },
-];
+// LED colors: amber (the default, no value), white, green, red.
+const LED_COLORS = [{ value: "", color: "#ffb000", title: "Amber" }, { value: "#f4f4f4", title: "White" }, { value: "#46ff74", title: "Green" }, { value: "#ff4031", title: "Red" }];
+
+/** An LED color: one of the usual ones or any color. <value> undefined is the default amber. */
+const LedColorField = (props: { label: string; value?: string; onChange: (color: string | undefined) => void }) => {
+  const known = LED_COLORS.some((c) => c.value && c.value === props.value?.toLowerCase());
+  const custom = !!props.value && !known;
+  return (
+    <Field label={props.label}>
+      <ColorRows colors={LED_COLORS.map((c) => ({
+        color: c.color ?? c.value, title: c.title, on: c.value ? c.value === props.value?.toLowerCase() : !props.value, onClick: () => props.onChange(c.value || undefined),
+      }))} custom={{ on: custom, onClick: () => props.onChange(props.value ?? "#ff8800") }} />
+      {custom && <ColorBox value={props.value!} onChange={(c) => props.onChange(c)} />}
+    </Field>
+  );
+};
 const CHIP_SPAN: Option[] = [{ value: "", label: "Fit" }, { value: "full", label: "Full width", title: "As wide as the column it is in" }];
 const TAB_SIDE: Option[] = [{ value: "left", label: "Left" }, { value: "center", label: "Center" }, { value: "right", label: "Right" }];
 
@@ -73,15 +86,10 @@ const PartColorField = (props: { item: Item; theme?: Theme; onChange: (patch: Pa
   const custom = !!color && !palette.includes(color.toLowerCase());
   return (
     <Field label="Color">
-      <div className={styles.choices}>
-        <div className={!color ? styles.choiceOn : styles.choice} title="The sign's legend color" onClick={() => props.onChange({ color: undefined })}>Default</div>
-        {palette.map((c) => (
-          <div key={c} title={c} className={color?.toLowerCase() === c ? styles.swatchOn : styles.swatch} style={{ backgroundColor: c, width: "22rem" }}
-            onClick={() => props.onChange({ color: c })} />
-        ))}
-        <div title="Any color" className={custom ? styles.swatchOn : styles.swatch} style={{ width: "22rem", backgroundImage: "linear-gradient(90deg, #e53935, #fdd835, #43a047, #1e88e5, #8e24aa)" }}
-          onClick={() => props.onChange({ color: color ?? "#ff8800" })} />
-      </div>
+      <ColorRows perRow={7}
+        lead={[<div key="default" className={!color ? styles.choiceOn : styles.choice} title="The sign's legend color" onClick={() => props.onChange({ color: undefined })}>Default</div>]}
+        colors={palette.map((c) => ({ color: c, on: color?.toLowerCase() === c, onClick: () => props.onChange({ color: c }) }))}
+        custom={{ on: custom, onClick: () => props.onChange({ color: color ?? "#ff8800" }) }} />
       {custom && <ColorBox value={color!} onChange={(c) => props.onChange({ color: c })} />}
     </Field>
   );
@@ -192,7 +200,7 @@ function ItemProperties(props: { item: Item; onChange: (patch: Partial<Item>) =>
     case "diagram":
       return (
         <>
-          <Field label="Shape"><Choice options={DIAGRAM_SHAPES} value={item.shape ?? "exit-left"} onChange={(shape) => onChange({ shape })} /></Field>
+          <Field label="Shape"><Choice options={DIAGRAM_SHAPES} perRow={3} value={item.shape ?? "exit-left"} onChange={(shape) => onChange({ shape })} /></Field>
           {item.shape === "roundabout" ? (
             <Field label="Exits">
               <div className={styles.choices}>
@@ -233,7 +241,7 @@ function ItemProperties(props: { item: Item; onChange: (patch: Partial<Item>) =>
             <div className={styles.chip} style={{ alignSelf: "flex-start" }} onClick={() => onChange({ lines: [...lines, ""] })}>Add line</div>
           </Field>
           <Field label="Letter height"><NumberBox value={item.height ?? 12} onChange={(height) => onChange({ height })} /></Field>
-          <Field label="LED color"><Choice options={LED_COLORS} value={item.color ?? ""} onChange={(color) => onChange({ color: color || undefined })} /></Field>
+          <LedColorField label="LED color" value={item.color} onChange={(color) => onChange({ color })} />
           {place}
         </>
       );
@@ -277,9 +285,16 @@ export const Designer = (props: {
   onClose: () => void;
   /** Drawn over the dialog's content (the discard-changes question). */
   overlay?: ReactNode;
+  /** More options under the sign's own (a placed roadside sign's lights). */
+  extra?: ReactNode;
 }) => {
   const { design, setDesign } = props;
   const [selected, setSelected] = useState<string | null>(null);
+  // For the in-game tests: select a part the way a click does.
+  useEffect(() => {
+    (window as any).__signBuilderSelect = setSelected;
+    return () => { delete (window as any).__signBuilderSelect; };
+  }, []);
   // Bumped when a part is picked on the preview, so its text box takes focus with the caret at the end.
   const [focusToken, setFocusToken] = useState(0);
   const theme = themeOf(props.themes, design);
@@ -332,14 +347,19 @@ export const Designer = (props: {
           <Scrollable vertical trackVisibility="scrollable" className={styles.optionsScroll}>
           <div className={styles.signOptions}>
             <Field label="Sign type">
-              <div className={styles.inlineRow}>
-                <Choice options={[{ value: "", label: "Standard" }, { value: "led", label: "Message board", title: "A black LED panel: lit pixel lettering" }]}
-                  value={design.board ?? ""} onChange={(board) => { const d: Design = { ...design, board: board || undefined }; if (!board) delete d.board; setDesign(d); }} />
-                {design.board === "led" && (
-                  <Choice options={LED_COLORS} value={design.foreground ?? ""} onChange={(c) => { const d: Design = { ...design, foreground: c || undefined }; if (!c) delete d.foreground; setDesign(d); }} />
-                )}
-              </div>
+              <Choice options={[{ value: "", label: "Standard" }, { value: "led", label: "Message board", title: "A black LED panel: lit dot-matrix lettering" }]}
+                value={design.board ?? ""} onChange={(board) => {
+                  const d: Design = { ...design, board: board || undefined };
+                  if (!board) delete d.board;
+                  delete d.foreground;
+                  delete d.background;
+                  setDesign(d);
+                }} />
             </Field>
+            {design.board === "led" && (
+              <LedColorField label="LED color" value={design.foreground}
+                onChange={(c) => { const d: Design = { ...design, foreground: c }; if (!c) delete d.foreground; setDesign(d); }} />
+            )}
             {design.board !== "led" && (
             <Field label="Color">
               <Swatches schemes={def?.schemes ?? {}} scheme={design.scheme ?? def?.defaults?.scheme ?? ""} custom={custom}
@@ -347,7 +367,7 @@ export const Designer = (props: {
                 onCustom={() => setDesign({ ...design, background: design.background ?? "#2d6a4f", foreground: design.foreground ?? "#ffffff" })} />
             </Field>
             )}
-            {custom && (
+            {custom && design.board !== "led" && (
               <div className={styles.customColors}>
                 <Field label="Background"><ColorBox value={design.background} onChange={(background) => setDesign({ ...design, background })} /></Field>
                 <Field label="Legend"><ColorBox value={design.foreground ?? "#ffffff"} onChange={(foreground) => setDesign({ ...design, foreground })} /></Field>
@@ -380,6 +400,7 @@ export const Designer = (props: {
               </div>
             </Field>
             <Field label="Align lines"><Choice options={ALIGN} value={design.align ?? "start"} onChange={(align) => setDesign({ ...design, align })} /></Field>
+            {props.extra}
           </div>
           </Scrollable>
           <div className={styles.actions}>

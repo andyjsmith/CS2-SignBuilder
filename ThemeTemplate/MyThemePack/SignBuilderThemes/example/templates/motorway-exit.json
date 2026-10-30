@@ -1,0 +1,31 @@
+{
+  "theme": "example",
+  "id": "motorway-exit",
+  "name": "Motorway exit",
+  "scheme": "motorway",
+  "align": "center",
+  "items": [
+    {
+      "type": "tab",
+      "align": "right",
+      "items": [{ "type": "text", "text": "12", "height": 12 }]
+    },
+    {
+      "type": "row",
+      "items": [
+        { "type": "shield", "network": "M", "number": "1" },
+        { "type": "text", "text": "North" }
+      ]
+    },
+    { "type": "text", "text": "Capital City" },
+    { "type": "text", "text": "Harbour", "height": 13 },
+    {
+      "type": "panel",
+      "scheme": "detour",
+      "items": [
+        { "type": "arrow", "direction": "down", "height": 16 },
+        { "type": "text", "text": "EXIT", "height": 12 }
+      ]
+    }
+  ]
+}

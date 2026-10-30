@@ -19,15 +19,13 @@ namespace SignBuilder.Assemblies
             var templateMaterial = template.GetTemplateMaterial() ?? throw new InvalidOperationException("Donor surface has no template material");
             var material = new Material(templateMaterial) { name = name };
 
-            // Templates carry textures that are not CPU-readable (snow maps, blue noise); SurfaceAsset
-            // saves every texture it references, so drop them.
+            // SurfaceAsset saves a copy of every texture its material references, and the template's own (snow maps,
+            // blue noise) would be saved again with each of our materials: drop them all, we set what we use.
             var shader = material.shader;
             for (var i = 0; i < shader.GetPropertyCount(); i++)
             {
                 if (shader.GetPropertyType(i) != ShaderPropertyType.Texture) continue;
-                var prop = shader.GetPropertyName(i);
-                var tex = material.GetTexture(prop);
-                if (tex != null && !tex.isReadable) material.SetTexture(prop, null);
+                material.SetTexture(shader.GetPropertyName(i), null);
             }
             material.SetTexture("_BaseColorMap", Savable(baseColor));
             if (mask != null && material.HasProperty("_MaskMap")) material.SetTexture("_MaskMap", Savable(mask));
@@ -40,20 +38,81 @@ namespace SignBuilder.Assemblies
             return surface;
         }
 
+        /// <summary>How bright LED lettering glows, relative to the face's own color.</summary>
+        public const float kLedGlow = 3f;
+
         /// <summary>
         /// A sign face: the baked texture, matte non-metallic, transparent corners cut out. <paramref name="glow"/> is its
         /// self-illumination: faint (retroreflective sheeting) by default, brighter for signs with lights.
+        /// <paramref name="lit"/> (LED lettering, the face's size) glows brightly on top of that.
         /// </summary>
-        public static SurfaceAsset SignFace(ILocalAssetDatabase database, string folder, SurfaceAsset template, Texture2D face, string key, float glow = 0.3f)
+        public static SurfaceAsset SignFace(ILocalAssetDatabase database, string folder, SurfaceAsset template, Texture2D face, string key, float glow = 0.3f,
+            Texture2D lit = null)
         {
             face = Savable(face);
+            // The glow map is saved as a texture of its own: at a quarter of the face's size (half for LED lettering,
+            // which must stay sharp), as faint retroreflective glow needs no detail.
+            var led = lit != null && lit.width == face.width && lit.height == face.height;
+            var emissive = led ? Downscale(Emissive(face, lit, glow / kLedGlow), 2) : Downscale(face, 4);
+            var strength = led ? kLedGlow : glow;
             return Create(database, folder, "SignBuilder_Face_" + key.Substring(0, Math.Min(12, key.Length)), template, face, FaceMask(), m =>
             {
                 if (m.HasProperty("_AlphaCutoffEnable")) m.SetFloat("_AlphaCutoffEnable", 1f);
                 if (m.HasProperty("_AlphaCutoff")) m.SetFloat("_AlphaCutoff", 0.5f);
-                if (m.HasProperty("_EmissiveColorMap")) m.SetTexture("_EmissiveColorMap", face);
-                if (m.HasProperty("_EmissiveColor")) m.SetColor("_EmissiveColor", Color.white * glow);
+                if (m.HasProperty("_EmissiveColorMap")) m.SetTexture("_EmissiveColorMap", emissive);
+                if (m.HasProperty("_EmissiveColor")) m.SetColor("_EmissiveColor", Color.white * strength);
             });
+        }
+
+        /// <summary>A copy <paramref name="factor"/> times smaller each way (averaged), with mipmaps.</summary>
+        private static Texture2D Downscale(Texture2D source, int factor)
+        {
+            var w = Math.Max(1, source.width / factor);
+            var h = Math.Max(1, source.height / factor);
+            var src = source.GetPixels32();
+            var dst = new Color32[w * h];
+            for (var y = 0; y < h; y++)
+            {
+                for (var x = 0; x < w; x++)
+                {
+                    int r = 0, g = 0, b = 0, a = 0, n = 0;
+                    for (var dy = 0; dy < factor; dy++)
+                    {
+                        var sy = y * factor + dy;
+                        if (sy >= source.height) break;
+                        for (var dx = 0; dx < factor; dx++)
+                        {
+                            var sx = x * factor + dx;
+                            if (sx >= source.width) break;
+                            var c = src[sy * source.width + sx];
+                            r += c.r; g += c.g; b += c.b; a += c.a; n++;
+                        }
+                    }
+                    dst[y * w + x] = new Color32((byte)(r / n), (byte)(g / n), (byte)(b / n), (byte)(a / n));
+                }
+            }
+            var tex = new Texture2D(w, h, TextureFormat.RGBA32, mipChain: true) { name = "SignBuilder.Glow", wrapMode = TextureWrapMode.Clamp };
+            tex.SetPixels32(dst);
+            tex.Apply(updateMipmaps: true);
+            return tex;
+        }
+
+        /// <summary>The face dimmed by <paramref name="faceShare"/>, with the LED lettering at full brightness over it.</summary>
+        private static Texture2D Emissive(Texture2D face, Texture2D lit, float faceShare)
+        {
+            var a = face.GetPixels32();
+            var b = lit.GetPixels32();
+            var o = new Color32[a.Length];
+            for (var i = 0; i < a.Length; i++)
+            {
+                var k = b[i].a / 255f;
+                byte Mix(byte f, byte l) => (byte)Math.Min(255f, Math.Max(f * faceShare, l * k));
+                o[i] = new Color32(Mix(a[i].r, b[i].r), Mix(a[i].g, b[i].g), Mix(a[i].b, b[i].b), a[i].a);
+            }
+            var tex = new Texture2D(face.width, face.height, TextureFormat.RGBA32, mipChain: true) { name = "SignBuilder.Glow", wrapMode = TextureWrapMode.Clamp };
+            tex.SetPixels32(o);
+            tex.Apply(updateMipmaps: true);
+            return tex;
         }
 
         /// <summary>

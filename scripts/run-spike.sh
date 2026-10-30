@@ -4,7 +4,8 @@
 #
 #   scripts/run-spike.sh [mode] [save-guid]
 #     mode       "full" (default) runs every spike test; "smoke" only loads, screenshots and quits;
-#                "phase1" runs the Phase 1 batch; "debug" bakes one sign and idles with the UI
+#                "phase1" runs the Phase 1 batch; "e2e" the full end-to-end tests; "ui-e2e" only the designer
+#                UI tests (a couple of minutes); "debug" bakes one sign and idles with the UI
 #                DevTools on localhost:9444 (create spike/done.flag to quit early).
 #     save-guid  SaveGameMetadata guid to load (-startGame=...); omit to continue the last save.
 #
@@ -34,9 +35,19 @@ fi
 cmd.exe //c start "" "steam://rungameid/949230"
 echo "Launched (mode=$mode, save=${save:-last}); waiting for the game to quit..."
 
+# Steam can hold the launch (e.g. a cloud save conflict to confirm): wait up to 5 minutes for the game to start.
+started=""
+for _ in $(seq 1 60); do
+  if tasklist | grep -qi cities2.exe; then started=1; break; fi
+  sleep 5
+done
+if [[ -z "$started" ]]; then
+  echo "The game did not start within 5 minutes (is Steam waiting for something?)." >&2
+  exit 1
+fi
+
 # Hard stop: whatever happens in game, the process is killed after 10 minutes so it is never left running.
-sleep 20
-for _ in $(seq 1 116); do
+for _ in $(seq 1 120); do
   tasklist | grep -qi cities2.exe || break
   sleep 5
 done

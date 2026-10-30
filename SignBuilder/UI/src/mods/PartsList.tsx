@@ -11,6 +11,12 @@ type Drop = { path: string; position: DropPosition; shown: string } | null;
  * onto a Row or Column to put it inside. Below the last part of a row or column, the pointer's indent picks the
  * level: further left drops it after the row or column instead of inside it.
  */
+/** A button at the right end of a part's row (duplicate, delete): it must not start a drag or select the part. */
+const RowButton = (p: { className: string; title: string; onClick: () => void; children: any }) => (
+  <div className={p.className} title={p.title} onMouseDown={(e) => e.stopPropagation()}
+    onClick={(e) => { e.stopPropagation(); p.onClick(); }}>{p.children}</div>
+);
+
 export const PartsList = (props: {
   design: Design;
   selected: string | null;
@@ -62,18 +68,6 @@ export const PartsList = (props: {
     if (best && best.position !== "inside" && getItem(props.design, best.path)?.type === "tab") return null;
     return best;
   };
-
-  // Delete button at the right end of a part's row (it must not start a drag or select the part).
-  const Delete = (p: { path: string }) => (
-    <div className={styles.rowDelete} title="Delete this part" onMouseDown={(e) => e.stopPropagation()}
-      onClick={(e) => { e.stopPropagation(); props.onDelete(p.path); }}><TrashIcon /></div>
-  );
-
-  // Duplicate button left of the delete button (copies the part with everything inside it).
-  const Duplicate = (p: { path: string }) => (
-    <div className={styles.rowDelete} title="Duplicate this part" onMouseDown={(e) => e.stopPropagation()}
-      onClick={(e) => { e.stopPropagation(); props.onDuplicate(p.path); }}><DuplicateIcon /></div>
-  );
 
   const startDrag = (e: any, path: string) => {
     // Tabs always sit on top of the sign, so they are not moved around (only selected).
@@ -133,8 +127,8 @@ export const PartsList = (props: {
               {describe(item, props.labels)}
               {item.items && item.items.length === 0 && <span className={styles.hintInline}> drop parts here</span>}
             </div>
-            <Duplicate path={path} />
-            <Delete path={path} />
+            <RowButton className={styles.rowCopy} title="Duplicate this part" onClick={() => props.onDuplicate(path)}><DuplicateIcon /></RowButton>
+            <RowButton className={styles.rowDelete} title="Delete this part" onClick={() => props.onDelete(path)}><TrashIcon /></RowButton>
           </div>
         );
       })}

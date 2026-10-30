@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 100" width="120" height="100">
+  <!-- A motorway plate: the route number is drawn on top by Sign Builder ("num", "top" in theme.json). -->
+  <rect x="2" y="2" width="116" height="96" rx="14" fill="#ffffff"/>
+  <rect x="8" y="8" width="104" height="84" rx="10" fill="#c8102e"/>
+</svg>

@@ -110,6 +110,7 @@ namespace SignBuilder.Tools
 
         private void Activate(Mode mode)
         {
+            SignBuilderRuntime.Mark("tool: " + mode);
             m_Mode = mode;
             m_Changed = false;
             m_PreviewKey = null;
@@ -201,6 +202,8 @@ namespace SignBuilder.Tools
                     break;
                 case "wider": m_Options.FreeWidth = math.min(m_Options.FreeWidth + 1f, 60f); break;
                 case "narrower": m_Options.FreeWidth = math.max(m_Options.FreeWidth - 1f, 4f); break;
+                case "lightsOn": m_Options.Lights = true; break;
+                case "lightsOff": m_Options.Lights = false; break;
                 case "smaller": m_Options.SignScale = Step(m_Options.SignScale, -1); break;
                 case "larger": m_Options.SignScale = Step(m_Options.SignScale, 1); break;
             }
@@ -472,7 +475,7 @@ namespace SignBuilder.Tools
             ["scale"] = m_Options.SignScale / LayoutOptions.kDefaultScale, ["posts"] = m_Mode == Mode.Posts, ["surface"] = Surface,
             // Height of a roadside sign's bottom edge above the ground (or a gantry's lift), and the gap to the road's edge.
             ["bottom"] = (m_Options.Free ? m_Options.Elevation : m_Options.Lift) + GantryFactory.kGroundClearance,
-            ["lift"] = m_Options.Lift, ["gap"] = m_Options.RoadGap,
+            ["lift"] = m_Options.Lift, ["gap"] = m_Options.RoadGap, ["lights"] = m_Options.Lights,
         }.ToString(Formatting.None);
 
         /// <summary>Sign sizes in meters at the current scale; signs still baking use a placeholder size.</summary>
@@ -756,7 +759,7 @@ namespace SignBuilder.Tools
                 Deactivate();
                 m_Replacing = entity;
                 m_Options = options;
-                m_UI.OpenForEdit(record, "posts");
+                m_UI.OpenForEdit(record, "posts", options.Lights);
                 return true;
             }
             SetSigns(record.Designs);
@@ -772,12 +775,13 @@ namespace SignBuilder.Tools
         }
 
         /// <summary>Saves a roadside sign edited in the designer, rebuilt where it stands.</summary>
-        public bool SavePosts(JObject design)
+        public bool SavePosts(JObject design, bool lights)
         {
             if (m_Replacing == Entity.Null || m_Busy) return false;
             var record = RecordOf(m_Replacing);
             if (record == null) return false;
             var options = OptionsOf(record);
+            options.Lights = lights;
             SetSigns(new[] { design });
             m_Options = options;
             SignBuilderRuntime.Run(WaitThenBuild(record.Context.ToSnap(), closeEditor: true));
@@ -809,7 +813,7 @@ namespace SignBuilder.Tools
             SetHidden(m_Replacing, true);
             if (options.Standalone) BeginPosts(record.Designs[0], options);
             else BeginGantry(record.Designs, options);
-            m_UI.OpenForEdit(record, options.Standalone ? "posts" : "gantry");
+            m_UI.OpenForEdit(record, options.Standalone ? "posts" : "gantry", options.Lights);
             return true;
         }
 

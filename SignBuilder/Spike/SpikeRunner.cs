@@ -100,6 +100,11 @@ namespace SignBuilder.Spike
                 yield return RunE2E();
                 yield break;
             }
+            if (m_Mode == "ui-e2e")
+            {
+                yield return RunUIE2E();
+                yield break;
+            }
             if (m_Mode == "uitest")
             {
                 yield return RunUITest();

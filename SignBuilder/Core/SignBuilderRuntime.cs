@@ -40,6 +40,19 @@ namespace SignBuilder.Core
 
         public static Coroutine Run(IEnumerator routine) => s_Host.StartCoroutine(routine);
 
+        private static string s_Step = "none";
+        private static float s_StepAt;
+
+        /// <summary>
+        /// Notes what Sign Builder is doing; a very long frame soon after is logged with it, so a freeze can be traced
+        /// afterwards (ours, or the game's).
+        /// </summary>
+        public static void Mark(string step)
+        {
+            s_Step = step;
+            s_StepAt = Time.realtimeSinceStartup;
+        }
+
         public static SignFaceBaker Baker => s_Baker ??= new SignFaceBaker(ResourcesDir, Path.Combine(SignBuilderCache.RootPath, "Faces"));
 
         /// <summary>
@@ -69,6 +82,15 @@ namespace SignBuilder.Core
 
         private sealed class CoroutineHost : MonoBehaviour
         {
+            private void Update()
+            {
+                var frame = Time.unscaledDeltaTime;
+                var since = Time.realtimeSinceStartup - s_StepAt;
+                if (frame > 0.75f && since < 60f)
+                {
+                    Mod.log.Info($"Long frame: {frame:F2} s; last Sign Builder step \"{s_Step}\" {since:F2} s ago");
+                }
+            }
         }
     }
 }

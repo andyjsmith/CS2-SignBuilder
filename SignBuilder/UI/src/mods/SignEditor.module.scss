@@ -8,6 +8,8 @@
 .listItem:hover { background-color: rgba(255, 255, 255, 0.15); }
 .listItemOn { background-color: rgba(255, 212, 0, 0.35); }
 .palette, .choices { display: flex; flex-direction: row; flex-wrap: wrap; }
+.palette, .choices { align-items: center; }
+.chip, .choice, .choiceOn { white-space: nowrap; }
 .chip, .choice, .choiceOn { padding: 3rem 8rem; margin: 0 4rem 4rem 0; font-size: 13rem; color: #fff; background-color: rgba(255, 255, 255, 0.1); border-radius: 3rem; }
 .chip:hover, .choice:hover { background-color: rgba(255, 255, 255, 0.22); }
 .choiceOn { background-color: rgba(80, 160, 255, 0.6); }
@@ -92,14 +94,18 @@
 .rowLabel { flex: 1; }
 .rowDelete { padding: 2rem 4rem; margin-left: 6rem; border-radius: 3rem; opacity: 0.6; }
 .rowDelete:hover { opacity: 1; background-color: rgba(220, 60, 60, 0.6); }
+.rowCopy { padding: 2rem 4rem; margin-left: 6rem; border-radius: 3rem; opacity: 0.6; }
+.rowCopy:hover { opacity: 1; background-color: rgba(80, 160, 255, 0.6); }
 .confirmShade { position: absolute; left: 0; top: 0; right: 0; bottom: 0; display: flex; align-items: center; justify-content: center; background-color: rgba(0, 0, 0, 0.55); }
 .confirmBox { display: flex; flex-direction: column; align-items: center; padding: 16rem 20rem; border-radius: 6rem; background-color: rgba(30, 36, 44, 0.98); }
 .confirmText { font-size: 15rem; color: #fff; margin-bottom: 12rem; }
 .dangerButton { padding: 5rem 14rem; margin-right: 10rem; font-size: 14rem; font-weight: bold; color: #fff; border-radius: 4rem; background-color: #b23a3a; }
 .dangerButton:hover { background-color: #cc4545; }
 .marginGrid { display: flex; flex-direction: column; }
-.marginSide { display: flex; flex-direction: row; align-items: center; margin: 0 10rem 3rem 0; }
-.marginLabel { width: 42rem; font-size: 12rem; color: rgba(255, 255, 255, 0.7); }
+.marginSide { display: flex; flex-direction: row; align-items: center; margin: 0 6rem 3rem 0; }
+.marginLabel { width: 40rem; font-size: 12rem; color: rgba(255, 255, 255, 0.7); }
+.marginSide .numberInput { width: 36rem; }
+.marginSide .stepValue { margin: 0 2rem; }
 .cardBadge { position: absolute; right: 26rem; bottom: 4rem; opacity: 0.7; }
 .stepperCompact { display: flex; flex-direction: row; align-items: center; }
 .stepperCompact .stepValue { width: auto; }

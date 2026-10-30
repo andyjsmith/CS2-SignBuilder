@@ -152,14 +152,14 @@ export function describe(item: Item, labels?: Record<string, string>): string {
   switch (item.type) {
     case "text": return `"${item.text}"`;
     case "shield": return `Shield "${item.number ?? ""}"`;
-    case "chip": return `Chip (${item.items?.length ?? 0})`;
+    case "chip": return "Chip";
     case "diagram": return `Diagram ${String(item.shape ?? "exit-left").replace("-", " ")}`;
     case "message": return `LED "${(item.lines ?? [])[0] ?? ""}"`;
-    case "panel": return `Panel (${item.items?.length ?? 0})`;
-    case "tab": return `Tab (${item.items?.length ?? 0})`;
+    case "panel": return "Panel";
+    case "tab": return "Tab";
     case "arrow": return `Arrow ${String(item.direction ?? "up").replace("-", " ")}`;
-    case "row": return `Row (${item.items.length})`;
-    case "stack": return `Column (${item.items.length})`;
+    case "row": return "Row";
+    case "stack": return "Column";
     case "divider": return "Divider";
     default: return item.type;
   }

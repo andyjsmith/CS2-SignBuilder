@@ -31,6 +31,7 @@ namespace SignBuilder.Assemblies
             base.OnGamePreload(purpose, mode);
             if (s_Registered || !mode.IsGameOrEditor()) return;
             s_Registered = true;
+            AssemblyCleanup.SweepOrphans();
             var prefabs = new RuntimePrefabs();
             int ok = 0, missing = 0;
             foreach (var record in AssemblyLibrary.All)

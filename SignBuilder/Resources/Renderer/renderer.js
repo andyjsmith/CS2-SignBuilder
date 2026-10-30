@@ -72,6 +72,8 @@
   }
 
   var ppu = 3;
+  // Set while drawing a sign's glow (see hsRender).
+  var glowOnly = false;
   var ppi = 3;
   // Assets resolve relative to this script so the renderer also works when loaded into the game's
   // main UI page (the editor preview), not only from renderer.html.
@@ -130,10 +132,6 @@
   // Font size and vertical offset per letter height: "scale" = em / cap height, "offset" puts the capitals'
   // top at the top of the box (from the font's metrics; Roadgeek 2014 is 1.75 and 0.125).
   // "weight" picks a face of a family the game itself provides (e.g. "Noto Sans JP" bold), which has no font file.
-  // Fonts every theme can use: the game's pixel font, for LED message boards.
-  var LED_FONT = "Perfect DOS VGA 437";
-  var BUILTIN_FONTS = {};
-  BUILTIN_FONTS[LED_FONT] = { scale: 1.6, offset: 0.1 };
   var LED_COLOR = "#ffb000";
 
   // Family names are quoted: some are not valid bare CSS names (e.g. "Perfect DOS VGA 437").
@@ -142,7 +140,7 @@
   }
 
   function metrics(family) {
-    var f = T.fonts[family] || BUILTIN_FONTS[family];
+    var f = T.fonts[family];
     return { scale: (f && f.scale) || 1.75, offset: f && f.offset != null ? f.offset : 0.125, weight: (f && f.weight) || "normal" };
   }
 
@@ -164,10 +162,59 @@
 
   function renderText(item, ctx) {
     var h = item.height || DEFAULTS.textHeight;
-    var font = item.font || ctx.font;
-    var led = font === LED_FONT;
-    var e = textBox(led ? String(item.text || "").toUpperCase() : item.text || "", h, font, item.color || ctx.fg, item.tracking != null ? item.tracking : led ? 12 : 0);
-    return e;
+    // On a message board, legends are LED lettering (unless the part picks a font).
+    if (ctx.led && !item.font) return ledText(item.text || "", h, item.color || ctx.fg);
+    return textBox(item.text || "", h, item.font || ctx.font, item.color || ctx.fg, item.tracking);
+  }
+
+  // 5 x 7 dot-matrix letters, as on LED message boards: 7 rows of 5 bits each (top row first).
+  var LED_GLYPHS = {
+    "A": "0e11111f111111", "B": "1e11111e11111e", "C": "0e11101010110e", "D": "1c12111111121c", "E": "1f10101e10101f",
+    "F": "1f10101e101010", "G": "0e11101711110f", "H": "1111111f111111", "I": "0e04040404040e", "J": "0702020202120c",
+    "K": "11121418141211", "L": "1010101010101f", "M": "111b1515111111", "N": "11111915131111", "O": "0e11111111110e",
+    "P": "1e11111e101010", "Q": "0e11111115120d", "R": "1e11111e141211", "S": "0f10100e01011e", "T": "1f040404040404",
+    "U": "1111111111110e", "V": "11111111110a04", "W": "1111111515150a", "X": "11110a040a1111", "Y": "1111110a040404",
+    "Z": "1f01020408101f", "0": "0e11131519110e", "1": "040c040404040e", "2": "0e11010204081f", "3": "1f02040201110e",
+    "4": "02060a121f0202", "5": "1f101e0101110e", "6": "0608101e11110e", "7": "1f010204080808", "8": "0e11110e11110e",
+    "9": "0e11110f01020c", " ": "00000000000000", ".": "00000000000c0c", ",": "000000000c0408", ":": "000c0c000c0c00",
+    "-": "0000001f000000", "/": "00010204081000", "!": "04040404040004", "?": "0e110102040004", "$": "040f140e051e04",
+    "&": "0c12140815120d", "'": "0c040800000000", "(": "02040808080402", ")": "08040202020408", "+": "0004041f040400",
+    "%": "18190204081303", "#": "0a0a1f0a1f0a0a", "\"": "0a0a0a00000000", "@": "0e11010d15150e",
+    "=": "00001f001f0000", "<": "02040810080402", ">": "08040201020408", "*": "0004150e150400",
+  };
+
+  // LED lettering: one dot per lit pixel of each letter, <h> tall (7 dots), in <color>. Unknown characters are blank.
+  function ledText(text, h, color) {
+    var chars = String(text).toUpperCase().split("");
+    var pitch = h / 7, dot = pitch * 0.8;
+    var d = [];
+    chars.forEach(function (ch, i) {
+      var g = LED_GLYPHS[ch] || LED_GLYPHS[" "];
+      for (var row = 0; row < 7; row++) {
+        var bits = parseInt(g.substr(row * 2, 2), 16);
+        for (var col = 0; col < 5; col++) {
+          if (!(bits & (16 >> col))) continue;
+          var x = (i * 6 + col) * pitch, y = row * pitch;
+          d.push("M" + x.toFixed(2) + " " + y.toFixed(2) + "h" + dot.toFixed(2) + "v" + dot.toFixed(2) + "h-" + dot.toFixed(2) + "Z");
+        }
+      }
+    });
+    var w = Math.max(1, chars.length * 6 - 1) * pitch;
+    var ns = "http://www.w3.org/2000/svg";
+    var svg = document.createElementNS(ns, "svg");
+    svg.setAttribute("class", "sb-led");
+    svg.setAttribute("viewBox", "0 0 " + w.toFixed(2) + " " + h.toFixed(2));
+    svg.setAttribute("width", String(w * ppu));
+    svg.setAttribute("height", String(h * ppu));
+    if (d.length) {
+      var path = document.createElementNS(ns, "path");
+      path.setAttribute("d", d.join(""));
+      path.setAttribute("fill", color);
+      svg.appendChild(path);
+    }
+    // The glow pass (the lit parts of the sign at night) shows only LED lettering.
+    if (glowOnly) svg.style.visibility = "visible";
+    return svg;
   }
 
   // Route plates come from the theme: "img" (artwork, number on top), "ellipse", "rect" (colored plate with an
@@ -294,38 +341,41 @@
   // curving off (exit left / right), a fork, or a roundabout with its exits. Drawn as filled shapes (lane lines are
   // separate dashes in the background color), sized by its height.
   function renderDiagram(item, ctx) {
-    var L = 24, headLen = 30, headOver = 13;
+    var L = 14, headLen = 25, headOver = 11;
     var fg = item.color || ctx.fg, gapColor = ctx.bg;
     var shapes = [], dashes = [];
     var shape = item.shape || "exit-left";
     var rect = function (x, y, w, h) { return [[x, y], [x + w, y], [x + w, y + h], [x, y + h]]; };
+    // An arrowhead at <e> pointing along <d>. Its base reaches a little back into the shaft, so no seam of
+    // background shows between them (anti-aliased edges that only touch leave a faint line).
     var head = function (e, d, half) {
-      var n = [-d[1], d[0]];
-      return [[e[0] + n[0] * half, e[1] + n[1] * half], [e[0] + d[0] * headLen, e[1] + d[1] * headLen], [e[0] - n[0] * half, e[1] - n[1] * half]];
+      var n = [-d[1], d[0]], back = 0.8;
+      var b = [e[0] - d[0] * back, e[1] - d[1] * back];
+      return [[b[0] + n[0] * half, b[1] + n[1] * half], [e[0] + d[0] * headLen, e[1] + d[1] * headLen], [b[0] - n[0] * half, b[1] - n[1] * half]];
     };
     var dash = function (cx, cy, dx, dy) {
-      // A dash 10 long and 3 wide centered on (cx, cy) along (dx, dy).
-      var nx = -dy * 1.5, ny = dx * 1.5;
-      dashes.push([[cx - dx * 5 + nx, cy - dy * 5 + ny], [cx + dx * 5 + nx, cy + dy * 5 + ny], [cx + dx * 5 - nx, cy + dy * 5 - ny], [cx - dx * 5 - nx, cy - dy * 5 - ny]]);
+      // A dash 8 long and 2 wide centered on (cx, cy) along (dx, dy).
+      var nx = -dy, ny = dx;
+      dashes.push([[cx - dx * 4 + nx, cy - dy * 4 + ny], [cx + dx * 4 + nx, cy + dy * 4 + ny], [cx + dx * 4 - nx, cy + dy * 4 - ny], [cx - dx * 4 - nx, cy - dy * 4 - ny]]);
     };
     if (shape === "roundabout") {
       // Ring around (0, 0), entry from below, an arm with an arrowhead per exit.
-      var R = 40, band = 18;
+      var R = 32, band = 11;
       for (var k = 0; k < 40; k++) {
         var a0 = k / 40 * Math.PI * 2, a1 = (k + 1.15) / 40 * Math.PI * 2;
         shapes.push([[Math.cos(a0) * (R - band / 2), Math.sin(a0) * (R - band / 2)], [Math.cos(a0) * (R + band / 2), Math.sin(a0) * (R + band / 2)],
           [Math.cos(a1) * (R + band / 2), Math.sin(a1) * (R + band / 2)], [Math.cos(a1) * (R - band / 2), Math.sin(a1) * (R - band / 2)]]);
       }
-      shapes.push(rect(-band / 2, R, band, 55));
+      shapes.push(rect(-band / 2, R, band, 50));
       var angles = { left: Math.PI, up: -Math.PI / 2, right: 0, "up-left": -Math.PI * 3 / 4, "up-right": -Math.PI / 4 };
       (item.exits || ["left", "up", "right"]).forEach(function (exit) {
         var a = angles[exit];
         if (a == null) return;
         var d = [Math.cos(a), Math.sin(a)], n = [-d[1], d[0]];
-        var s0 = R, s1 = R + band / 2 + 26;
+        var s0 = R, s1 = R + band / 2 + 20;
         shapes.push([[d[0] * s0 + n[0] * band / 2, d[1] * s0 + n[1] * band / 2], [d[0] * s1 + n[0] * band / 2, d[1] * s1 + n[1] * band / 2],
           [d[0] * s1 - n[0] * band / 2, d[1] * s1 - n[1] * band / 2], [d[0] * s0 - n[0] * band / 2, d[1] * s0 - n[1] * band / 2]]);
-        shapes.push(head([d[0] * s1, d[1] * s1], d, band / 2 + headOver - 4));
+        shapes.push(head([d[0] * s1, d[1] * s1], d, band / 2 + headOver - 2));
       });
     } else {
       var lanes = Math.max(1, Math.round(item.lanes || 2));
@@ -336,14 +386,14 @@
       shapes.push(rect(sx, shaftTop, sw, bottom - shaftTop));
       if (!fork) shapes.push(head([0, shaftTop], [0, -1], sw / 2 + headOver));
       for (var lane = 1; lane < lanes; lane++) {
-        for (var y = bottom - 9; y > shaftTop + 8; y -= 19) dash(sx + lane * L, y, 0, -1);
+        for (var y = bottom - 7; y > shaftTop + 6; y -= 15) dash(sx + lane * L, y, 0, -1);
       }
       var sides = shape === "exit-right" ? [1] : shape === "exit-left" ? [-1] : [-1, 1];
       sides.forEach(function (side) {
-        var bw = exitLanes * L, Rc = 70 + bw, sweep = 1.0;
+        var bw = exitLanes * L, Rc = 46 + bw, sweep = 1.15;
         // The branch leaves the shaft's edge going up, then bends off to its side.
         var startX = side < 0 ? sx + bw / 2 : sx + sw - bw / 2;
-        var cy = fork ? shaftTop + 4 : 138;
+        var cy = fork ? shaftTop + 4 : 122;
         var cx = startX + side * Rc;
         var at = function (phi, r) { return [cx - side * r * Math.cos(phi), cy + r * Math.sin(phi)]; };
         var outer = [], inner = [];
@@ -358,8 +408,8 @@
         shapes.push(head(end, d, bw / 2 + headOver));
         for (var bl = 1; bl < exitLanes; bl++) {
           var r = Rc - bw / 2 + bl * L;
-          for (var k3 = 1; k3 < 6; k3++) {
-            var ph = -sweep * (k3 / 6), p0 = at(ph, r), p1 = at(ph - 0.01, r);
+          for (var k3 = 1; k3 < 5; k3++) {
+            var ph = -sweep * (k3 / 5), p0 = at(ph, r), p1 = at(ph - 0.01, r);
             var len = Math.hypot(p1[0] - p0[0], p1[1] - p0[1]) || 1;
             dash(p0[0], p0[1], (p1[0] - p0[0]) / len, (p1[1] - p0[1]) / len);
           }
@@ -393,11 +443,11 @@
     var color = item.color || LED_COLOR;
     var box = el("div", "sb-message", {
       display: "flex", flexDirection: "column", alignItems: { start: "flex-start", end: "flex-end" }[item.align] || "center",
-      backgroundColor: item.background || "#0b0b0b", padding: px(h * 0.35) + " " + px(h * 0.5), borderRadius: px(h * 0.12),
+      backgroundColor: item.background || "#0b0b0b", padding: px(h * 0.35) + " " + px(h * 0.5),
     });
     (item.lines && item.lines.length ? item.lines : [""]).forEach(function (line, i) {
-      var t = textBox(String(line).toUpperCase(), h, LED_FONT, color, item.tracking != null ? item.tracking : 12);
-      if (i > 0) t.style.marginTop = px(h * 0.45);
+      var t = ledText(line, h, color);
+      if (i > 0) t.style.marginTop = px(h * 0.4);
       box.appendChild(t);
     });
     return box;
@@ -442,6 +492,8 @@
     e.style.alignItems = align;
     var items = item.items || [];
     var previous = null;
+    var even = horizontal && item.justify === "even";
+    var last = null;
     items.forEach(function (child, i) {
       if (only && only.indexOf(i) < 0) return;
       var c = renderItem(child, ctx, path == null ? null : (path === "" ? String(i) : path + "." + i), horizontal);
@@ -462,17 +514,29 @@
       c.style.marginLeft = px((horizontal ? gap : 0) + (m.left || 0));
       c.style.marginBottom = px(m.bottom || 0);
       c.style.marginRight = px((c.sbMarginRight || 0) + (m.right || 0));
+      // The part's own margin in layout pixels (the editor's selection outline includes it).
+      c.sbMargin = { top: (m.top || 0) * ppu, right: (m.right || 0) * ppu, bottom: (m.bottom || 0) * ppu, left: (m.left || 0) * ppu };
       previous = child;
-      if (horizontal && item.justify === "even" && child.type !== "divider") {
-        var cell = el("div", null, {
-          // Content width plus an equal share of the spare width: never narrower than its part, so a sign laid
-          // out at its natural width does not collapse the cells.
-          flexGrow: "1", flexShrink: "0", flexBasis: "auto", display: "flex", flexDirection: "row",
-          justifyContent: "center", alignItems: align,
-        });
-        c.style.marginLeft = px(m.left || 0);
-        cell.appendChild(c);
-        c = cell;
+      if (even) {
+        var right = 0;
+        if (child.type !== "divider") {
+          var cell = el("div", null, {
+            // Content width plus an equal share of the spare width: never narrower than its part, so a sign laid
+            // out at its natural width does not collapse the cells.
+            flexGrow: "1", flexShrink: "0", flexBasis: "auto", display: "flex", flexDirection: "row",
+            justifyContent: "center", alignItems: align,
+          });
+          c.style.marginLeft = px(m.left || 0);
+          cell.appendChild(c);
+          c = cell;
+        } else {
+          c.style.marginLeft = px(gap / 2 + (m.left || 0));
+          right = (c.sbMarginRight || 0) + (m.right || 0);
+        }
+        // Half the gap on this side, half on the previous part's side.
+        if (child.type !== "divider") c.style.marginLeft = px(gap / 2);
+        if (last && gap) last.el.style.marginRight = px(last.right + gap / 2);
+        last = { el: c, right: right };
       }
       e.appendChild(c);
     });
@@ -516,7 +580,7 @@
     var c = boxColors(item, ctx);
     var h = spacingHeight(item) || DEFAULTS.textHeight;
     var pad = item.padding != null ? item.padding : h * 0.3;
-    var inner = renderContainer({ type: item.vertical ? "stack" : "row", items: item.items || [], align: item.align }, { font: ctx.font, fg: c.fg, bg: c.bg }, !item.vertical, path);
+    var inner = renderContainer({ type: item.vertical ? "stack" : "row", items: item.items || [], align: item.align }, { font: ctx.font, fg: c.fg, bg: c.bg, led: ctx.led }, !item.vertical, path);
     var e = el("div", "sb-chip", {
       display: "flex", flexDirection: "row", backgroundColor: c.bg, padding: px(pad * 0.7) + " " + px(pad),
       borderRadius: px(item.radius != null ? item.radius : h * 0.15),
@@ -550,7 +614,7 @@
       e.style.borderBottomRightRadius = px(innerRadius);
     }
     var gap = item.gap != null ? item.gap : (spacingHeight(item) || h) * 0.75;
-    e.appendChild(renderContainer({ type: "row", items: item.items || [], gap: gap }, { font: ctx.font, fg: c.fg, bg: c.bg }, true, path));
+    e.appendChild(renderContainer({ type: "row", items: item.items || [], gap: gap }, { font: ctx.font, fg: c.fg, bg: c.bg, led: ctx.led }, true, path));
     return e;
   }
 
@@ -569,7 +633,7 @@
       padding: px(h * 0.45) + " " + px(h * 0.7) + " " + px(h * 0.45) + " " + px(h * 0.7),
     });
     var font = (T.def.exitTab && T.def.exitTab.font) || ctx.font;
-    inner.appendChild(renderContainer({ type: "row", items: item.items || [], align: "center" }, { font: font, fg: c.fg, bg: c.bg }, true, path));
+    inner.appendChild(renderContainer({ type: "row", items: item.items || [], align: "center" }, { font: font, fg: c.fg, bg: c.bg, led: ctx.led }, true, path));
     box.appendChild(inner);
     return tag(box, path);
   }
@@ -591,11 +655,12 @@
     if (led) s = { bg: "#0b0b0b", fg: doc.foreground || LED_COLOR };
     var frame = led ? "#3c3f44" : s.fg;
     var border = doc.border != null ? doc.border : DEFAULTS.border;
-    var radius = doc.cornerRadius != null ? doc.cornerRadius : DEFAULTS.cornerRadius;
+    // Message boards are square boxes.
+    var radius = led ? 0 : doc.cornerRadius != null ? doc.cornerRadius : DEFAULTS.cornerRadius;
     var items = doc.items || [];
     var legend = spacingHeight({ type: "stack", items: items.filter(inBody) }) || DEFAULTS.textHeight;
     var margin = doc.margin != null ? doc.margin : legend * DEFAULTS.margin;
-    var ctx = { font: doc.font || (led ? LED_FONT : DEFAULTS.font), fg: s.fg, bg: s.bg };
+    var ctx = { font: doc.font || DEFAULTS.font, fg: s.fg, bg: s.bg, led: led };
     var minWidth = doc.minLanes ? doc.minLanes * laneWidth(doc.laneKind) : doc.minWidth;
 
     var sign = el("div", "sb-sign");
@@ -659,6 +724,7 @@
     flush();
     panel.appendChild(inner);
     sign.appendChild(panel);
+    if (glowOnly) sign.style.visibility = "hidden";
     return sign;
   }
 
@@ -675,10 +741,12 @@
     arrows: Object.keys(ARROWS).concat(["turn-left", "turn-right", "split-left", "split-right"]),
   };
 
-  window.hsRender = function (doc, pixelsPerInch) {
+  // <glow>: draw only what is lit at night (LED lettering), laid out exactly like the sign itself.
+  window.hsRender = function (doc, pixelsPerInch, glow) {
     ppi = pixelsPerInch || 3;
     var root = document.getElementById("root");
     while (root.firstChild) root.removeChild(root.firstChild);
+    glowOnly = !!glow;
     try {
       root.appendChild(renderSign(doc || {}));
       window.hsLastError = null;
@@ -687,6 +755,8 @@
       var err = el("div", "sb-error");
       err.textContent = "Render error: " + window.hsLastError;
       root.appendChild(err);
+    } finally {
+      glowOnly = false;
     }
     window.hsRenderCount = (window.hsRenderCount || 0) + 1;
   };

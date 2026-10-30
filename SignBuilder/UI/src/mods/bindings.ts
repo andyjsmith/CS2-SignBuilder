@@ -32,7 +32,7 @@ export const adjust = (action: string) => trigger(group, "adjust", action);
 /** Arrangement panel operation, e.g. { op: "moveSign", index, x, snap }. */
 export const arrange = (op: object) => trigger(group, "arrange", JSON.stringify(op));
 /** Save an edited roadside sign where it stands. */
-export const savePosts = (design: object) => trigger(group, "savePosts", JSON.stringify(design));
+export const savePosts = (design: object, lights: boolean) => trigger(group, "savePosts", JSON.stringify({ design, lights }));
 /** Stop the tool. */
 export const cancelTool = () => trigger(group, "cancelTool");
 export const saveTemplate = (name: string, design: object, id?: string) => trigger(group, "saveTemplate", JSON.stringify({ name, design, id }));
