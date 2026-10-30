@@ -37,7 +37,7 @@
 .optionGroup .choices { flex-wrap: nowrap; }
 /* --- designer --- */
 .signOptions { display: flex; flex-direction: column; align-items: flex-start; width: 560rem; margin-top: 6rem; }
-.optionsScroll { width: 580rem; height: 262rem; }
+.optionsScroll { width: 580rem; height: 290rem; }
 .partsScroll { height: 610rem; }
 .customColors { display: flex; flex-direction: row; }
 .customColors > div { margin-right: 16rem; }
@@ -56,7 +56,7 @@
 .dragging { opacity: 0.5; }
 .hintInline { font-size: 11rem; color: rgba(255, 255, 255, 0.5); }
 /* --- arrangement --- */
-.arrange { width: 1360rem; }
+.arrange { width: 1480rem; }
 .arrangeBody { position: relative; padding: 6rem 12rem; display: flex; flex-direction: column; align-items: stretch; }
 .barGap { width: 18rem; }
 .barValueSmall { min-width: 60rem; text-align: center; font-size: 14rem; color: #fff; white-space: nowrap; }
@@ -102,7 +102,8 @@
 .marginLabel { width: 42rem; font-size: 12rem; color: rgba(255, 255, 255, 0.7); }
 .cardBadge { position: absolute; right: 26rem; bottom: 4rem; opacity: 0.7; }
 .stepperCompact { display: flex; flex-direction: row; align-items: center; }
-.stepperCompact .stepValue { width: 34rem; }
+.stepperCompact .stepValue { width: auto; }
+.stepperCompact .numberInput { width: 48rem; }
 .stepperCompact .step { min-width: 22rem; padding: 0 3rem; }
 .selectVanilla { width: 100%; }
 .inlineRow .choices { flex-wrap: nowrap; }
@@ -125,3 +126,4 @@
 /* As Road Builder docks its bottom view: absolute, measured from the screen bottom by the game's own toolbar
    height (no fallback inside var(): Gameface drops the whole declaration then). 56rem + toolbar = just above it. */
 .dockBottom { position: absolute; left: 0; right: 0; top: auto; width: auto; height: auto; bottom: calc(var(--toolbarHeight) + 56rem); justify-content: flex-end; }
+.choiceRows .palette { flex-wrap: nowrap; }

@@ -153,6 +153,8 @@ export function describe(item: Item, labels?: Record<string, string>): string {
     case "text": return `"${item.text}"`;
     case "shield": return `Shield "${item.number ?? ""}"`;
     case "chip": return `Chip (${item.items?.length ?? 0})`;
+    case "diagram": return `Diagram ${String(item.shape ?? "exit-left").replace("-", " ")}`;
+    case "message": return `LED "${(item.lines ?? [])[0] ?? ""}"`;
     case "panel": return `Panel (${item.items?.length ?? 0})`;
     case "tab": return `Tab (${item.items?.length ?? 0})`;
     case "arrow": return `Arrow ${String(item.direction ?? "up").replace("-", " ")}`;
@@ -169,6 +171,8 @@ export function kindOf(item: Item, labels?: Record<string, string>): string {
     case "text": return "Text";
     case "shield": return "Shield";
     case "chip": return "Chip";
+    case "diagram": return "Diagram";
+    case "message": return "LED text";
     case "panel": return "Panel";
     case "tab": return "Tab";
     case "arrow": return "Arrow";

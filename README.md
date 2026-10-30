@@ -15,7 +15,9 @@ Players can add their own themes and templates as files, or publish them as mods
    (a small colored box such as a TOLL or speed plate), **Panel** (a band across the sign's full width, at
    the top, between parts or at the bottom, like an EXIT ONLY panel) and **Tab** (on top of the sign, like
    an exit number plaque). Drag parts in the list to reorder them or drop them into a Row, Column, Chip,
-   Panel or Tab. A row can be spread out across the sign (lane arrows under their lanes); text, arrows and
+   Panel or Tab. **Diagram** draws the road itself for diagrammatic signs (exit left or right with lane
+   lines, fork, roundabout with chosen exits); **LED text** is a lit pixel display (prices, messages), and
+   **Sign type: Message board** makes the whole sign a black LED board. A row can be spread out across the sign (lane arrows under their lanes); text, arrows and
    dividers can take any color; text has a letter spacing setting; any part can have margins. Set the
    colors (or custom colors), width (fit, a number of lanes, or at least a size) and alignment.
    **Save current as template** keeps the sign as a JSON file in

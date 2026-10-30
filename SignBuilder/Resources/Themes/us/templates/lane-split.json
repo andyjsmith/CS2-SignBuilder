@@ -1,0 +1,131 @@
+{
+  "theme": "us",
+  "id": "lane-split",
+  "name": "Lane split",
+  "scheme": "green",
+  "items": [
+    {
+      "type": "tab",
+      "align": "right",
+      "items": [
+        {
+          "type": "text",
+          "text": "EXIT 1",
+          "height": 10,
+          "font": "RG2014E"
+        }
+      ]
+    },
+    {
+      "type": "row",
+      "align": "end",
+      "items": [
+        {
+          "type": "stack",
+          "align": "center",
+          "items": [
+            {
+              "type": "text",
+              "text": "WEST",
+              "height": 15,
+              "font": "RG2014D"
+            },
+            {
+              "type": "shield",
+              "network": "I",
+              "number": "96",
+              "height": 32
+            },
+            {
+              "type": "text",
+              "text": "Lansing"
+            }
+          ],
+          "margin": {
+            "right": 10
+          }
+        },
+        {
+          "type": "stack",
+          "align": "center",
+          "items": [
+            {
+              "type": "diagram",
+              "shape": "exit-left",
+              "lanes": 2,
+              "exitLanes": 1,
+              "height": 78
+            },
+            {
+              "type": "text",
+              "text": "1/2 MILE",
+              "height": 12,
+              "font": "RG2014D"
+            }
+          ]
+        },
+        {
+          "type": "stack",
+          "align": "center",
+          "items": [
+            {
+              "type": "row",
+              "align": "center",
+              "items": [
+                {
+                  "type": "stack",
+                  "align": "center",
+                  "items": [
+                    {
+                      "type": "text",
+                      "text": "EAST",
+                      "height": 15,
+                      "font": "RG2014D"
+                    },
+                    {
+                      "type": "shield",
+                      "network": "I",
+                      "number": "96",
+                      "height": 32
+                    }
+                  ]
+                },
+                {
+                  "type": "stack",
+                  "align": "center",
+                  "items": [
+                    {
+                      "type": "text",
+                      "text": "SOUTH",
+                      "height": 15,
+                      "font": "RG2014D"
+                    },
+                    {
+                      "type": "shield",
+                      "network": "I",
+                      "number": "275",
+                      "height": 32
+                    }
+                  ]
+                }
+              ],
+              "gap": 8
+            },
+            {
+              "type": "text",
+              "text": "Gd River Ave"
+            },
+            {
+              "type": "text",
+              "text": "Toledo"
+            }
+          ],
+          "margin": {
+            "left": 10
+          }
+        }
+      ],
+      "justify": "even"
+    }
+  ]
+}

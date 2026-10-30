@@ -1,0 +1,60 @@
+{
+  "theme": "de",
+  "id": "kreisverkehr",
+  "name": "Roundabout",
+  "scheme": "yellow",
+  "items": [
+    {
+      "type": "row",
+      "align": "end",
+      "items": [
+        {
+          "type": "stack",
+          "align": "center",
+          "items": [
+            {
+              "type": "text",
+              "text": "Erfurt"
+            },
+            {
+              "type": "shield",
+              "network": "B",
+              "number": "7"
+            }
+          ]
+        },
+        {
+          "type": "stack",
+          "align": "center",
+          "items": [
+            {
+              "type": "text",
+              "text": "Gotha"
+            },
+            {
+              "type": "diagram",
+              "shape": "roundabout",
+              "exits": [
+                "left",
+                "up",
+                "right"
+              ],
+              "height": 44
+            }
+          ]
+        },
+        {
+          "type": "stack",
+          "align": "center",
+          "items": [
+            {
+              "type": "text",
+              "text": "Eisenach"
+            }
+          ]
+        }
+      ],
+      "justify": "even"
+    }
+  ]
+}

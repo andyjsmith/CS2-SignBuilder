@@ -42,6 +42,23 @@ function loadRenderer(): Promise<void> {
   return loading;
 }
 
+// Thumbnails are drawn a couple per frame instead of all at once, so opening the designer (a page of template
+// thumbnails) does not stall the game for a frame.
+const pending: (() => void)[] = [];
+let pumping = false;
+function pump() {
+  for (let i = 0; i < 2 && pending.length > 0; i++) pending.shift()!();
+  if (pending.length > 0) requestAnimationFrame(pump);
+  else pumping = false;
+}
+function later(draw: () => void) {
+  pending.push(draw);
+  if (!pumping) {
+    pumping = true;
+    requestAnimationFrame(pump);
+  }
+}
+
 function pathOf(target: EventTarget | null, stop: HTMLElement): string | null {
   let node = target as HTMLElement | null;
   while (node && node !== stop) {
@@ -74,6 +91,9 @@ export const SignPreview = (props: {
   useEffect(() => {
     const el = host.current;
     if (!ready || !el || !window.SignRenderer) return;
+    let canceled = false;
+    const draw = () => {
+    if (canceled || !window.SignRenderer) return;
     while (el.firstChild) el.removeChild(el.firstChild);
     const sign = window.SignRenderer.render(props.design, 2, { annotate: interactive });
     // Absolutely positioned inside an oversized host so the sign lays out at its natural width; as a
@@ -112,8 +132,9 @@ export const SignPreview = (props: {
     // Fit the sign into the preview box. Layout is not ready on the first frame (offsetWidth 0) and
     // grows when the sign fonts and shield images finish loading, so keep measuring for a while.
     let frames = 0;
-    let canceled = false;
     let last = "";
+    let key0 = "";
+    let steady = 0;
     const measure = () => {
       if (canceled) return;
       const box = outer.current;
@@ -131,9 +152,17 @@ export const SignPreview = (props: {
           setFit(next);
         }
       }
-      if (frames++ < (interactive ? 180 : 90)) requestAnimationFrame(measure);
+      // Keep measuring while the size still changes (fonts and plate images load over a few frames), then stop:
+      // every measurement forces a layout of the whole game UI.
+      if (key0 === last && w > 1) steady++;
+      else steady = 0;
+      key0 = last;
+      if (steady < 15 && frames++ < 240) requestAnimationFrame(measure);
     };
     requestAnimationFrame(measure);
+    };
+    if (interactive) draw();
+    else later(draw);
     return () => { canceled = true; };
   }, [ready, props.design, props.selected, props.maxWidth, props.maxHeight]);
 

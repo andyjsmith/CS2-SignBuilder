@@ -7,7 +7,7 @@ export const ToolbarButton = () => {
   const open = useValue(editorOpen$);
   return (
     <Button variant="floating" selected={open} onSelect={() => setEditorOpen(!open)} tooltipLabel="Sign Builder">
-      <div style={{ fontSize: "13rem", fontWeight: "bold", color: "#fff" }}>SB</div>
+      <img src="coui://signbuilder/icon.svg" style={{ width: "30rem", height: "30rem" }} />
     </Button>
   );
 };

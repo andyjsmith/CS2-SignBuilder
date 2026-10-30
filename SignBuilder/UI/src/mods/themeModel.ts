@@ -14,7 +14,7 @@ export type ThemeDef = {
   shields?: Record<string, ThemeShield>;
   exitTab?: { font?: string };
   /** Ready-made combinations of the basic parts that suit the theme's signs ("Add preset"). */
-  presets?: { label: string; item: Item }[];
+  presets?: { label: string; item: Item; insert?: "first" }[];
   laneWidth?: number;
 };
 export type Theme = { id: string; name: string; builtIn: boolean; base: string; def: ThemeDef };
@@ -38,6 +38,8 @@ export function baseParts(theme?: Theme): { label: string; item: Item }[] {
     { label: "Text", item: { type: "text", text: "Destination", height: th } },
     { label: "Shield", item: { type: "shield", network: first, number: (d?.shields ?? {})[first]?.default ?? "1", height: d?.defaults?.shieldHeight } },
     { label: "Arrow", item: { type: "arrow", direction: "up", height: d?.defaults?.arrowHeight } },
+    { label: "Diagram", item: { type: "diagram", shape: "exit-left", lanes: 2, exitLanes: 1, height: Math.round((d?.defaults?.arrowHeight ?? 24) * 2.2) } },
+    { label: "LED text", item: { type: "message", lines: ["ACCIDENT AHEAD"], height: small } },
     { label: "Divider", item: { type: "divider" } },
     { label: "Row", item: { type: "row", align: "center", items: [] } },
     { label: "Column", item: { type: "stack", align: "center", items: [] } },

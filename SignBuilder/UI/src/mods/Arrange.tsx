@@ -2,7 +2,7 @@ import { useValue } from "cs2/api";
 import { Dialog } from "./Dialog";
 import { ReactNode, useEffect, useMemo, useRef, useState } from "react";
 import { adjust, arrange, arrangeInfo$, toolStatus$ } from "./bindings";
-import { Choice } from "./Controls";
+import { Choice, NumberBox } from "./Controls";
 import { Design, SPANS, STRUCTURES } from "./designModel";
 import { ArrowIcon } from "./Icons";
 import { SignPreview } from "./SignPreview";
@@ -117,6 +117,7 @@ export const Arrange = (props: {
     arrange({ op: "slot", index: s.index, mode: "lane", lane: fromRight ? n - 1 - next : next, fromRight, offset: 0 });
   };
   const Step = (p: { onClick: () => void; children: any; title?: string }) => <div className={styles.step} title={p.title} onClick={p.onClick}>{p.children}</div>;
+  const set = (field: string, value: number) => arrange({ op: "set", field, value });
   const Label = (p: { children: any }) => <div className={styles.barLabel} style={{ marginLeft: "16rem" }}>{p.children}</div>;
   const laneXs = allLanes.map((l) => l[0]);
   const dragLane = drag ? nearest(laneXs, drag.x) : -1;
@@ -136,9 +137,14 @@ export const Arrange = (props: {
           <div className={styles.chip} style={{ alignSelf: "center" }} onClick={() => props.onCancel(unsaved)}>Cancel</div>
           <Label>Showing</Label>
           <Choice options={[
-            { value: "front", label: `Front (${info.view === "back" ? info.otherSide : signs.length})` },
-            { value: "back", label: `Back (${info.view === "back" ? signs.length : info.otherSide})`, title: "Signs on the other face of the structure, for traffic the other way" },
+            { value: "front", label: "Front" },
+            { value: "back", label: "Back", title: "Signs on the other face of the structure, for traffic the other way" },
           ]} value={info.view} onChange={(value) => { arrange({ op: "view", value }); setSelected(-1); }} />
+          <Label>Lights</Label>
+          <Choice options={[{ value: "off", label: "Off" }, { value: "on", label: "On", title: "Light fixtures below each sign, lit at night" }]}
+            value={info.lights ? "on" : "off"} onChange={(v) => arrange({ op: "lights", value: v === "on" })} />
+          <Label>Sign size</Label>
+          <NumberBox compact value={Math.round(info.scale * 100)} step={5} min={50} max={170} unit="%" onChange={(v) => set("scale", v)} />
           {status && <div className={styles.status} style={{ marginLeft: "12rem" }}>{status}</div>}
         </>
       }>
@@ -156,44 +162,27 @@ export const Arrange = (props: {
             <div className={styles.chip} style={{ alignSelf: "center", marginLeft: "12rem" }} title="Face the signs the other way"
               onClick={() => arrange({ op: "swap" })}>Swap directions</div>
           )}
-        </div>
-        <div className={styles.barRow}>
-          <div className={styles.barLabel}>Height</div>
-          <Step title="Lower (Ctrl + mouse wheel)" onClick={() => arrange({ op: "lift", value: -0.25 })}><ArrowIcon direction="down" size={12} /></Step>
-          <div className={styles.barValueSmall}>{`${info.lift >= 0 ? "+" : ""}${info.lift.toFixed(2)} m`}</div>
-          <Step title="Raise (Ctrl + mouse wheel)" onClick={() => arrange({ op: "lift", value: 0.25 })}><ArrowIcon direction="up" size={12} /></Step>
+          <Label>Height</Label>
+          <NumberBox compact value={info.lift} step={0.25} min={-5.3} max={6} unit=" m" onChange={(v) => set("lift", v)} />
           {!info.free && (
             <>
-              <Label>Posts from road</Label>
-              <Step title="Closer (Alt + mouse wheel)" onClick={() => adjust("closer")}>-</Step>
-              <div className={styles.barValueSmall}>{`${(info.gap ?? 2).toFixed(2)} m`}</div>
-              <Step title="Farther (Alt + mouse wheel)" onClick={() => adjust("farther")}>+</Step>
-            </>
-          )}
-          <Label>Sign size</Label>
-          <Step onClick={() => arrange({ op: "scale", value: -1 })}>-</Step>
-          <div className={styles.barValueSmall}>{`${Math.round(info.scale * 100)}%`}</div>
-          <Step onClick={() => arrange({ op: "scale", value: 1 })}>+</Step>
-          <Label>Lights</Label>
-          <Choice options={[{ value: "off", label: "Off" }, { value: "on", label: "On", title: "Light fixtures on arms below each sign; the signs glow brighter at night" }]}
-            value={info.lights ? "on" : "off"} onChange={(v) => arrange({ op: "lights", value: v === "on" })} />
-          {info.free && (
-            <>
-              <Label>Rotate</Label>
-              <Step onClick={() => adjust("rotateLeft")}>-15°</Step>
-              <div className={styles.barValueSmall}>{`${Math.round(info.angle)}°`}</div>
-              <Step onClick={() => adjust("rotateRight")}>+15°</Step>
-              <Label>Base</Label>
-              <Step onClick={() => adjust("lower")}><ArrowIcon direction="down" size={12} /></Step>
-              <div className={styles.barValueSmall}>{`${info.elevation >= 0 ? "+" : ""}${info.elevation.toFixed(2)} m`}</div>
-              <Step onClick={() => adjust("raise")}><ArrowIcon direction="up" size={12} /></Step>
-              <Label>Road width</Label>
-              <Step onClick={() => adjust("narrower")}>-</Step>
-              <div className={styles.barValueSmall}>{`${info.width.toFixed(0)} m`}</div>
-              <Step onClick={() => adjust("wider")}>+</Step>
+              <Label>From road</Label>
+              <NumberBox compact value={info.gap ?? 2} step={0.25} min={0.5} max={30} unit=" m" onChange={(v) => set("gap", v)} />
             </>
           )}
         </div>
+        {info.free && (
+        <div className={styles.barRow}>
+            <>
+              <Label>Rotate</Label>
+              <NumberBox compact value={Math.round(info.angle)} step={15} min={-360} max={720} unit="°" onChange={(v) => set("angle", v)} />
+              <Label>Base</Label>
+              <NumberBox compact value={info.elevation} step={0.25} min={-5} max={40} unit=" m" onChange={(v) => set("elevation", v)} />
+              <Label>Road width</Label>
+              <NumberBox compact value={info.width} step={1} min={4} max={60} unit=" m" onChange={(v) => set("width", v)} />
+            </>
+        </div>
+        )}
 
         <div ref={area} className={styles.diagram} style={{ height: height + "px" }}>
           {(info.roads.length ? info.roads : [[info.deck[0], info.deck[1], true] as [number, number, boolean]]).map((r, k) => (

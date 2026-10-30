@@ -25,8 +25,38 @@ const LANE_KIND: Option[] = [
   { value: "local", label: "Local", title: "Local road lanes (3 m)" },
 ];
 const PLACE: Option[] = [{ value: "", label: "Sign default" }, ...ALIGN];
+const DIAGRAM_SHAPES: Option[] = [
+  { value: "exit-left", label: "Exit left" }, { value: "exit-right", label: "Exit right" },
+  { value: "fork", label: "Fork" }, { value: "roundabout", label: "Roundabout" },
+];
+const ROUNDABOUT_EXITS: Option[] = ["left", "up-left", "up", "up-right", "right"].map((d) => ({ value: d, icon: <ArrowIcon direction={d} />, title: d }));
+const LED_COLORS: Option[] = [
+  { value: "", label: "Amber" }, { value: "#f4f4f4", label: "White" }, { value: "#46ff74", label: "Green" }, { value: "#ff4031", label: "Red" },
+];
 const CHIP_SPAN: Option[] = [{ value: "", label: "Fit" }, { value: "full", label: "Full width", title: "As wide as the column it is in" }];
 const TAB_SIDE: Option[] = [{ value: "left", label: "Left" }, { value: "center", label: "Center" }, { value: "right", label: "Right" }];
+
+/**
+ * Buttons laid out in rows by their label lengths (Gameface does not grow a wrapped flex row, so a second line would
+ * overlap whatever follows).
+ */
+const Palette = (props: { entries: { label: string; onClick: () => void }[] }) => {
+  const rows: { label: string; onClick: () => void }[][] = [[]];
+  let used = 0;
+  for (const e of props.entries) {
+    const width = e.label.length * 8 + 24;
+    if (used + width > 560 && rows[rows.length - 1].length > 0) { rows.push([]); used = 0; }
+    rows[rows.length - 1].push(e);
+    used += width;
+  }
+  return (
+    <div className={styles.choiceRows}>
+      {rows.map((row, i) => (
+        <div key={i} className={styles.palette}>{row.map((e) => <div key={e.label} className={styles.chip} onClick={e.onClick}>{e.label}</div>)}</div>
+      ))}
+    </div>
+  );
+};
 
 /** Alignment of one part within its column, overriding the sign's "Align lines". */
 const PlaceField = (props: { item: Item; onChange: (patch: Partial<Item>) => void }) => (
@@ -159,6 +189,55 @@ function ItemProperties(props: { item: Item; onChange: (patch: Partial<Item>) =>
           <Field label="Align within the panel"><Choice options={ALIGN} value={item.align ?? "center"} onChange={(align) => onChange({ align })} /></Field>
         </>
       );
+    case "diagram":
+      return (
+        <>
+          <Field label="Shape"><Choice options={DIAGRAM_SHAPES} value={item.shape ?? "exit-left"} onChange={(shape) => onChange({ shape })} /></Field>
+          {item.shape === "roundabout" ? (
+            <Field label="Exits">
+              <div className={styles.choices}>
+                {ROUNDABOUT_EXITS.map((o) => {
+                  const exits: string[] = item.exits ?? ["left", "up", "right"];
+                  const on = exits.includes(o.value);
+                  return (
+                    <div key={o.value} title={o.title} className={on ? styles.choiceOn : styles.choice}
+                      onClick={() => onChange({ exits: on ? exits.filter((x) => x !== o.value) : [...exits, o.value] })}>{o.icon}</div>
+                  );
+                })}
+              </div>
+            </Field>
+          ) : (
+            <div className={styles.inlineRow}>
+              <Field label="Through lanes"><NumberBox compact value={item.lanes ?? 2} min={1} max={6} onChange={(lanes) => onChange({ lanes })} /></Field>
+              <div style={{ width: "12rem" }} />
+              <Field label="Exit lanes"><NumberBox compact value={item.exitLanes ?? 1} min={1} max={4} onChange={(exitLanes) => onChange({ exitLanes })} /></Field>
+            </div>
+          )}
+          <Field label="Size"><NumberBox value={item.height ?? 50} step={2} onChange={(height) => onChange({ height })} /></Field>
+          <PartColorField item={item} theme={theme} onChange={onChange} />
+          {place}
+        </>
+      );
+    case "message": {
+      const lines: string[] = item.lines ?? [""];
+      const setLine = (k: number, text: string) => onChange({ lines: lines.map((l, i) => (i === k ? text : l)) });
+      return (
+        <>
+          <Field label="Lines">
+            {lines.map((line, k) => (
+              <div key={k} className={styles.inlineRow} style={{ marginBottom: "3rem" }}>
+                <div style={{ width: "200rem" }}><TextBox value={line} focusToken={k === 0 ? props.focusToken : undefined} onChange={(t) => setLine(k, t)} /></div>
+                {lines.length > 1 && <div className={styles.rowDelete} title="Remove this line" onClick={() => onChange({ lines: lines.filter((_, i) => i !== k) })}>✕</div>}
+              </div>
+            ))}
+            <div className={styles.chip} style={{ alignSelf: "flex-start" }} onClick={() => onChange({ lines: [...lines, ""] })}>Add line</div>
+          </Field>
+          <Field label="Letter height"><NumberBox value={item.height ?? 12} onChange={(height) => onChange({ height })} /></Field>
+          <Field label="LED color"><Choice options={LED_COLORS} value={item.color ?? ""} onChange={(color) => onChange({ color: color || undefined })} /></Field>
+          {place}
+        </>
+      );
+    }
     case "divider":
       return (
         <>
@@ -211,7 +290,15 @@ export const Designer = (props: {
 
   const item = selected != null ? getItem(design, selected) : null;
   const update = (patch: Partial<Item>) => { if (selected != null) setDesign(updateItem(design, selected, patch)); };
-  const add = (made: Item) => {
+  // <insert> "first": the preset goes at the top of the sign (a panel across its top, like an E-ZPass panel).
+  const add = (made: Item, insert?: "first") => {
+    if (insert === "first") {
+      const d = clone(design);
+      d.items.unshift(clone(made));
+      setDesign(d);
+      setSelected("0");
+      return;
+    }
     // Tabs and panels belong to the sign itself, so they go at its top level (a panel after the selected part's top-level part).
     const anchor = made.type === "tab" ? null : made.type === "panel" ? selected?.split(".")[0] ?? null : selected;
     const r = insertItem(design, anchor, clone(made));
@@ -244,11 +331,22 @@ export const Designer = (props: {
           </div>
           <Scrollable vertical trackVisibility="scrollable" className={styles.optionsScroll}>
           <div className={styles.signOptions}>
+            <Field label="Sign type">
+              <div className={styles.inlineRow}>
+                <Choice options={[{ value: "", label: "Standard" }, { value: "led", label: "Message board", title: "A black LED panel: lit pixel lettering" }]}
+                  value={design.board ?? ""} onChange={(board) => { const d: Design = { ...design, board: board || undefined }; if (!board) delete d.board; setDesign(d); }} />
+                {design.board === "led" && (
+                  <Choice options={LED_COLORS} value={design.foreground ?? ""} onChange={(c) => { const d: Design = { ...design, foreground: c || undefined }; if (!c) delete d.foreground; setDesign(d); }} />
+                )}
+              </div>
+            </Field>
+            {design.board !== "led" && (
             <Field label="Color">
               <Swatches schemes={def?.schemes ?? {}} scheme={design.scheme ?? def?.defaults?.scheme ?? ""} custom={custom}
                 onScheme={(scheme) => { const d: Design = { ...design, scheme }; delete d.background; delete d.foreground; setDesign(d); }}
                 onCustom={() => setDesign({ ...design, background: design.background ?? "#2d6a4f", foreground: design.foreground ?? "#ffffff" })} />
             </Field>
+            )}
             {custom && (
               <div className={styles.customColors}>
                 <Field label="Background"><ColorBox value={design.background} onChange={(background) => setDesign({ ...design, background })} /></Field>
@@ -256,15 +354,11 @@ export const Designer = (props: {
               </div>
             )}
             <Field label="Add part">
-              <div className={styles.palette}>
-                {baseParts(theme).map((p) => <div key={p.label} className={styles.chip} onClick={() => add(p.item)}>{p.label}</div>)}
-              </div>
+              <Palette entries={baseParts(theme).map((p) => ({ label: p.label, onClick: () => add(p.item) }))} />
             </Field>
             {(def?.presets ?? []).length > 0 && (
               <Field label="Add preset">
-                <div className={styles.palette}>
-                  {def!.presets!.map((p) => <div key={p.label} className={styles.chip} onClick={() => add(p.item)}>{p.label}</div>)}
-                </div>
+                <Palette entries={def!.presets!.map((p) => ({ label: p.label, onClick: () => add(p.item, p.insert) }))} />
               </Field>
             )}
             <Field label="Width">

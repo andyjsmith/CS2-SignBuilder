@@ -145,29 +145,32 @@ namespace SignBuilder.Spike
         }
 
         private static EffectPrefab s_SignLight;
+        private const string kSignLightName = "SignBuilder_SignLight2";
 
         /// <summary>
         /// The light every sign fixture uses: a warm-white spot light, on at night only. Created once and registered
-        /// as a prefab of its own (effects are prefabs the object's EffectSource refers to).
+        /// as a prefab of its own (effects are prefabs the object's EffectSource refers to). Versioned name: a
+        /// changed light is a new prefab, not a stale one from the game's prefab list.
         /// </summary>
         private EffectPrefab SignLightEffect()
         {
             if (s_SignLight != null) return s_SignLight;
-            if (m_PrefabSystem.TryGetPrefab(new PrefabID(nameof(EffectPrefab), "SignBuilder_SignLight"), out var known) && known is EffectPrefab existing)
+            if (m_PrefabSystem.TryGetPrefab(new PrefabID(nameof(EffectPrefab), kSignLightName), out var known) && known is EffectPrefab existing)
             {
                 return s_SignLight = existing;
             }
             var effect = ScriptableObject.CreateInstance<EffectPrefab>();
-            effect.name = "SignBuilder_SignLight";
+            effect.name = kSignLightName;
             effect.m_Conditions = new EffectCondition { m_RequiredFlags = EffectConditionFlags.Night };
             var light = effect.AddComponent<Game.Prefabs.Effects.LightEffect>();
             light.m_Type = Game.Rendering.LightType.Spot;
             light.m_SpotShape = Game.Rendering.SpotLightShape.Cone;
-            light.m_SpotAngle = 75f;
-            light.m_InnerSpotPercentage = 40f;
-            light.m_Range = 7f;
+            // Wide and soft: the beam covers the whole sign face without a white hot spot in the middle.
+            light.m_SpotAngle = 125f;
+            light.m_InnerSpotPercentage = 5f;
+            light.m_Range = 6f;
             light.m_LightUnit = Game.Rendering.LightUnit.Lumen;
-            light.m_Intensity = 2500f;
+            light.m_Intensity = 700f;
             light.m_UseColorTemperature = true;
             light.m_ColorTemperature = 4200f;
             light.m_Color = Color.white;

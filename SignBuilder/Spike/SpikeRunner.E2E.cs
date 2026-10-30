@@ -71,6 +71,7 @@ namespace SignBuilder.Spike
             yield return Test("e2e.free", TestFreePlacement(tool));
             yield return Test("e2e.standalone", TestStandalone(tool));
             yield return Test("e2e.features", TestFeatures(tool));
+            yield return Test("e2e.perf", TestPerformance(ui, tool));
             yield return Test("e2e.templates", TestTemplates(ui));
             yield return Test("e2e.themes", TestThemes(ui, tool));
             yield return Test("e2e.uipause", TestDesignerPause(ui));
@@ -421,6 +422,78 @@ namespace SignBuilder.Spike
         }
 
         /// <summary>
+        /// Frame time spikes: the slowest frame (ms) in the two seconds after selecting a placed gantry, opening a
+        /// roadside sign for editing, and opening the designer; plus an idle baseline.
+        /// </summary>
+        private IEnumerator TestPerformance(SignBuilderUISystem ui, SignPlacementToolSystem tool)
+        {
+            var world = World.DefaultGameObjectInjectionWorld;
+            var results = new List<string>();
+            float worst = 0f;
+            IEnumerator Watch(float seconds)
+            {
+                worst = 0f;
+                var end = Time.realtimeSinceStartup + seconds;
+                while (Time.realtimeSinceStartup < end)
+                {
+                    yield return null;
+                    worst = Math.Max(worst, Time.unscaledDeltaTime * 1000f);
+                }
+            }
+            yield return Watch(2f);
+            results.Add($"idle={worst:F0}");
+
+            var gantry = m_Placed.FirstOrDefault(p => p.support == "straight-single");
+            var info = world.GetOrCreateSystemManaged<Game.UI.InGame.SelectedInfoUISystem>();
+            if (gantry.record != null)
+            {
+                info.SetSelection(InstancesOf(gantry.record.PrefabName).FirstOrDefault());
+                yield return Watch(2f);
+                results.Add($"select={worst:F0}");
+                info.SetSelection(Entity.Null);
+                yield return new WaitForSecondsRealtime(1f);
+                info.SetSelection(InstancesOf(gantry.record.PrefabName).FirstOrDefault());
+                yield return Watch(2f);
+                results.Add($"selectAgain={worst:F0}");
+                info.SetSelection(Entity.Null);
+                yield return new WaitForSecondsRealtime(1f);
+                // A vanilla object for comparison: is the spike the game's selection panel or our sign?
+                using (var trees = world.EntityManager.CreateEntityQuery(ComponentType.ReadOnly<Game.Objects.Tree>(), ComponentType.ReadOnly<Game.Objects.Transform>()))
+                using (var any = trees.ToEntityArray(Unity.Collections.Allocator.Temp))
+                {
+                    if (any.Length > 0)
+                    {
+                        info.SetSelection(any[0]);
+                        yield return Watch(2f);
+                        results.Add($"selectVanillaTree={worst:F0}");
+                        info.SetSelection(Entity.Null);
+                        yield return new WaitForSecondsRealtime(1f);
+                    }
+                }
+            }
+            // Any roadside sign still standing (the edit test replaced the first one).
+            var posts = AssemblyLibrary.All.Where(r => r.Context?.Options?.Type == "ground").Select(r => InstancesOf(r.PrefabName).FirstOrDefault()).FirstOrDefault(e => e != Entity.Null);
+            {
+                var entity = posts;
+                if (entity != Entity.Null)
+                {
+                    tool.EditPlaced(entity);
+                    yield return Watch(2.5f);
+                    results.Add($"editRoadside={worst:F0}");
+                    ui.SetEditorOpen(false);
+                    yield return new WaitForSecondsRealtime(1f);
+                }
+            }
+            ui.SetEditorOpen(true);
+            yield return Watch(2.5f);
+            results.Add($"openDesigner={worst:F0}");
+            yield return Watch(2f);
+            results.Add($"designerIdle={worst:F0}");
+            ui.SetEditorOpen(false);
+            SpikeReport.Set("e2e.perf.worstFrameMs", string.Join(" ", results));
+        }
+
+        /// <summary>
         /// Newer placement options: a roadside sign close to the road, a free-placed one lowered below the default,
         /// a gantry lowered almost to the road with lights, and the split-arrow template on a lit gantry.
         /// </summary>
@@ -470,6 +543,10 @@ namespace SignBuilder.Spike
             yield return PlaceAndWait(() => tool.PlaceForTest(spot.edge, math.clamp(t + 0.24f, 0.05f, 0.95f), new List<JObject> { Template("split-lane-arrows") }, lit));
             SpikeReport.Set("e2e.features.splitArrows", Describe(SignPlacementToolSystem.LastPlaced));
             yield return Shoot(SignPlacementToolSystem.LastPlaced, "e2e_features_split.png", 180f, 30f);
+            // A diagrammatic sign and an LED message board side by side.
+            yield return PlaceAndWait(() => tool.PlaceForTest(spot.edge, math.clamp(t + 0.36f, 0.05f, 0.95f), new List<JObject> { Template("lane-split"), Template("message-board") }, Options("doubleTruss", "single")));
+            SpikeReport.Set("e2e.features.diagramLed", Describe(SignPlacementToolSystem.LastPlaced));
+            yield return Shoot(SignPlacementToolSystem.LastPlaced, "e2e_features_diagram_led.png", 10f, 35f);
         }
 
         /// <summary>

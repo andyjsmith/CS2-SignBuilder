@@ -1,0 +1,65 @@
+{
+  "theme": "uk",
+  "id": "roundabout",
+  "name": "Roundabout",
+  "scheme": "green",
+  "items": [
+    {
+      "type": "row",
+      "align": "end",
+      "items": [
+        {
+          "type": "stack",
+          "align": "center",
+          "items": [
+            {
+              "type": "text",
+              "text": "Leeds"
+            },
+            {
+              "type": "shield",
+              "network": "AP",
+              "number": "64"
+            }
+          ]
+        },
+        {
+          "type": "stack",
+          "align": "center",
+          "items": [
+            {
+              "type": "text",
+              "text": "York"
+            },
+            {
+              "type": "diagram",
+              "shape": "roundabout",
+              "exits": [
+                "left",
+                "up",
+                "right"
+              ],
+              "height": 44
+            }
+          ]
+        },
+        {
+          "type": "stack",
+          "align": "center",
+          "items": [
+            {
+              "type": "text",
+              "text": "Harrogate"
+            },
+            {
+              "type": "shield",
+              "network": "AP",
+              "number": "61"
+            }
+          ]
+        }
+      ],
+      "justify": "even"
+    }
+  ]
+}

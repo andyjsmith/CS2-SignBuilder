@@ -1,0 +1,78 @@
+{
+  "theme": "us",
+  "id": "express-lanes",
+  "name": "Express lanes",
+  "scheme": "white",
+  "align": "center",
+  "items": [
+    {
+      "type": "panel",
+      "scheme": "green",
+      "items": [
+        {
+          "type": "text",
+          "text": "EXPRESS LANE",
+          "height": 13,
+          "font": "RG2014E"
+        }
+      ]
+    },
+    {
+      "type": "chip",
+      "scheme": "purple",
+      "items": [
+        {
+          "type": "text",
+          "text": "ExpressToll",
+          "height": 10,
+          "font": "RG2014D"
+        }
+      ],
+      "radius": 1.5
+    },
+    {
+      "type": "row",
+      "align": "center",
+      "items": [
+        {
+          "type": "text",
+          "text": "Federal Blvd",
+          "height": 13
+        },
+        {
+          "type": "message",
+          "lines": [
+            "$0.75"
+          ],
+          "height": 11
+        }
+      ],
+      "justify": "between"
+    },
+    {
+      "type": "row",
+      "align": "center",
+      "items": [
+        {
+          "type": "text",
+          "text": "Exp Lane End",
+          "height": 13
+        },
+        {
+          "type": "message",
+          "lines": [
+            "$1.50"
+          ],
+          "height": 11
+        }
+      ],
+      "justify": "between"
+    },
+    {
+      "type": "text",
+      "text": "HOV 3+ USE ExpressToll",
+      "height": 10,
+      "font": "RG2014D"
+    }
+  ]
+}

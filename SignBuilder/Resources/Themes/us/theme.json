@@ -93,6 +93,11 @@
       "bg": "#ffffff",
       "fg": "#000000",
       "label": "Regulatory"
+    },
+    "purple": {
+      "bg": "#5c2d91",
+      "fg": "#ffffff",
+      "label": "E-ZPass / toll"
     }
   },
   "shields": {
@@ -181,6 +186,23 @@
             "type": "arrow",
             "direction": "down",
             "height": 18
+          }
+        ]
+      }
+    },
+    {
+      "label": "E-ZPass",
+      "insert": "first",
+      "item": {
+        "type": "panel",
+        "scheme": "purple",
+        "align": "center",
+        "items": [
+          {
+            "type": "text",
+            "text": "E-ZPass ONLY",
+            "height": 12,
+            "font": "RG2014E"
           }
         ]
       }
@@ -293,6 +315,16 @@
           }
         ],
         "justify": "even"
+      }
+    },
+    {
+      "label": "Price display",
+      "item": {
+        "type": "message",
+        "lines": [
+          "$1.50"
+        ],
+        "height": 11
       }
     }
   ]

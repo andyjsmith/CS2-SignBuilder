@@ -220,6 +220,23 @@ namespace SignBuilder.Tools
         /// <summary>Placing a surface-mounted sign (just the sign, on an overpass's side or any surface).</summary>
         private bool Surface => m_Mode == Mode.Posts && m_Options.Type == "surface";
 
+        /// <summary>A value typed into a number field (gantry editor, placement bar), within the same limits as its buttons.</summary>
+        public void SetValue(string field, float value)
+        {
+            switch (field)
+            {
+                case "lift":
+                    m_Options.Lift = math.clamp(value, m_Options.Type == "ground" ? AssemblyBuilder.kMinGroundLift : -kMinOverheadClearance, 6f);
+                    break;
+                case "gap": m_Options.RoadGap = math.clamp(value, m_Options.Type == "ground" ? kMinRoadGap : 0.5f, 30f); break;
+                case "scale": m_Options.SignScale = math.clamp(value / 100f, 0.5f, 1.7f) * LayoutOptions.kDefaultScale; break;
+                case "angle": m_Options.Angle = ((value % 360f) + 360f) % 360f; break;
+                case "elevation": m_Options.Elevation = math.clamp(value, MinElevation, 40f); break;
+                case "width": m_Options.FreeWidth = math.clamp(value, 4f, 60f); break;
+            }
+            if (m_Mode == Mode.Arrange && m_Pinned != null && m_Options.Free) RepinFree();
+        }
+
         /// <summary>Sign size steps of 5% of the default size (shown to players as 100%).</summary>
         private static float Step(float scale, int direction)
         {
@@ -256,6 +273,7 @@ namespace SignBuilder.Tools
                 case "scale": m_Options.SignScale = Step(m_Options.SignScale, (int?)a["value"] ?? 0); break;
                 case "lift": m_Options.Lift = math.clamp(m_Options.Lift + ((float?)a["value"] ?? 0f), -kMinOverheadClearance, 6f); break;
                 case "lights": m_Options.Lights = (bool?)a["value"] ?? false; break;
+                case "set": SetValue((string)a["field"], (float?)a["value"] ?? 0f); break;
                 case "duplicateSign":
                     if (i >= 0 && i < m_Designs.Count)
                     {
@@ -448,7 +466,7 @@ namespace SignBuilder.Tools
         }
 
         /// <summary>Placement bar data while placing posts or picking a road.</summary>
-        public string PlacementInfo => new JObject
+        public string PlacementInfo => !Active ? "{}" : new JObject
         {
             ["free"] = m_Options.Free, ["angle"] = m_Options.Angle, ["elevation"] = m_Options.Elevation, ["width"] = m_Options.FreeWidth,
             ["scale"] = m_Options.SignScale / LayoutOptions.kDefaultScale, ["posts"] = m_Mode == Mode.Posts, ["surface"] = Surface,
@@ -762,15 +780,19 @@ namespace SignBuilder.Tools
             var options = OptionsOf(record);
             SetSigns(new[] { design });
             m_Options = options;
-            SignBuilderRuntime.Run(WaitThenBuild(record.Context.ToSnap()));
+            SignBuilderRuntime.Run(WaitThenBuild(record.Context.ToSnap(), closeEditor: true));
             return true;
         }
 
-        private IEnumerator WaitThenBuild(RoadProbe.Snap snap)
+        private IEnumerator WaitThenBuild(RoadProbe.Snap snap, bool closeEditor = false)
         {
             var end = UnityEngine.Time.realtimeSinceStartup + 15f;
             while (!FacesReady && UnityEngine.Time.realtimeSinceStartup < end) yield return null;
-            Build(snap, "Saved.", afterwards: () => m_Replacing = Entity.Null);
+            Build(snap, "Saved.", afterwards: () =>
+            {
+                m_Replacing = Entity.Null;
+                if (closeEditor) m_UI.SetEditorOpen(false);
+            });
         }
 
         /// <summary>

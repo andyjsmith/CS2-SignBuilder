@@ -1,0 +1,89 @@
+{
+  "theme": "us",
+  "id": "roundabout",
+  "name": "Roundabout",
+  "scheme": "green",
+  "items": [
+    {
+      "type": "row",
+      "align": "end",
+      "items": [
+        {
+          "type": "stack",
+          "align": "center",
+          "items": [
+            {
+              "type": "text",
+              "text": "WEST",
+              "height": 15,
+              "font": "RG2014D"
+            },
+            {
+              "type": "shield",
+              "network": "US",
+              "number": "220",
+              "height": 30
+            },
+            {
+              "type": "text",
+              "text": "Forsberg",
+              "height": 13
+            }
+          ]
+        },
+        {
+          "type": "stack",
+          "align": "center",
+          "items": [
+            {
+              "type": "text",
+              "text": "NORTH",
+              "height": 15,
+              "font": "RG2014D"
+            },
+            {
+              "type": "shield",
+              "network": "US",
+              "number": "301",
+              "height": 30
+            },
+            {
+              "type": "diagram",
+              "shape": "roundabout",
+              "exits": [
+                "left",
+                "up",
+                "right"
+              ],
+              "height": 48
+            }
+          ]
+        },
+        {
+          "type": "stack",
+          "align": "center",
+          "items": [
+            {
+              "type": "text",
+              "text": "EAST",
+              "height": 15,
+              "font": "RG2014D"
+            },
+            {
+              "type": "shield",
+              "network": "US",
+              "number": "220",
+              "height": 30
+            },
+            {
+              "type": "text",
+              "text": "Burke",
+              "height": 13
+            }
+          ]
+        }
+      ],
+      "justify": "even"
+    }
+  ]
+}

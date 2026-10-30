@@ -301,7 +301,7 @@ namespace SignBuilder.Spike
         }
 
         /// <summary>Which way a fixture shines (local to the sign): back and up, onto the face.</summary>
-        public static readonly Vector3 kLightAim = new Vector3(0f, 0.75f, 1f).normalized;
+        public static readonly Vector3 kLightAim = new Vector3(0f, 1.1f, 1f).normalized;
 
         /// <summary>
         /// Sign lighting under one sign (local to the sign's center, face toward -Z): fixtures spaced along its bottom

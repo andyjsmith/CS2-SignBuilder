@@ -128,8 +128,7 @@ export const TextBox = (props: { value: string; onChange: (v: string) => void; f
 
 /** A number with - and + buttons; sizes are in the sign's own units (shown without a unit). */
 /**
- * A number: type it, or step it with - and + (Shift: 10 steps, Ctrl: a tenth of a step), or with the mouse wheel
- * while the field has the caret and the pointer is over it.
+ * A number: type it, or step it with - and + (Shift: 10 steps, Ctrl: a tenth of a step).
  */
 export const NumberBox = (props: { value: number; onChange: (v: number) => void; step?: number; unit?: string; min?: number; max?: number; compact?: boolean }) => {
   const [text, setText] = useState<string | null>(null);
@@ -151,8 +150,7 @@ export const NumberBox = (props: { value: number; onChange: (v: number) => void;
   return (
     <div className={props.compact ? styles.stepperCompact : styles.stepper}>
       <div className={styles.step} title="Shift: x10, Ctrl: x0.1" onClick={(e) => nudge(-1, e)}>-</div>
-      <div ref={wrap} className={styles.stepValue}
-        onWheel={(e) => { if (document.activeElement === field()) { e.preventDefault(); nudge(e.deltaY < 0 ? 1 : -1, e); } }}>
+      <div ref={wrap} className={styles.stepValue}>
         {(() => {
           // The game's own text input keeps typed keys from reaching game hotkeys; a plain input is the fallback.
           const inputProps = {

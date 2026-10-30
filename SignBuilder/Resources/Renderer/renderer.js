@@ -110,6 +110,8 @@
       case "text": return item.height || DEFAULTS.textHeight;
       case "shield": return item.height || DEFAULTS.shieldHeight;
       case "arrow": return item.height || DEFAULTS.arrowHeight;
+      case "diagram": return item.height || DEFAULTS.arrowHeight * 2.2;
+      case "message": return (item.height || DEFAULTS.textHeight * 0.8) * Math.max(1, (item.lines || []).length) * 1.5;
       case "spacer": return item.height || 0;
       case "row":
       case "stack":
@@ -128,8 +130,19 @@
   // Font size and vertical offset per letter height: "scale" = em / cap height, "offset" puts the capitals'
   // top at the top of the box (from the font's metrics; Roadgeek 2014 is 1.75 and 0.125).
   // "weight" picks a face of a family the game itself provides (e.g. "Noto Sans JP" bold), which has no font file.
+  // Fonts every theme can use: the game's pixel font, for LED message boards.
+  var LED_FONT = "Perfect DOS VGA 437";
+  var BUILTIN_FONTS = {};
+  BUILTIN_FONTS[LED_FONT] = { scale: 1.6, offset: 0.1 };
+  var LED_COLOR = "#ffb000";
+
+  // Family names are quoted: some are not valid bare CSS names (e.g. "Perfect DOS VGA 437").
+  function quoted(family) {
+    return family ? '"' + String(family).replace(/"/g, "") + '"' : family;
+  }
+
   function metrics(family) {
-    var f = T.fonts[family];
+    var f = T.fonts[family] || BUILTIN_FONTS[family];
     return { scale: (f && f.scale) || 1.75, offset: f && f.offset != null ? f.offset : 0.125, weight: (f && f.weight) || "normal" };
   }
 
@@ -137,7 +150,7 @@
   function textBox(text, h, family, color, tracking) {
     var m = metrics(family);
     var e = el("div", "sb-text", {
-      fontFamily: family, fontWeight: m.weight, fontSize: px(h * m.scale), lineHeight: px(h), height: px(h), top: px(h * m.offset), color: color,
+      fontFamily: quoted(family), fontWeight: m.weight, fontSize: px(h * m.scale), lineHeight: px(h), height: px(h), top: px(h * m.offset), color: color,
     });
     if (tracking) {
       // Letter spacing also follows the last letter: take it back so the text stays centered.
@@ -151,7 +164,9 @@
 
   function renderText(item, ctx) {
     var h = item.height || DEFAULTS.textHeight;
-    var e = textBox(item.text || "", h, item.font || ctx.font, item.color || ctx.fg, item.tracking);
+    var font = item.font || ctx.font;
+    var led = font === LED_FONT;
+    var e = textBox(led ? String(item.text || "").toUpperCase() : item.text || "", h, font, item.color || ctx.fg, item.tracking != null ? item.tracking : led ? 12 : 0);
     return e;
   }
 
@@ -205,7 +220,7 @@
     var m = metrics(font);
     var num = el("div", "sb-num", {
       width: px(w), top: px(h * (def.top != null ? def.top : 0.3) + nh * m.offset),
-      fontFamily: font, fontWeight: m.weight, fontSize: px(nh * m.scale), lineHeight: px(nh), height: px(nh), color: def.fg || def.color || "#000000",
+      fontFamily: quoted(font), fontWeight: m.weight, fontSize: px(nh * m.scale), lineHeight: px(nh), height: px(nh), color: def.fg || def.color || "#000000",
     });
     num.textContent = number;
     box.appendChild(num);
@@ -273,6 +288,121 @@
     return svg;
   }
 
+  // ---------------------------------------------------------------- diagrams and message boards
+
+  // A road diagram (the arrow of a diagrammatic sign): a wide through arrow with dashed lane lines and a branch
+  // curving off (exit left / right), a fork, or a roundabout with its exits. Drawn as filled shapes (lane lines are
+  // separate dashes in the background color), sized by its height.
+  function renderDiagram(item, ctx) {
+    var L = 24, headLen = 30, headOver = 13;
+    var fg = item.color || ctx.fg, gapColor = ctx.bg;
+    var shapes = [], dashes = [];
+    var shape = item.shape || "exit-left";
+    var rect = function (x, y, w, h) { return [[x, y], [x + w, y], [x + w, y + h], [x, y + h]]; };
+    var head = function (e, d, half) {
+      var n = [-d[1], d[0]];
+      return [[e[0] + n[0] * half, e[1] + n[1] * half], [e[0] + d[0] * headLen, e[1] + d[1] * headLen], [e[0] - n[0] * half, e[1] - n[1] * half]];
+    };
+    var dash = function (cx, cy, dx, dy) {
+      // A dash 10 long and 3 wide centered on (cx, cy) along (dx, dy).
+      var nx = -dy * 1.5, ny = dx * 1.5;
+      dashes.push([[cx - dx * 5 + nx, cy - dy * 5 + ny], [cx + dx * 5 + nx, cy + dy * 5 + ny], [cx + dx * 5 - nx, cy + dy * 5 - ny], [cx - dx * 5 - nx, cy - dy * 5 - ny]]);
+    };
+    if (shape === "roundabout") {
+      // Ring around (0, 0), entry from below, an arm with an arrowhead per exit.
+      var R = 40, band = 18;
+      for (var k = 0; k < 40; k++) {
+        var a0 = k / 40 * Math.PI * 2, a1 = (k + 1.15) / 40 * Math.PI * 2;
+        shapes.push([[Math.cos(a0) * (R - band / 2), Math.sin(a0) * (R - band / 2)], [Math.cos(a0) * (R + band / 2), Math.sin(a0) * (R + band / 2)],
+          [Math.cos(a1) * (R + band / 2), Math.sin(a1) * (R + band / 2)], [Math.cos(a1) * (R - band / 2), Math.sin(a1) * (R - band / 2)]]);
+      }
+      shapes.push(rect(-band / 2, R, band, 55));
+      var angles = { left: Math.PI, up: -Math.PI / 2, right: 0, "up-left": -Math.PI * 3 / 4, "up-right": -Math.PI / 4 };
+      (item.exits || ["left", "up", "right"]).forEach(function (exit) {
+        var a = angles[exit];
+        if (a == null) return;
+        var d = [Math.cos(a), Math.sin(a)], n = [-d[1], d[0]];
+        var s0 = R, s1 = R + band / 2 + 26;
+        shapes.push([[d[0] * s0 + n[0] * band / 2, d[1] * s0 + n[1] * band / 2], [d[0] * s1 + n[0] * band / 2, d[1] * s1 + n[1] * band / 2],
+          [d[0] * s1 - n[0] * band / 2, d[1] * s1 - n[1] * band / 2], [d[0] * s0 - n[0] * band / 2, d[1] * s0 - n[1] * band / 2]]);
+        shapes.push(head([d[0] * s1, d[1] * s1], d, band / 2 + headOver - 4));
+      });
+    } else {
+      var lanes = Math.max(1, Math.round(item.lanes || 2));
+      var exitLanes = Math.max(1, Math.round(item.exitLanes || 1));
+      var sw = lanes * L, sx = -sw / 2, bottom = 150, top = 0;
+      var fork = shape === "fork";
+      var shaftTop = fork ? 75 : top + headLen;
+      shapes.push(rect(sx, shaftTop, sw, bottom - shaftTop));
+      if (!fork) shapes.push(head([0, shaftTop], [0, -1], sw / 2 + headOver));
+      for (var lane = 1; lane < lanes; lane++) {
+        for (var y = bottom - 9; y > shaftTop + 8; y -= 19) dash(sx + lane * L, y, 0, -1);
+      }
+      var sides = shape === "exit-right" ? [1] : shape === "exit-left" ? [-1] : [-1, 1];
+      sides.forEach(function (side) {
+        var bw = exitLanes * L, Rc = 70 + bw, sweep = 1.0;
+        // The branch leaves the shaft's edge going up, then bends off to its side.
+        var startX = side < 0 ? sx + bw / 2 : sx + sw - bw / 2;
+        var cy = fork ? shaftTop + 4 : 138;
+        var cx = startX + side * Rc;
+        var at = function (phi, r) { return [cx - side * r * Math.cos(phi), cy + r * Math.sin(phi)]; };
+        var outer = [], inner = [];
+        for (var k2 = 0; k2 <= 14; k2++) {
+          var phi = -sweep * k2 / 14;
+          outer.push(at(phi, Rc + bw / 2));
+          inner.push(at(phi, Rc - bw / 2));
+        }
+        shapes.push(outer.concat(inner.reverse()));
+        var end = at(-sweep, Rc);
+        var d = [side * Math.sin(sweep), -Math.cos(sweep)];
+        shapes.push(head(end, d, bw / 2 + headOver));
+        for (var bl = 1; bl < exitLanes; bl++) {
+          var r = Rc - bw / 2 + bl * L;
+          for (var k3 = 1; k3 < 6; k3++) {
+            var ph = -sweep * (k3 / 6), p0 = at(ph, r), p1 = at(ph - 0.01, r);
+            var len = Math.hypot(p1[0] - p0[0], p1[1] - p0[1]) || 1;
+            dash(p0[0], p0[1], (p1[0] - p0[0]) / len, (p1[1] - p0[1]) / len);
+          }
+        }
+      });
+    }
+    var x0 = 1e9, y0 = 1e9, x1 = -1e9, y1 = -1e9;
+    shapes.forEach(function (poly) { poly.forEach(function (pt) { x0 = Math.min(x0, pt[0]); y0 = Math.min(y0, pt[1]); x1 = Math.max(x1, pt[0]); y1 = Math.max(y1, pt[1]); }); });
+    var h = item.height || DEFAULTS.arrowHeight * 2.2;
+    var unit = h / (y1 - y0);
+    var ns = "http://www.w3.org/2000/svg";
+    var svg = document.createElementNS(ns, "svg");
+    svg.setAttribute("viewBox", [x0, y0, x1 - x0, y1 - y0].join(" "));
+    svg.setAttribute("width", String((x1 - x0) * unit * ppu));
+    svg.setAttribute("height", String(h * ppu));
+    var draw = function (poly, color) {
+      var path = document.createElementNS(ns, "path");
+      path.setAttribute("d", "M" + poly.map(function (pt) { return pt[0].toFixed(2) + " " + pt[1].toFixed(2); }).join(" L") + " Z");
+      path.setAttribute("fill", color);
+      svg.appendChild(path);
+    };
+    shapes.forEach(function (poly) { draw(poly, fg); });
+    dashes.forEach(function (poly) { draw(poly, gapColor); });
+    return svg;
+  }
+
+  // An LED display: lines of pixel lettering on a black panel (a variable message sign, or a price display inside a
+  // sign).
+  function renderMessage(item, ctx) {
+    var h = item.height || DEFAULTS.textHeight * 0.8;
+    var color = item.color || LED_COLOR;
+    var box = el("div", "sb-message", {
+      display: "flex", flexDirection: "column", alignItems: { start: "flex-start", end: "flex-end" }[item.align] || "center",
+      backgroundColor: item.background || "#0b0b0b", padding: px(h * 0.35) + " " + px(h * 0.5), borderRadius: px(h * 0.12),
+    });
+    (item.lines && item.lines.length ? item.lines : [""]).forEach(function (line, i) {
+      var t = textBox(String(line).toUpperCase(), h, LED_FONT, color, item.tracking != null ? item.tracking : 12);
+      if (i > 0) t.style.marginTop = px(h * 0.45);
+      box.appendChild(t);
+    });
+    return box;
+  }
+
   // Height used for spacing rules: legend (letter) height, not the full height of shields or
   // arrows. MUTCD spacing is expressed in terms of letter heights, so a 36" shield next to 16"
   // legends must not inflate the gaps and margins.
@@ -335,7 +465,9 @@
       previous = child;
       if (horizontal && item.justify === "even" && child.type !== "divider") {
         var cell = el("div", null, {
-          flexGrow: "1", flexShrink: "1", flexBasis: "0px", display: "flex", flexDirection: "row",
+          // Content width plus an equal share of the spare width: never narrower than its part, so a sign laid
+          // out at its natural width does not collapse the cells.
+          flexGrow: "1", flexShrink: "0", flexBasis: "auto", display: "flex", flexDirection: "row",
           justifyContent: "center", alignItems: align,
         });
         c.style.marginLeft = px(m.left || 0);
@@ -357,6 +489,8 @@
       case "row": e = renderContainer(item, ctx, true, path); break;
       case "stack": e = renderContainer(item, ctx, false, path); break;
       case "chip": e = renderChip(item, ctx, path); break;
+      case "diagram": e = renderDiagram(item, ctx); break;
+      case "message": e = renderMessage(item, ctx); break;
       // A panel inside a row or column fills it (only the sign's own panels reach its edges).
       case "panel": e = renderPanel(item, ctx, path); e.style.alignSelf = "stretch"; break;
       case "spacer": e = el("div", null, { width: px(item.width || 0), height: px(item.height || 0) }); break;
@@ -452,12 +586,16 @@
     // Custom colors ("background" / "foreground" as CSS colors) override the scheme.
     var base = scheme(doc.scheme);
     var s = { bg: doc.background || base.bg, fg: doc.foreground || base.fg };
+    // A message board: a black LED panel in a dark frame; its legends are lit pixel lettering.
+    var led = doc.board === "led";
+    if (led) s = { bg: "#0b0b0b", fg: doc.foreground || LED_COLOR };
+    var frame = led ? "#3c3f44" : s.fg;
     var border = doc.border != null ? doc.border : DEFAULTS.border;
     var radius = doc.cornerRadius != null ? doc.cornerRadius : DEFAULTS.cornerRadius;
     var items = doc.items || [];
     var legend = spacingHeight({ type: "stack", items: items.filter(inBody) }) || DEFAULTS.textHeight;
     var margin = doc.margin != null ? doc.margin : legend * DEFAULTS.margin;
-    var ctx = { font: doc.font || DEFAULTS.font, fg: s.fg, bg: s.bg };
+    var ctx = { font: doc.font || (led ? LED_FONT : DEFAULTS.font), fg: s.fg, bg: s.bg };
     var minWidth = doc.minLanes ? doc.minLanes * laneWidth(doc.laneKind) : doc.minWidth;
 
     var sign = el("div", "sb-sign");
@@ -479,7 +617,7 @@
     }
 
     var panel = el("div", "sb-panel", {
-      backgroundColor: s.bg, padding: px(border),
+      backgroundColor: led ? frame : s.bg, padding: px(border),
       borderRadius: px(radius),
     });
     // The corner under a tab at the sign's edge is square.
@@ -490,10 +628,11 @@
 
     var innerRadius = Math.max(radius - border, 0);
     var inner = el("div", "sb-panel-inner", {
-      borderStyle: "solid", borderColor: s.fg, borderWidth: px(border), borderRadius: px(innerRadius),
+      borderStyle: "solid", borderColor: frame, borderWidth: px(border), borderRadius: px(innerRadius),
     });
     if (sides.right.length) inner.style.borderTopRightRadius = "0px";
     if (sides.left.length) inner.style.borderTopLeftRadius = "0px";
+    if (led) inner.style.backgroundColor = s.bg;
 
     // The body runs in stretches between panels; each stretch has the sign's margin around it.
     var drawn = [];
