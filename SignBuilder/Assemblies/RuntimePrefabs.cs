@@ -125,8 +125,9 @@ namespace SignBuilder.Assemblies
             var objectPrefab = ScriptableObject.CreateInstance<StaticObjectPrefab>();
             objectPrefab.name = name;
             objectPrefab.m_Meshes = new[] { new ObjectMeshInfo { m_Mesh = renderPrefab, m_Position = float3.zero, m_Rotation = quaternion.identity } };
-            if (glowMeshes != null && glowMeshes.Length > 0) Systems.LedLightSystem.Track(objectPrefab);
-            if (lightSpots != null && lightSpots.Length >= 6)
+            var lit = lightSpots != null && lightSpots.Length >= 6;
+            if (lit || (glowMeshes != null && glowMeshes.Length > 0)) Systems.SignLightSystem.Track(objectPrefab);
+            if (lit)
             {
                 // Real lights: a spot light per fixture, shining onto the sign at night (as street lights do).
                 var source = objectPrefab.AddComponent<EffectSource>();
@@ -158,7 +159,7 @@ namespace SignBuilder.Assemblies
         /// <summary>
         /// The game draws a material's emissive map only for submeshes its mesh lists as lights; without that the map
         /// is ignored. Lists <paramref name="glowMeshes"/> as lights of no purpose, which the game never animates:
-        /// <see cref="Systems.LedLightSystem"/> switches them on at night.
+        /// <see cref="Systems.SignLightSystem"/> switches them on when it gets dark.
         /// </summary>
         private static void AddGlow(RenderPrefab mesh, int[] glowMeshes)
         {
@@ -176,10 +177,10 @@ namespace SignBuilder.Assemblies
         }
 
         private static EffectPrefab s_SignLight;
-        private const string kSignLightName = "SignBuilder_SignLight2";
+        private const string kSignLightName = "SignBuilder_SignLight3";
 
         /// <summary>
-        /// The light every sign fixture uses: a warm-white spot light, on at night only. Created once and registered
+        /// The light every sign fixture uses: a warm-white spot light, on when it gets dark (SignLightSystem). Created once and registered
         /// as a prefab of its own (effects are prefabs the object's EffectSource refers to). Versioned name: a
         /// changed light is a new prefab, not a stale one from the game's prefab list.
         /// </summary>
@@ -192,7 +193,8 @@ namespace SignBuilder.Assemblies
             }
             var effect = ScriptableObject.CreateInstance<EffectPrefab>();
             effect.name = kSignLightName;
-            effect.m_Conditions = new EffectCondition { m_RequiredFlags = EffectConditionFlags.Night };
+            // Off while the sign's street light state says so (SignLightSystem), as on street light poles.
+            effect.m_Conditions = new EffectCondition { m_ForbiddenFlags = EffectConditionFlags.LightsOff };
             var light = effect.AddComponent<Game.Prefabs.Effects.LightEffect>();
             light.m_Type = Game.Rendering.LightType.Spot;
             light.m_SpotShape = Game.Rendering.SpotLightShape.Cone;

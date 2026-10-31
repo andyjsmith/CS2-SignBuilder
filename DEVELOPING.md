@@ -135,12 +135,14 @@ LED lettering is the renderer's own 5×7 dot-matrix font (`LED_GLYPHS`), drawn a
    - Each face is its own material. Faces with LED lettering also get a glow (emissive) map.
    - The game draws an emissive map only for submeshes that the mesh's `EmissiveProperties` lists as lights. LED
      faces are listed as lights of no purpose (`RuntimePrefabs.AddGlow`, the record's `GlowMeshes`), which the game
-     never animates. `LedLightSystem` sets their state from the game clock (on from 18:00 to 06:00, like the game's
-     night lights) just before light states reach the GPU. An emissive map on any other material is ignored.
+     never animates. `SignLightSystem` switches them, and the light fixtures, the way the game switches street lights:
+     by the rendered daylight (`LightingSystem.dayLightBrightness`, which the debug time of day also moves), each sign
+     below its own 20-30 % threshold. Fixtures are effects forbidden while the sign's `StreetLight` state is
+     `TurnedOff`; LED light states are set directly, just before they reach the GPU. An emissive map on any other material is ignored.
    - The steel material is shared by every structure.
 5. **Prefab** (`RuntimePrefabs`). A `StaticObjectPrefab` with a `RenderPrefab` (mesh and materials, and the LOD) is
    added through `PrefabSystem.AddPrefab`. Lights are `EffectSource` entries pointing at a runtime `EffectPrefab`
-   with a spot `LightEffect` that is on at night. The object is then spawned at the placement transform.
+   with a spot `LightEffect` that is on when it gets dark (`SignLightSystem`). The object is then spawned at the placement transform.
 
 The meshes, materials and textures are saved as assets in Sign Builder's own asset database
 (`ModsData/SignBuilder/Cache`). The structure's recipe goes into the library (`ModsData/SignBuilder/assemblies.json`).

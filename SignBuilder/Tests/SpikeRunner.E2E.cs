@@ -95,7 +95,8 @@ namespace SignBuilder.Tests
                     effects = string.Join(",", em.GetBuffer<Game.Effects.EnabledEffect>(entity).AsNativeArray().Select(e =>
                         $"#{e.m_EffectIndex}:{(e.m_EnabledIndex >= 0 && e.m_EnabledIndex < data.Length ? data[e.m_EnabledIndex].m_Flags.ToString() : "?")}"));
                 }
-                return $"glowMeshes=[{string.Join(",", record.GlowMeshes ?? new int[0])}] emissive={emissive} states=[{states}] effects=[{effects}]";
+                var street = em.HasComponent<Game.Objects.StreetLight>(entity) ? em.GetComponentData<Game.Objects.StreetLight>(entity).m_State.ToString() : "none";
+                return $"daylight={world.GetExistingSystemManaged<Game.Rendering.LightingSystem>().dayLightBrightness:F2} streetLight={street} glowMeshes=[{string.Join(",", record.GlowMeshes ?? new int[0])}] emissive={emissive} states=[{states}] effects=[{effects}]";
             }
             yield return Shoot(board, "led_day.png", 10f, 25f);
             SpikeReport.Set("led.day.board", State(board));
@@ -103,19 +104,15 @@ namespace SignBuilder.Tests
             var planet = world.GetOrCreateSystemManaged<Game.Simulation.PlanetarySystem>();
             planet.overrideTime = true;
             planet.normalizedTime = 0.02f;
-            SetEffectNight(true);
             for (var i = 0; i < 4; i++)
             {
                 yield return new WaitForSecondsRealtime(1.5f);
-                SetEffectNight(true);
                 SpikeReport.Set($"led.night{i}.board", State(board));
             }
             yield return Shoot(board, "led_night_board.png", 10f, 25f);
             SpikeReport.Set("led.night.board", State(board));
-            SetEffectNight(true);
             yield return Shoot(lit, "led_night_lit.png", 15f, 20f);
             SpikeReport.Set("led.night.lit", State(lit));
-            SetEffectNight(false);
             planet.overrideTime = false;
             SpikeReport.Set("led.status", "ok");
             Finish();
@@ -714,35 +711,15 @@ namespace SignBuilder.Tests
             var time = planet.normalizedTime;
             planet.overrideTime = true;
             planet.normalizedTime = 0.02f;
-            // Night-only effects (sign lights, LED lettering) follow the simulation clock, not the sky.
-            SetEffectNight(true);
             yield return new WaitForSecondsRealtime(3f);
-            SetEffectNight(true);
             yield return Shoot(board, "e2e_night_led.png", 10f, 35f);
             SpikeReport.Set("e2e.features.ledLightNightFar", LedLight());
-            SetEffectNight(true);
             yield return Shoot(board, "e2e_night_led_close.png", 10f, 15f);
             SpikeReport.Set("e2e.features.ledLightNight", LedLight());
-            SetEffectNight(true);
             if (m_LitRoadside != null) yield return Shoot(m_LitRoadside, "e2e_night_roadside.png", 15f, 20f);
-            SetEffectNight(false);
             planet.normalizedTime = time;
             planet.overrideTime = overridden;
             yield return new WaitForSecondsRealtime(2f);
-        }
-
-        /// <summary>
-        /// Sets the game's night flag for effects directly (it otherwise follows the simulation clock, recomputed every
-        /// 2048 frames): with no recorded change time, night-only effects switch at once.
-        /// </summary>
-        private static void SetEffectNight(bool night)
-        {
-            var flags = World.DefaultGameObjectInjectionWorld.GetExistingSystemManaged<Game.Effects.EffectFlagSystem>();
-            var type = typeof(Game.Effects.EffectFlagSystem);
-            const System.Reflection.BindingFlags field = System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic;
-            type.GetField("m_IsNightTime", field)?.SetValue(flags, night);
-            type.GetField("m_LastTimeChange", field)?.SetValue(flags, 0u);
-            Systems.LedLightSystem.ForceNight = night ? true : (bool?)null;
         }
 
         /// <summary>

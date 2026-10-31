@@ -32,9 +32,9 @@ namespace SignBuilder
             updateSystem.UpdateAt<Tools.SignPlacementToolSystem>(SystemUpdatePhase.ToolUpdate);
             updateSystem.UpdateAt<Systems.SignBuilderUISystem>(SystemUpdatePhase.UIUpdate);
             updateSystem.UpdateAt<Systems.SignInfoSection>(SystemUpdatePhase.UIUpdate);
-            // LED lettering on at night: set after the game animates its lights, before they reach the GPU.
-            updateSystem.UpdateAfter<Systems.LedLightSystem, Game.Rendering.ObjectInterpolateSystem>(SystemUpdatePhase.Rendering);
-            updateSystem.UpdateBefore<Systems.LedLightSystem, Game.Rendering.ProceduralUploadSystem>(SystemUpdatePhase.Rendering);
+            // Sign lights on when it gets dark: set after the game animates its lights, before they reach the GPU.
+            updateSystem.UpdateAfter<Systems.SignLightSystem, Game.Rendering.ObjectInterpolateSystem>(SystemUpdatePhase.Rendering);
+            updateSystem.UpdateBefore<Systems.SignLightSystem, Game.Rendering.ProceduralUploadSystem>(SystemUpdatePhase.Rendering);
 
             if (GameManager.instance.modManager.TryGetExecutableAsset(this, out var asset))
             {
