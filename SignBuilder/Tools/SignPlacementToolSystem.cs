@@ -10,12 +10,12 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using SignBuilder.Assemblies;
 using SignBuilder.Core;
-using SignBuilder.Spike;
 using SignBuilder.Systems;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Jobs;
 using Unity.Mathematics;
+using SignBuilder.Geometry;
 
 namespace SignBuilder.Tools
 {
@@ -518,7 +518,9 @@ namespace SignBuilder.Tools
             HandleKeys();
 
             var hit = GetRaycastResult(out Entity entity, out RaycastHit raycast);
+#if TESTS
             Hovered = hit ? entity : Entity.Null;
+#endif
             RoadProbe.Snap snap = null;
             string key = null;
             // A surface-mounted sign hovering an elevated road hangs on that road's side (the edge nearer the cursor);
@@ -684,10 +686,6 @@ namespace SignBuilder.Tools
             }
         }
 
-        /// <summary>Test hook: draw the preview for a road position (as hovering would).</summary>
-        public void PreviewForTest(Entity edge, float t) => DrawPreview(new RoadProbe(EntityManager, m_PrefabSystem).SnapAt(edge, t), $"road {edge} {t}");
-
-        public bool PreviewReady => FacesReady && m_Designs.Count > 0;
 
         // ------------------------------------------------------------------ building
 
@@ -721,7 +719,9 @@ namespace SignBuilder.Tools
                         new RuntimePrefabs().Delete(replacing);
                         m_Replacing = Entity.Null;
                     }
+#if TESTS
                     LastPlaced = record;
+#endif
                     m_UI.SetStatus(doneStatus);
                     afterwards?.Invoke();
                 },
@@ -732,9 +732,6 @@ namespace SignBuilder.Tools
                 },
                 PlacementContext.From(snap, options)));
         }
-
-        /// <summary>The most recent assembly built by this tool (used by the test harness).</summary>
-        public static AssemblyRecord LastPlaced { get; private set; }
 
         // ------------------------------------------------------------------ placed structures
 
@@ -832,47 +829,8 @@ namespace SignBuilder.Tools
             EntityManager.AddComponent<BatchesUpdated>(entity);
         }
 
-        /// <summary>Test hook: whether the structure being edited is hidden.</summary>
-        public bool ReplacingHidden => m_Replacing != Entity.Null && EntityManager.Exists(m_Replacing) && EntityManager.HasComponent<Hidden>(m_Replacing);
-
         /// <summary>Whether the tool is active, and in which mode: "off", "posts", "pickRoad" or "arrange".</summary>
         public string ModeName => !Active ? "off" : m_Mode switch { Mode.Posts => "posts", Mode.PickRoad => "pickRoad", _ => "arrange" };
-
-        /// <summary>The entity under the cursor this frame (test harness).</summary>
-        public Entity Hovered { get; private set; }
-
-        public bool Busy => m_Busy;
-        public int SignCount => m_Designs.Count;
-
-        // ------------------------------------------------------------------ test hooks
-
-        /// <summary>Test hook: build at a road edge without a mouse click.</summary>
-        public void PlaceForTest(Entity edge, float t, IReadOnlyList<JObject> designs, LayoutOptions options)
-        {
-            SetSigns(designs);
-            m_Options = options.Clone();
-            m_Options.EnsureSigns(m_Designs.Count);
-            SignBuilderRuntime.Run(WaitThenBuild(new RoadProbe(EntityManager, m_PrefabSystem).SnapAt(edge, t)));
-        }
-
-        /// <summary>Test hook: free placement at a point.</summary>
-        public void PlaceFreeForTest(float3 point, IReadOnlyList<JObject> designs, LayoutOptions options)
-        {
-            SetSigns(designs);
-            m_Options = options.Clone();
-            m_Options.Free = true;
-            m_Options.EnsureSigns(m_Designs.Count);
-            SignBuilderRuntime.Run(WaitThenBuild(PlacementContext.FreeSnap(point, m_Options.Angle, m_Options)));
-        }
-
-        /// <summary>Test hook: pin a gantry at a road position and open the arrangement, as a click would.</summary>
-        public void ArrangeForTest(Entity edge, float t, IReadOnlyList<JObject> designs, LayoutOptions options)
-        {
-            BeginGantry(designs, options);
-            m_Pinned = new RoadProbe(EntityManager, m_PrefabSystem).SnapAt(edge, t);
-            m_Mode = Mode.Arrange;
-            Status();
-        }
 
         public override PrefabBase GetPrefab() => null;
 

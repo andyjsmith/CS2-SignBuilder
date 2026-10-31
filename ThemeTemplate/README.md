@@ -46,6 +46,7 @@ Only `id`, `name` and `schemes` are required; everything else has defaults.
 
 ```jsonc
 {
+  "formatVersion": 1,              // the theme.json format; Sign Builder skips formats newer than it reads
   "id": "example",                 // unique id, stored in every sign made with the theme
   "name": "Exampleland",           // shown in the Theme list
   "description": "…",              // shown on hover
@@ -158,7 +159,7 @@ Each file in `templates/` is one sign: the same JSON the designer saves. The eas
 
 ```json
 {
-  "theme": "example", "id": "motorway-exit", "name": "Motorway exit", "scheme": "motorway", "align": "center",
+  "formatVersion": 1, "theme": "example", "id": "motorway-exit", "name": "Motorway exit", "scheme": "motorway", "align": "center",
   "items": [
     { "type": "tab", "align": "right", "items": [{ "type": "text", "text": "12", "height": 12 }] },
     { "type": "row", "items": [{ "type": "shield", "network": "M", "number": "1" }, { "type": "text", "text": "North" }] },
@@ -173,8 +174,8 @@ Each file in `templates/` is one sign: the same JSON the designer saves. The eas
 | `shield` | `network` (a key from `shields`), `number`, `height` |
 | `arrow` | `direction` (`up`, `down`, `left`, `right`, `up-left`… `turn-left`, `split-right`…), `height`, `color` |
 | `diagram` | `shape` (`exit-left`, `exit-right`, `fork`, `roundabout`), `lanes`, `exitLanes`, `exits`, `height` |
-| `message` (LED text) | `lines`, `height`, `color` |
-| `row`, `stack` (a column) | `items`, `align`; rows also take `justify` (`between`, `even`) |
+| `led` (LED text) | `lines`, `height`, `color` |
+| `row`, `column` | `items`, `align`; rows also take `justify` (`between`, `even`) |
 | `chip` | `items`, `scheme`, `border`, `span` (`full`), `align` |
 | `panel` (a band across the sign) | `items`, `scheme`, `align` |
 | `tab` (on top of the sign) | `items`, `align` (`left`, `center`, `right`), `scheme` |

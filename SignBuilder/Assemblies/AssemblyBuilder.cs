@@ -7,9 +7,10 @@ using Game.Prefabs;
 using Newtonsoft.Json.Linq;
 using SignBuilder.Core;
 using SignBuilder.Rendering;
-using SignBuilder.Spike;
 using Unity.Mathematics;
 using UnityEngine;
+using SignBuilder.Geometry;
+using SignBuilder.Tools;
 
 namespace SignBuilder.Assemblies
 {
@@ -435,7 +436,7 @@ namespace SignBuilder.Assemblies
                     Id = Guid.NewGuid().ToString("N").Substring(0, 12),
                     Support = context.Options.Support,
                     Reverse = context.Options.Reverse,
-                    Designs = designs.ToList(),
+                    Designs = designs.Select(Formats.StampDesign).ToList(),
                     SupportSpec = placement.Spec,
                     SignCenters = placement.SignCenters.SelectMany(c => new[] { c.x, c.y, c.z }).ToArray(),
                     Context = context,
@@ -483,7 +484,18 @@ namespace SignBuilder.Assemblies
             var steel = SignBuilderRuntime.Steel(prefabs);
             var surfaces = new List<Colossal.IO.AssetDatabase.SurfaceAsset> { steel };
             SignBuilderRuntime.Mark("build: materials");
-            surfaces.AddRange(faces.Select(f => SurfaceFactory.SignFace(db, SignBuilderRuntime.SurfaceFolder, donor, f.Texture, f.Key, f.Glow)));
+            // Identical faces (here or on another structure) share one material.
+            var made = new Dictionary<string, Colossal.IO.AssetDatabase.SurfaceAsset>();
+            foreach (var f in faces)
+            {
+                if (!made.TryGetValue(f.Key, out var surface))
+                {
+                    surface = AssemblyLibrary.FaceSurface(f.Key) ?? SurfaceFactory.SignFace(db, SignBuilderRuntime.SurfaceFolder, donor, f.Texture, f.Key, f.Glow);
+                    made[f.Key] = surface;
+                }
+                surfaces.Add(surface);
+            }
+            record.FaceKeys = faces.Select(f => f.Key).ToList();
             var bounds = new Bounds3(mesh.bounds.min, mesh.bounds.max);
             var indexCount = 0;
             for (var i = 0; i < mesh.subMeshCount; i++) indexCount += (int)mesh.GetIndexCount(i);

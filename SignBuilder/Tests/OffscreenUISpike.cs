@@ -7,8 +7,12 @@ using Unity.Collections;
 using UnityEngine;
 using UnityEngine.Rendering;
 using Object = UnityEngine.Object;
+using SignBuilder.Core;
+using SignBuilder.Geometry;
+using SignBuilder.Assemblies;
+using SignBuilder.Tools;
 
-namespace SignBuilder.Spike
+namespace SignBuilder.Tests
 {
     /// <summary>
     /// Renders HTML pages with the game's Gameface (cohtml) engine into off-screen textures.

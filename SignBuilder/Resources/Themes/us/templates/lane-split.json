@@ -1,4 +1,5 @@
 {
+  "formatVersion": 1,
   "theme": "us",
   "id": "lane-split",
   "name": "Lane split",
@@ -21,7 +22,7 @@
       "align": "end",
       "items": [
         {
-          "type": "stack",
+          "type": "column",
           "align": "center",
           "items": [
             {
@@ -46,7 +47,7 @@
           }
         },
         {
-          "type": "stack",
+          "type": "column",
           "align": "center",
           "items": [
             {
@@ -65,7 +66,7 @@
           ]
         },
         {
-          "type": "stack",
+          "type": "column",
           "align": "center",
           "items": [
             {
@@ -73,7 +74,7 @@
               "align": "center",
               "items": [
                 {
-                  "type": "stack",
+                  "type": "column",
                   "align": "center",
                   "items": [
                     {
@@ -91,7 +92,7 @@
                   ]
                 },
                 {
-                  "type": "stack",
+                  "type": "column",
                   "align": "center",
                   "items": [
                     {

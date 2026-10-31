@@ -1,4 +1,5 @@
 {
+  "formatVersion": 1,
   "id": "jp",
   "name": "Japan",
   "description": "Expressway (green) and general road (blue) guide signs, Japanese with English",
@@ -107,7 +108,7 @@
     {
       "label": "Japanese + English",
       "item": {
-        "type": "stack",
+        "type": "column",
         "align": "center",
         "items": [
           {

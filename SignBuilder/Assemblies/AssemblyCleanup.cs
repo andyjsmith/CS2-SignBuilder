@@ -7,9 +7,10 @@ using Game.Common;
 using Game.Prefabs;
 using Game.Tools;
 using SignBuilder.Core;
-using SignBuilder.Spike;
 using Unity.Collections;
 using Unity.Entities;
+using SignBuilder.Geometry;
+using SignBuilder.Tools;
 
 namespace SignBuilder.Assemblies
 {
@@ -62,14 +63,17 @@ namespace SignBuilder.Assemblies
                 }
             }
             var db = SignBuilderRuntime.Database;
+            var unused = records.Where(r => !used.Contains(r.PrefabName)).ToList();
+            // Face materials are shared between structures with identical faces: keep those another structure uses.
+            var gone = new HashSet<AssemblyRecord>(unused);
+            var shared = new HashSet<string>(AssemblyLibrary.All.Where(r => !gone.Contains(r)).SelectMany(r => r.SurfaceIds));
             var count = 0;
-            foreach (var record in records)
+            foreach (var record in unused)
             {
-                if (used.Contains(record.PrefabName)) continue;
                 DeleteAsset<GeometryAsset>(db, record.GeometryId, null);
                 if (record.LodGeometryId != null) DeleteAsset<GeometryAsset>(db, record.LodGeometryId, null);
                 // Surface 0 is the shared steel; the rest are this structure's sign faces (with their textures).
-                foreach (var id in record.SurfaceIds.Skip(1)) DeleteAsset<SurfaceAsset>(db, id, s =>
+                foreach (var id in record.SurfaceIds.Skip(1).Distinct().Where(id => shared.Add(id))) DeleteAsset<SurfaceAsset>(db, id, s =>
                 {
                     s.LoadProperties(false);
                     foreach (var texture in s.textures.Values.Where(t => t != null)) Delete(texture);

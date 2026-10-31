@@ -172,7 +172,7 @@ function ItemProperties(props: { item: Item; onChange: (patch: Partial<Item>) =>
           {place}
         </>
       );
-    case "stack":
+    case "column":
       return (
         <>
           <Field label="Align within the column"><Choice options={ALIGN} value={item.align ?? "start"} onChange={(align) => onChange({ align })} /></Field>
@@ -226,7 +226,7 @@ function ItemProperties(props: { item: Item; onChange: (patch: Partial<Item>) =>
           {place}
         </>
       );
-    case "message": {
+    case "led": {
       const lines: string[] = item.lines ?? [""];
       const setLine = (k: number, text: string) => onChange({ lines: lines.map((l, i) => (i === k ? text : l)) });
       return (
@@ -290,8 +290,9 @@ export const Designer = (props: {
 }) => {
   const { design, setDesign } = props;
   const [selected, setSelected] = useState<string | null>(null);
-  // For the in-game tests: select a part the way a click does.
+  // For the in-game tests: select a part the way a click does (test builds only).
   useEffect(() => {
+    if (!__SIGNBUILDER_TESTS__) return;
     (window as any).__signBuilderSelect = setSelected;
     return () => { delete (window as any).__signBuilderSelect; };
   }, []);

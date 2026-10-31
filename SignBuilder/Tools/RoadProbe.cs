@@ -9,8 +9,11 @@ using Game.Tools;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;
+using SignBuilder.Core;
+using SignBuilder.Geometry;
+using SignBuilder.Assemblies;
 
-namespace SignBuilder.Spike
+namespace SignBuilder.Tools
 {
     /// <summary>
     /// Finds a road edge near a point, reads its geometry and car lanes, and pairs it with a parallel

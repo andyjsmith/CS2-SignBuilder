@@ -1,7 +1,10 @@
 using System.Linq;
 using UnityEngine;
+using SignBuilder.Core;
+using SignBuilder.Assemblies;
+using SignBuilder.Tools;
 
-namespace SignBuilder.Spike
+namespace SignBuilder.Geometry
 {
     /// <summary>
     /// Parametric gantry meshes. Local space: X runs across the road, Z along it (traffic faces -Z),

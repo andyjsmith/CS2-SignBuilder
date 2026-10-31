@@ -1,4 +1,5 @@
 {
+  "formatVersion": 1,
   "theme": "uk",
   "id": "motorway-lanes",
   "name": "Motorway lanes",
@@ -8,7 +9,7 @@
       "type": "row",
       "items": [
         {
-          "type": "stack",
+          "type": "column",
           "align": "center",
           "items": [
             {
@@ -40,7 +41,7 @@
           "type": "divider"
         },
         {
-          "type": "stack",
+          "type": "column",
           "align": "center",
           "items": [
             {

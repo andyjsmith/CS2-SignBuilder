@@ -10,8 +10,11 @@ using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;
 using UnityEngine;
+using SignBuilder.Core;
+using SignBuilder.Geometry;
+using SignBuilder.Tools;
 
-namespace SignBuilder.Spike
+namespace SignBuilder.Assemblies
 {
     /// <summary>
     /// Turns generated meshes into real game props (GeometryAsset -> RenderPrefab -> StaticObjectPrefab)
@@ -122,6 +125,7 @@ namespace SignBuilder.Spike
             var objectPrefab = ScriptableObject.CreateInstance<StaticObjectPrefab>();
             objectPrefab.name = name;
             objectPrefab.m_Meshes = new[] { new ObjectMeshInfo { m_Mesh = renderPrefab, m_Position = float3.zero, m_Rotation = quaternion.identity } };
+            if (glowMeshes != null && glowMeshes.Length > 0) Systems.LedLightSystem.Track(objectPrefab);
             if (lightSpots != null && lightSpots.Length >= 6)
             {
                 // Real lights: a spot light per fixture, shining onto the sign at night (as street lights do).
@@ -149,8 +153,8 @@ namespace SignBuilder.Spike
 
         /// <summary>
         /// The game draws a material's emissive map only for submeshes its mesh lists as lights; without that the map
-        /// is ignored. Lists <paramref name="glowMeshes"/> as always-on decorative lights (powered, day and night), as
-        /// the game's asset importer does for neon signs.
+        /// is ignored. Lists <paramref name="glowMeshes"/> as lights of no purpose, which the game never animates:
+        /// <see cref="Systems.LedLightSystem"/> switches them on at night.
         /// </summary>
         private static void AddGlow(RenderPrefab mesh, int[] glowMeshes)
         {
@@ -158,7 +162,7 @@ namespace SignBuilder.Spike
             var emissive = mesh.AddComponent<EmissiveProperties>();
             emissive.m_SingleLights = glowMeshes.Select(i => new EmissiveProperties.SingleLightMapping
             {
-                purpose = EmissiveProperties.Purpose.NeonSign, intensity = Assemblies.SurfaceFactory.kLedGlow, materialId = i,
+                purpose = EmissiveProperties.Purpose.None, intensity = Assemblies.SurfaceFactory.kLedGlow, materialId = i,
             }).ToList();
             emissive.m_MultiLights = new List<EmissiveProperties.MultiLightMapping>();
             emissive.m_AnimationCurves = new List<EmissiveProperties.AnimationProperties>();

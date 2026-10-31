@@ -17,11 +17,13 @@ namespace SignBuilder
 
             // Generated meshes and materials live in a mod-owned database; it must be registered
             // before any save that uses them is loaded.
-            AssetDatabase.global.RegisterDatabase(AssetDatabase<Spike.SignBuilderCache>.instance).ContinueWith(t =>
+            AssetDatabase.global.RegisterDatabase(AssetDatabase<Core.SignBuilderCache>.instance).ContinueWith(t =>
             {
                 if (t.IsFaulted) log.Error(t.Exception, "Registering the SignBuilder cache database failed");
             });
-            updateSystem.UpdateAt<Spike.SpikeBootstrapSystem>(SystemUpdatePhase.MainLoop);
+#if TESTS
+            updateSystem.UpdateAt<Tests.SpikeBootstrapSystem>(SystemUpdatePhase.MainLoop);
+#endif
             updateSystem.UpdateAt<Assemblies.AssemblyBootstrapSystem>(SystemUpdatePhase.MainLoop);
             // Sign recipes travel inside saves so shared cities rebuild their signs on other PCs.
             updateSystem.UpdateBefore<Assemblies.AssemblySaveSystem>(SystemUpdatePhase.Serialize);
@@ -30,12 +32,17 @@ namespace SignBuilder
             updateSystem.UpdateAt<Tools.SignPlacementToolSystem>(SystemUpdatePhase.ToolUpdate);
             updateSystem.UpdateAt<Systems.SignBuilderUISystem>(SystemUpdatePhase.UIUpdate);
             updateSystem.UpdateAt<Systems.SignInfoSection>(SystemUpdatePhase.UIUpdate);
+            // LED lettering on at night: set after the game animates its lights, before they reach the GPU.
+            updateSystem.UpdateAfter<Systems.LedLightSystem, Game.Rendering.ObjectInterpolateSystem>(SystemUpdatePhase.Rendering);
+            updateSystem.UpdateBefore<Systems.LedLightSystem, Game.Rendering.ProceduralUploadSystem>(SystemUpdatePhase.Rendering);
 
             if (GameManager.instance.modManager.TryGetExecutableAsset(this, out var asset))
             {
                 log.Info($"Current mod asset at {asset.path}");
                 Core.SignBuilderRuntime.Initialize(System.IO.Path.GetDirectoryName(asset.path));
-                Spike.SpikeRunner.StartIfFlagged(System.IO.Path.GetDirectoryName(asset.path));
+#if TESTS
+                Tests.SpikeRunner.StartIfFlagged(System.IO.Path.GetDirectoryName(asset.path));
+#endif
             }
 
             m_Setting = new Setting(this);

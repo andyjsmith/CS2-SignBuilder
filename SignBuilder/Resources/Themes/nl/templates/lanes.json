@@ -1,4 +1,5 @@
 {
+  "formatVersion": 1,
   "theme": "nl",
   "id": "lanes",
   "name": "Lanes",
@@ -8,7 +9,7 @@
       "type": "row",
       "items": [
         {
-          "type": "stack",
+          "type": "column",
           "align": "center",
           "items": [
             {
@@ -45,7 +46,7 @@
           "type": "divider"
         },
         {
-          "type": "stack",
+          "type": "column",
           "align": "center",
           "items": [
             {

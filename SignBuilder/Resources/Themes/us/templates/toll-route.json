@@ -1,4 +1,5 @@
 {
+  "formatVersion": 1,
   "theme": "us",
   "id": "toll-route",
   "name": "Toll road",
@@ -8,7 +9,7 @@
       "type": "row",
       "items": [
         {
-          "type": "stack",
+          "type": "column",
           "align": "center",
           "items": [
             {
@@ -33,7 +34,7 @@
           ]
         },
         {
-          "type": "stack",
+          "type": "column",
           "align": "start",
           "items": [
             {

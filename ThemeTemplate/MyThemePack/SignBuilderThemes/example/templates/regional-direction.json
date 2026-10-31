@@ -1,4 +1,5 @@
 {
+  "formatVersion": 1,
   "theme": "example",
   "id": "regional-direction",
   "name": "Regional direction",
@@ -8,16 +9,29 @@
       "type": "row",
       "justify": "between",
       "items": [
-        { "type": "text", "text": "Riverside" },
-        { "type": "shield", "network": "R", "number": "12" }
+        {
+          "type": "text",
+          "text": "Riverside"
+        },
+        {
+          "type": "shield",
+          "network": "R",
+          "number": "12"
+        }
       ]
     },
     {
       "type": "row",
       "justify": "between",
       "items": [
-        { "type": "text", "text": "Old Town" },
-        { "type": "arrow", "direction": "right" }
+        {
+          "type": "text",
+          "text": "Old Town"
+        },
+        {
+          "type": "arrow",
+          "direction": "right"
+        }
       ]
     }
   ]

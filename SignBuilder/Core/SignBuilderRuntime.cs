@@ -3,8 +3,10 @@ using System.Collections;
 using System.IO;
 using Colossal.IO.AssetDatabase;
 using SignBuilder.Rendering;
-using SignBuilder.Spike;
 using UnityEngine;
+using SignBuilder.Geometry;
+using SignBuilder.Assemblies;
+using SignBuilder.Tools;
 
 namespace SignBuilder.Core
 {

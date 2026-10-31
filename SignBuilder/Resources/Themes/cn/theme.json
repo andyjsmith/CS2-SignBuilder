@@ -1,4 +1,5 @@
 {
+  "formatVersion": 1,
   "id": "cn",
   "name": "China",
   "description": "Expressway (green) and general road (blue) guide signs, Chinese with English",
@@ -106,7 +107,7 @@
     {
       "label": "Chinese + English",
       "item": {
-        "type": "stack",
+        "type": "column",
         "align": "center",
         "items": [
           {

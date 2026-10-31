@@ -39,10 +39,10 @@ namespace SignBuilder.Assemblies
         }
 
         /// <summary>How bright LED lettering glows: its light's intensity (RuntimePrefabs.AddGlow).</summary>
-        public const float kLedGlow = 3f;
+        public const float kLedGlow = 1f;
 
         /// <summary>The share of the face's own color that glows around LED lettering (a faintly lit board).</summary>
-        private const float kLedBoardGlow = 0.1f;
+        private const float kLedBoardGlow = 0.04f;
 
         /// <summary>
         /// A sign face: the baked texture, matte non-metallic, transparent corners cut out. <paramref name="lit"/> (LED
@@ -53,14 +53,28 @@ namespace SignBuilder.Assemblies
             face = Savable(face);
             // Saved at half the face's size: enough to keep the dots sharp.
             var led = lit != null && lit.width == face.width && lit.height == face.height;
-            var emissive = led ? Downscale(Emissive(face, lit, kLedBoardGlow), 2) : null;
-            return Create(database, folder, "SignBuilder_Face_" + key.Substring(0, Math.Min(12, key.Length)), template, face, FaceMask(), m =>
+            var emissive = led ? Compressed(Downscale(Emissive(face, lit, kLedBoardGlow), 2)) : null;
+            return Create(database, folder, "SignBuilder_Face_" + key.Substring(0, Math.Min(12, key.Length)), template, Compressed(face), FaceMask(), m =>
             {
                 if (m.HasProperty("_AlphaCutoffEnable")) m.SetFloat("_AlphaCutoffEnable", 1f);
                 if (m.HasProperty("_AlphaCutoff")) m.SetFloat("_AlphaCutoff", 0.5f);
                 if (m.HasProperty("_EmissiveColor")) m.SetColor("_EmissiveColor", led ? Color.white : Color.black);
                 if (led && m.HasProperty("_EmissiveColorMap")) m.SetTexture("_EmissiveColorMap", emissive);
             });
+        }
+
+        /// <summary>
+        /// A block-compressed (DXT5) copy: a quarter of the size on disk and in video memory. Sign faces suit it well,
+        /// as most 4x4 blocks hold two colors (lettering and background). Faces are baked to multiples of 4 pixels
+        /// each way (SignFaceBaker); any other size stays uncompressed.
+        /// </summary>
+        private static Texture2D Compressed(Texture2D tex)
+        {
+            if (tex.width % 4 != 0 || tex.height % 4 != 0) return tex;
+            var copy = UnityEngine.Object.Instantiate(tex);
+            copy.name = tex.name;
+            copy.Compress(highQuality: true);
+            return copy;
         }
 
         /// <summary>A copy <paramref name="factor"/> times smaller each way (averaged), with mipmaps.</summary>
@@ -118,10 +132,11 @@ namespace SignBuilder.Assemblies
         /// TextureAsset stores the texture's GraphicsFormat and recreates it on load, so the format must be one
         /// the GPU can sample. ARGB32 (what Texture2D.LoadImage produces) is an internal format that saves
         /// fine but fails on load ("'87' is not supported for Sample usage"); copy such textures to RGBA32.
+        /// Block-compressed DXT5 samples fine as it is.
         /// </summary>
         public static Texture2D Savable(Texture2D tex)
         {
-            if (tex == null || tex.format == TextureFormat.RGBA32) return tex;
+            if (tex == null || tex.format == TextureFormat.RGBA32 || tex.format == TextureFormat.DXT5) return tex;
             var copy = new Texture2D(tex.width, tex.height, TextureFormat.RGBA32, tex.mipmapCount > 1, !tex.isDataSRGB)
             {
                 name = tex.name, wrapMode = tex.wrapMode, filterMode = tex.filterMode,

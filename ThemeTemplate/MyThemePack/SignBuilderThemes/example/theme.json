@@ -1,4 +1,5 @@
 {
+  "formatVersion": 1,
   "id": "example",
   "name": "Exampleland",
   "description": "Template theme: copy this folder, rename it and make it yours",
@@ -26,10 +27,26 @@
     }
   ],
   "schemes": {
-    "motorway": { "bg": "#1d4f9c", "fg": "#ffffff", "label": "Motorway" },
-    "primary": { "bg": "#1f6b3a", "fg": "#ffffff", "label": "Primary road" },
-    "local": { "bg": "#ffffff", "fg": "#111111", "label": "Local road" },
-    "detour": { "bg": "#f5c400", "fg": "#111111", "label": "Detour" }
+    "motorway": {
+      "bg": "#1d4f9c",
+      "fg": "#ffffff",
+      "label": "Motorway"
+    },
+    "primary": {
+      "bg": "#1f6b3a",
+      "fg": "#ffffff",
+      "label": "Primary road"
+    },
+    "local": {
+      "bg": "#ffffff",
+      "fg": "#111111",
+      "label": "Local road"
+    },
+    "detour": {
+      "bg": "#f5c400",
+      "fg": "#111111",
+      "label": "Detour"
+    }
   },
   "shields": {
     "M": {
@@ -61,8 +78,16 @@
         "type": "panel",
         "scheme": "detour",
         "items": [
-          { "type": "arrow", "direction": "down", "height": 16 },
-          { "type": "text", "text": "EXIT", "height": 12 }
+          {
+            "type": "arrow",
+            "direction": "down",
+            "height": 16
+          },
+          {
+            "type": "text",
+            "text": "EXIT",
+            "height": 12
+          }
         ]
       }
     }

@@ -21,8 +21,9 @@ using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;
 using UnityEngine;
+using SignBuilder.Geometry;
 
-namespace SignBuilder.Spike
+namespace SignBuilder.Tests
 {
     /// <summary>
     /// End-to-end run of the real feature code: every structure type and span, the gantry arrangement flow,
@@ -55,6 +56,68 @@ namespace SignBuilder.Spike
             yield return Test("e2e.ui", TestDesignerPicks(ui));
             yield return Test("e2e.uipause", TestDesignerPause(ui));
             ui.SetEditorOpen(false);
+            Finish();
+        }
+
+        /// <summary>
+        /// LED glow only (mode "led-e2e"): an LED board on a gantry and a lit roadside LED sign, with their lights and
+        /// effects by day and at night. A few minutes.
+        /// </summary>
+        private IEnumerator RunLedE2E()
+        {
+            yield return WaitForGame();
+            yield return new WaitForSecondsRealtime(5f);
+            m_Runtime = new RuntimePrefabs();
+            var world = World.DefaultGameObjectInjectionWorld;
+            var em = world.EntityManager;
+            var tool = world.GetOrCreateSystemManaged<SignPlacementToolSystem>();
+            var near = (float3)(CameraController()?.pivot ?? Camera.main.transform.position);
+            var spots = HighwaySpots(em, near, 2);
+            if (spots.Count < 2) { SpikeReport.Set("led.status", "FAILED: no highway"); Finish(); yield break; }
+            yield return PlaceAndWait(() => tool.PlaceForTest(spots[0].edge, spots[0].t, new List<JObject> { Template("lane-split"), Template("message-board") }, Options("doubleTruss", "single")));
+            var board = SignPlacementToolSystem.LastPlaced;
+            var litOptions = Options("ground", "single");
+            litOptions.Lights = true;
+            yield return PlaceAndWait(() => tool.PlaceForTest(spots[1].edge, spots[1].t, new List<JObject> { Template("message-board") }, litOptions));
+            var lit = SignPlacementToolSystem.LastPlaced;
+            string State(AssemblyRecord record)
+            {
+                var entity = InstancesOf(record.PrefabName).FirstOrDefault();
+                if (entity == Entity.Null) return "no instance";
+                var states = em.HasBuffer<Game.Rendering.LightState>(entity) ? string.Join(",", em.GetBuffer<Game.Rendering.LightState>(entity).AsNativeArray().Select(l => l.m_Intensity.ToString("F2"))) : "none";
+                var emissive = em.HasBuffer<Game.Rendering.Emissive>(entity);
+                var effects = "none";
+                if (em.HasBuffer<Game.Effects.EnabledEffect>(entity))
+                {
+                    var control = world.GetExistingSystemManaged<Game.Effects.EffectControlSystem>();
+                    var data = control.GetEnabledData(true, out var deps);
+                    deps.Complete();
+                    effects = string.Join(",", em.GetBuffer<Game.Effects.EnabledEffect>(entity).AsNativeArray().Select(e =>
+                        $"#{e.m_EffectIndex}:{(e.m_EnabledIndex >= 0 && e.m_EnabledIndex < data.Length ? data[e.m_EnabledIndex].m_Flags.ToString() : "?")}"));
+                }
+                return $"glowMeshes=[{string.Join(",", record.GlowMeshes ?? new int[0])}] emissive={emissive} states=[{states}] effects=[{effects}]";
+            }
+            yield return Shoot(board, "led_day.png", 10f, 25f);
+            SpikeReport.Set("led.day.board", State(board));
+            SpikeReport.Set("led.day.lit", State(lit));
+            var planet = world.GetOrCreateSystemManaged<Game.Simulation.PlanetarySystem>();
+            planet.overrideTime = true;
+            planet.normalizedTime = 0.02f;
+            SetEffectNight(true);
+            for (var i = 0; i < 4; i++)
+            {
+                yield return new WaitForSecondsRealtime(1.5f);
+                SetEffectNight(true);
+                SpikeReport.Set($"led.night{i}.board", State(board));
+            }
+            yield return Shoot(board, "led_night_board.png", 10f, 25f);
+            SpikeReport.Set("led.night.board", State(board));
+            SetEffectNight(true);
+            yield return Shoot(lit, "led_night_lit.png", 15f, 20f);
+            SpikeReport.Set("led.night.lit", State(lit));
+            SetEffectNight(false);
+            planet.overrideTime = false;
+            SpikeReport.Set("led.status", "ok");
             Finish();
         }
 
@@ -626,23 +689,59 @@ namespace SignBuilder.Spike
             SpikeReport.Set("e2e.features.glow", $"lit pixels in the last glow pass={Core.SignBuilderRuntime.Baker.LastGlowPixels}");
             var board = SignPlacementToolSystem.LastPlaced;
             yield return Shoot(board, "e2e_features_diagram_led.png", 10f, 35f);
+            // The LED face is one of the mesh's lights, following a night-only effect: off by day, lit at night.
+            string LedLight()
+            {
+                var entity = InstancesOf(board.PrefabName).FirstOrDefault();
+                var states = em.HasBuffer<Game.Rendering.LightState>(entity) ? em.GetBuffer<Game.Rendering.LightState>(entity) : default;
+                return $"emissive={em.HasBuffer<Game.Rendering.Emissive>(entity)} states=[{(states.IsCreated ? string.Join(",", Enumerable.Range(0, states.Length).Select(i => states[i].m_Intensity.ToString("F2"))) : "none")}]";
+            }
+            // Face materials: compressed textures, shared between structures with identical faces.
+            var faceTextures = board.SurfaceIds.Skip(1).Select(id =>
+            {
+                if (!Colossal.IO.AssetDatabase.AssetDatabase.global.TryGetAsset(Colossal.Hash128.Parse(id), out Colossal.IO.AssetDatabase.SurfaceAsset surface)) return "missing";
+                surface.LoadProperties(false);
+                return string.Join("+", surface.textures.Select(t => t.Value is Colossal.IO.AssetDatabase.TextureAsset x ? $"{t.Key}:{x.width}x{x.height} {x.format}" : t.Key));
+            });
+            var sharedFaces = AssemblyLibrary.All.SelectMany(r => r.SurfaceIds.Skip(1)).GroupBy(id => id).Count(g => g.Count() > 1);
+            var cacheBytes = new System.IO.DirectoryInfo(Core.SignBuilderCache.RootPath).EnumerateFiles("*.Texture").Sum(f => f.Length);
+            SpikeReport.Set("e2e.features.faceTextures", $"{string.Join(" | ", faceTextures)} sharedFaceMaterials={sharedFaces} textureMB={cacheBytes / 1e6:F1}");
+            SpikeReport.Set("e2e.features.ledLightDay", $"glowMeshes=[{string.Join(",", board.GlowMeshes ?? new int[0])}] {LedLight()}");
             // At night: the LED board glows, the lit roadside sign (edit test) has its light.
             var planet = World.DefaultGameObjectInjectionWorld.GetOrCreateSystemManaged<Game.Simulation.PlanetarySystem>();
             var overridden = planet.overrideTime;
             var time = planet.normalizedTime;
             planet.overrideTime = true;
             planet.normalizedTime = 0.02f;
+            // Night-only effects (sign lights, LED lettering) follow the simulation clock, not the sky.
+            SetEffectNight(true);
             yield return new WaitForSecondsRealtime(3f);
+            SetEffectNight(true);
             yield return Shoot(board, "e2e_night_led.png", 10f, 35f);
-            // The LED face is one of the mesh's lights: the instance carries the game's light state, lit.
-            var boardEntity = InstancesOf(board.PrefabName).FirstOrDefault();
-            var states = em.HasBuffer<Game.Rendering.LightState>(boardEntity) ? em.GetBuffer<Game.Rendering.LightState>(boardEntity) : default;
-            SpikeReport.Set("e2e.features.ledLight", $"glowMeshes=[{string.Join(",", board.GlowMeshes ?? new int[0])}] emissive={em.HasBuffer<Game.Rendering.Emissive>(boardEntity)} " +
-                $"states=[{(states.IsCreated ? string.Join(",", Enumerable.Range(0, states.Length).Select(i => states[i].m_Intensity.ToString("F2"))) : "none")}]");
+            SpikeReport.Set("e2e.features.ledLightNightFar", LedLight());
+            SetEffectNight(true);
+            yield return Shoot(board, "e2e_night_led_close.png", 10f, 15f);
+            SpikeReport.Set("e2e.features.ledLightNight", LedLight());
+            SetEffectNight(true);
             if (m_LitRoadside != null) yield return Shoot(m_LitRoadside, "e2e_night_roadside.png", 15f, 20f);
+            SetEffectNight(false);
             planet.normalizedTime = time;
             planet.overrideTime = overridden;
             yield return new WaitForSecondsRealtime(2f);
+        }
+
+        /// <summary>
+        /// Sets the game's night flag for effects directly (it otherwise follows the simulation clock, recomputed every
+        /// 2048 frames): with no recorded change time, night-only effects switch at once.
+        /// </summary>
+        private static void SetEffectNight(bool night)
+        {
+            var flags = World.DefaultGameObjectInjectionWorld.GetExistingSystemManaged<Game.Effects.EffectFlagSystem>();
+            var type = typeof(Game.Effects.EffectFlagSystem);
+            const System.Reflection.BindingFlags field = System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic;
+            type.GetField("m_IsNightTime", field)?.SetValue(flags, night);
+            type.GetField("m_LastTimeChange", field)?.SetValue(flags, 0u);
+            Systems.LedLightSystem.ForceNight = night ? true : (bool?)null;
         }
 
         /// <summary>The designer path ("0", "1.2", ...) of the first part of <paramref name="type"/> in a design.</summary>

@@ -105,6 +105,8 @@ module.exports = {
     outputModule: true,
   },
   plugins: [
+    // Test builds (SIGNBUILDER_TESTS=true, set by the project's -p:SignBuilderTests=true) keep the in-game test hooks.
+    new (require("webpack").DefinePlugin)({ __SIGNBUILDER_TESTS__: JSON.stringify(process.env.SIGNBUILDER_TESTS === "true") }),
     new MiniCssExtractPlugin(),
     new CSSPresencePlugin(),
     {

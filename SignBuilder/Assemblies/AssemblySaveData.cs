@@ -11,9 +11,10 @@ using Game.Tools;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using SignBuilder.Core;
-using SignBuilder.Spike;
 using Unity.Collections;
 using Unity.Entities;
+using SignBuilder.Geometry;
+using SignBuilder.Tools;
 
 namespace SignBuilder.Assemblies
 {

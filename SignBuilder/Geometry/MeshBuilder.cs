@@ -1,7 +1,10 @@
 using System.Collections.Generic;
 using UnityEngine;
+using SignBuilder.Core;
+using SignBuilder.Assemblies;
+using SignBuilder.Tools;
 
-namespace SignBuilder.Spike
+namespace SignBuilder.Geometry
 {
     /// <summary>
     /// Minimal mesh builder for boxes and tubes. Every face gets flat/smooth normals and UVs

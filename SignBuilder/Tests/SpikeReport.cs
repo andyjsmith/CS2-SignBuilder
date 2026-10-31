@@ -3,8 +3,12 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using UnityEngine;
+using SignBuilder.Core;
+using SignBuilder.Geometry;
+using SignBuilder.Assemblies;
+using SignBuilder.Tools;
 
-namespace SignBuilder.Spike
+namespace SignBuilder.Tests
 {
     /// <summary>
     /// Collects spike findings as ordered key/value pairs, mirrors them to the mod log and

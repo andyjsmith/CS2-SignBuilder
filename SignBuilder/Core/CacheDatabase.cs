@@ -3,8 +3,11 @@ using System.IO;
 using Colossal.IO.AssetDatabase;
 using Colossal.PSI.Common;
 using UnityEngine;
+using SignBuilder.Geometry;
+using SignBuilder.Assemblies;
+using SignBuilder.Tools;
 
-namespace SignBuilder.Spike
+namespace SignBuilder.Core
 {
     /// <summary>
     /// A mod-owned asset database rooted at ModsData/SignBuilder/Cache, so generated meshes and

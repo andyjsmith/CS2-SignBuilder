@@ -113,10 +113,10 @@
       case "shield": return item.height || DEFAULTS.shieldHeight;
       case "arrow": return item.height || DEFAULTS.arrowHeight;
       case "diagram": return item.height || DEFAULTS.arrowHeight * 2.2;
-      case "message": return (item.height || DEFAULTS.textHeight * 0.8) * Math.max(1, (item.lines || []).length) * 1.5;
+      case "led": return (item.height || DEFAULTS.textHeight * 0.8) * Math.max(1, (item.lines || []).length) * 1.5;
       case "spacer": return item.height || 0;
       case "row":
-      case "stack":
+      case "column":
       case "panel":
       case "chip":
       case "tab":
@@ -463,7 +463,7 @@
       case "shield": return Math.min((item.height || DEFAULTS.shieldHeight) * 0.45, DEFAULTS.textHeight);
       case "arrow": return Math.min((item.height || DEFAULTS.arrowHeight) * 0.6, DEFAULTS.textHeight);
       case "row":
-      case "stack":
+      case "column":
       case "panel":
       case "chip":
       case "tab":
@@ -551,10 +551,10 @@
       case "shield": e = renderShield(item, ctx); break;
       case "arrow": e = renderArrow(item, ctx); break;
       case "row": e = renderContainer(item, ctx, true, path); break;
-      case "stack": e = renderContainer(item, ctx, false, path); break;
+      case "column": e = renderContainer(item, ctx, false, path); break;
       case "chip": e = renderChip(item, ctx, path); break;
       case "diagram": e = renderDiagram(item, ctx); break;
-      case "message": e = renderMessage(item, ctx); break;
+      case "led": e = renderMessage(item, ctx); break;
       // A panel inside a row or column fills it (only the sign's own panels reach its edges).
       case "panel": e = renderPanel(item, ctx, path); e.style.alignSelf = "stretch"; break;
       case "spacer": e = el("div", null, { width: px(item.width || 0), height: px(item.height || 0) }); break;
@@ -580,7 +580,7 @@
     var c = boxColors(item, ctx);
     var h = spacingHeight(item) || DEFAULTS.textHeight;
     var pad = item.padding != null ? item.padding : h * 0.3;
-    var inner = renderContainer({ type: item.vertical ? "stack" : "row", items: item.items || [], align: item.align }, { font: ctx.font, fg: c.fg, bg: c.bg, led: ctx.led }, !item.vertical, path);
+    var inner = renderContainer({ type: item.vertical ? "column" : "row", items: item.items || [], align: item.align }, { font: ctx.font, fg: c.fg, bg: c.bg, led: ctx.led }, !item.vertical, path);
     var e = el("div", "sb-chip", {
       display: "flex", flexDirection: "row", backgroundColor: c.bg, padding: px(pad * 0.7) + " " + px(pad),
       borderRadius: px(item.radius != null ? item.radius : h * 0.15),
@@ -658,7 +658,7 @@
     // Message boards are square boxes.
     var radius = led ? 0 : doc.cornerRadius != null ? doc.cornerRadius : DEFAULTS.cornerRadius;
     var items = doc.items || [];
-    var legend = spacingHeight({ type: "stack", items: items.filter(inBody) }) || DEFAULTS.textHeight;
+    var legend = spacingHeight({ type: "column", items: items.filter(inBody) }) || DEFAULTS.textHeight;
     var margin = doc.margin != null ? doc.margin : legend * DEFAULTS.margin;
     var ctx = { font: doc.font || DEFAULTS.font, fg: s.fg, bg: s.bg, led: led };
     var minWidth = doc.minLanes ? doc.minLanes * laneWidth(doc.laneKind) : doc.minWidth;
@@ -706,7 +706,7 @@
     var first = true;
     var flush = function () {
       if (!stretch.length) return;
-      var content = renderContainer({ type: "stack", items: items, align: doc.align || "start" }, ctx, false, "", stretch);
+      var content = renderContainer({ type: "column", items: items, align: doc.align || "start" }, ctx, false, "", stretch);
       content.style.padding = px(margin);
       if (doc.height && first) content.style.minHeight = px(doc.height - border * 4 - margin * 2);
       inner.appendChild(content);

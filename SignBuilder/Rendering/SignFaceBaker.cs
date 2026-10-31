@@ -76,8 +76,10 @@ namespace SignBuilder.Rendering
         /// <summary>How the last face was produced: "script" (ExecuteScript) or "reload" (URL navigation).</summary>
         public string LastMode { get; private set; }
 
+#if TESTS
         /// <summary>Lit pixels in the last glow pass (diagnostics for the tests).</summary>
         public int LastGlowPixels { get; private set; }
+#endif
 
         /// <summary>Whether ExecuteScript re-rendering works in this game build; null until first tried.</summary>
         public bool? ScriptMode { get; private set; }
@@ -162,10 +164,10 @@ namespace SignBuilder.Rendering
 
         /// <summary>Whether a design has anything lit (LED lettering: a message board, or LED text parts).</summary>
         private static bool Glows(JObject design) =>
-            (string)design["board"] == "led" || design.SelectTokens("$..type").Any(t => (string)t == "message");
+            (string)design["board"] == "led" || design.SelectTokens("$..type").Any(t => (string)t == "led");
 
         /// <summary>Bumped when cached faces must not be reused (part of every face's cache key).</summary>
-        private const int kCacheVersion = 4;
+        private const int kCacheVersion = 5;
 
         private IEnumerator BakeOne(JObject design, float pixelsPerInch, Action<BakedFace> onDone)
         {
@@ -241,13 +243,21 @@ namespace SignBuilder.Rendering
                     continue;
                 }
 
+                // Padded with transparent pixels (cut out, and not part of the panel's shape) to a multiple of 8 each
+                // way: block-compressed textures need multiples of 4, and the glow map is half the size.
                 var crop = bounds;
+                var paddedWidth = (bounds.width + 7) / 8 * 8;
+                var paddedHeight = (bounds.height + 7) / 8 * 8;
+                if (bounds.x + paddedWidth <= width && bounds.yMax - paddedHeight >= 0)
+                {
+                    crop = new RectInt(bounds.x, bounds.yMax - paddedHeight, paddedWidth, paddedHeight);
+                }
                 var face = new BakedFace
                 {
                     Texture = Timed("crop", () => Crop(pixels, width, crop)),
                     PixelsPerInch = pixelsPerInch,
-                    WidthMeters = bounds.width / pixelsPerInch * kMetersPerInch,
-                    HeightMeters = bounds.height / pixelsPerInch * kMetersPerInch,
+                    WidthMeters = crop.width / pixelsPerInch * kMetersPerInch,
+                    HeightMeters = crop.height / pixelsPerInch * kMetersPerInch,
                     Key = key,
                 };
                 // What glows at night: the same layout drawn again with only the LED lettering showing.
@@ -260,8 +270,10 @@ namespace SignBuilder.Rendering
                     if (lit != null && gw == width && gh == height)
                     {
                         face.Glow = Timed("glow crop", () => Crop(lit, width, crop));
+#if TESTS
                         LastGlowPixels = 0;
                         for (var i = 3; i < lit.Length; i += 4) if (lit[i] > 0) LastGlowPixels++;
+#endif
                     }
                 }
                 Timed("save", () => { Save(key, face); return 0; });
@@ -414,7 +426,9 @@ namespace SignBuilder.Rendering
                     if (raw.LoadImage(File.ReadAllBytes(glowPng)))
                     {
                         glow = raw;
+#if TESTS
                         LastGlowPixels = raw.GetPixels32().Count(c => c.a > 0);
+#endif
                     }
                 }
                 return new BakedFace

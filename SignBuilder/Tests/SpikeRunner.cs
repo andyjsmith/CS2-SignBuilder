@@ -19,8 +19,12 @@ using Game.UI.Menu;
 using Unity.Entities;
 using Unity.Mathematics;
 using UnityEngine;
+using SignBuilder.Core;
+using SignBuilder.Geometry;
+using SignBuilder.Assemblies;
+using SignBuilder.Tools;
 
-namespace SignBuilder.Spike
+namespace SignBuilder.Tests
 {
     /// <summary>
     /// Automated spike harness, run 7 ("batched"). Only runs when ModsData/SignBuilder/spike.flag
@@ -98,6 +102,11 @@ namespace SignBuilder.Spike
             if (m_Mode == "e2e" || m_Mode == "reload-e2e")
             {
                 yield return RunE2E();
+                yield break;
+            }
+            if (m_Mode == "led-e2e")
+            {
+                yield return RunLedE2E();
                 yield break;
             }
             if (m_Mode == "ui-e2e")

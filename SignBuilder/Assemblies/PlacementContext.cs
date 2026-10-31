@@ -1,7 +1,9 @@
 using System.Collections.Generic;
 using System.Linq;
-using SignBuilder.Spike;
 using Unity.Mathematics;
+using SignBuilder.Core;
+using SignBuilder.Geometry;
+using SignBuilder.Tools;
 
 namespace SignBuilder.Assemblies
 {

@@ -137,6 +137,7 @@ namespace SignBuilder.Core
                 try
                 {
                     var def = JObject.Parse(File.ReadAllText(file));
+                    if (!Formats.ReadTheme(def, dir)) continue;
                     var id = (string)def["id"] ?? Path.GetFileName(dir);
                     def["id"] = id;
                     var theme = new ThemeInfo
@@ -181,9 +182,11 @@ namespace SignBuilder.Core
         /// <summary>The design with its theme attached ("_theme", "_themeBase"), as the renderer needs it to bake.</summary>
         public static JObject ForRender(JObject design)
         {
-            var theme = Get((string)design["theme"]);
-            if (theme == null) return design;
             var copy = (JObject)design.DeepClone();
+            // The format version changes nothing drawn (and must not make stored designs rebake).
+            copy.Remove(Formats.Key);
+            var theme = Get((string)design["theme"]);
+            if (theme == null) return copy;
             copy["theme"] = theme.Id;
             copy["_theme"] = theme.Def;
             copy["_themeBase"] = theme.BaseUrl;

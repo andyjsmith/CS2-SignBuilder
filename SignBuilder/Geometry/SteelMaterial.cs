@@ -1,8 +1,11 @@
 using System;
 using Colossal.IO.AssetDatabase;
 using UnityEngine;
+using SignBuilder.Core;
+using SignBuilder.Assemblies;
+using SignBuilder.Tools;
 
-namespace SignBuilder.Spike
+namespace SignBuilder.Geometry
 {
     /// <summary>
     /// Builds a tileable galvanized-steel SurfaceAsset from procedural textures, using a vanilla

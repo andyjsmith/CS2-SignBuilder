@@ -15,8 +15,6 @@ The same design goes through two paths:
    generated support structure (gantry, posts or none) into one mesh. That mesh is registered as a new static
    object prefab at runtime and placed in the city.
 
-So yes, it is a web page rendered and captured. It is not a screen capture, though: the view is drawn off-screen,
-straight into a render texture, and only the sign's own pixels are kept.
 
 ```
 design JSON ──► renderer.js ──► (editor) live preview in the game UI
@@ -30,20 +28,21 @@ road probe ──► layout (where signs go) ──► support mesh + sign panel
 
 ## Repository layout
 
-| Path | What |
-|---|---|
-| `SignBuilder/Mod.cs` | Entry point: registers systems, settings and the UI module |
-| `SignBuilder/Resources/Renderer/` | `renderer.js` / `renderer.css`: the sign renderer, shared by the editor and the baker. `renderer.html` and `renderer-b.html` are the bake pages; `preview.html` is for desktop browsers |
-| `SignBuilder/Resources/Themes/<id>/` | Built-in themes: `theme.json`, `fonts/`, `shields/`, `templates/` |
-| `SignBuilder/Rendering/SignFaceBaker.cs` | Off-screen rendering of designs into textures, and the face cache |
-| `SignBuilder/Assemblies/` | Building structures: layout (`PlacementContext`), meshes and materials (`AssemblyBuilder`, `SurfaceFactory`), the library of built structures (`AssemblyLibrary`), save data, start-up registration (`AssemblyBootstrapSystem`) and cleanup (`AssemblyCleanup`) |
-| `SignBuilder/Spike/` | Lower-level building blocks that grew out of the early experiments: mesh generation (`GantryFactory`, `MeshBuilder`), road probing (`RoadProbe`), runtime prefabs (`RuntimePrefabs`), the steel material, and the in-game test harness (`SpikeRunner*`) |
-| `SignBuilder/Tools/SignPlacementToolSystem.cs` | The placement tool: picking roads, the live preview, arranging signs on a gantry, building, editing placed structures |
-| `SignBuilder/Systems/` | `SignBuilderUISystem` (bindings between C# and the React UI) and `SignInfoSection` (the selected-object panel section) |
-| `SignBuilder/Core/` | Shared services (`SignBuilderRuntime`: asset database, baker, coroutines), theme loading (`Themes`), localized names |
-| `SignBuilder/UI/` | The React UI module (TypeScript, built with the game's modding toolchain) |
-| `scripts/run-spike.sh` | Launches the game through Steam into a test run and waits for it to finish |
-| `ThemeTemplate/` | A starter theme pack to copy |
+| Path                                     | What                                                                                                                                                                                                                                                                                        |
+| ---------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `SignBuilder/Mod.cs`                     | Entry point: registers systems, settings and the UI module                                                                                                                                                                                                                                  |
+| `SignBuilder/Resources/Renderer/`        | `renderer.js` / `renderer.css`: the sign renderer, shared by the editor and the baker. `renderer.html` and `renderer-b.html` are the bake pages; `preview.html` is for desktop browsers                                                                                                     |
+| `SignBuilder/Resources/Themes/<id>/`     | Built-in themes: `theme.json`, `fonts/`, `shields/`, `templates/`                                                                                                                                                                                                                           |
+| `SignBuilder/Rendering/SignFaceBaker.cs` | Off-screen rendering of designs into textures, and the face cache                                                                                                                                                                                                                           |
+| `SignBuilder/Assemblies/`                | Building structures: layout (`PlacementContext`), meshes and materials (`AssemblyBuilder`, `SurfaceFactory`), prefabs (`RuntimePrefabs`), the library of built structures (`AssemblyLibrary`), save data, start-up registration (`AssemblyBootstrapSystem`) and cleanup (`AssemblyCleanup`) |
+| `SignBuilder/Geometry/`                  | Mesh generation: supports and panels (`GantryFactory`, `MeshBuilder`) and the steel material                                                                                                                                                                                                |
+| `SignBuilder/Tests/`                     | The in-game test harness (`SpikeRunner*`), the placement tool's test hooks and the test pages. Compiled only in test builds                                                                                                                                                                 |
+| `SignBuilder/Tools/`                     | `RoadProbe` (lanes and carriageways at a road position) and `SignPlacementToolSystem`, the placement tool: picking roads, the live preview, arranging signs on a gantry, building, editing placed structures                                                                                |
+| `SignBuilder/Systems/`                   | `SignBuilderUISystem` (bindings between C# and the React UI) and `SignInfoSection` (the selected-object panel section)                                                                                                                                                                      |
+| `SignBuilder/Core/`                      | Shared services (`SignBuilderRuntime`: asset database, baker, coroutines), theme loading (`Themes`), localized names                                                                                                                                                                        |
+| `SignBuilder/UI/`                        | The React UI module (TypeScript, built with the game's modding toolchain)                                                                                                                                                                                                                   |
+| `scripts/run-spike.sh`                   | Launches the game through Steam into a test run and waits for it to finish                                                                                                                                                                                                                  |
+| `ThemeTemplate/`                         | A starter theme pack to copy                                                                                                                                                                                                                                                                |
 
 ## The design format
 
@@ -61,10 +60,11 @@ A design is the JSON that `renderer.js` draws:
 }
 ```
 
-- **Part types:** `text`, `shield`, `arrow`, `diagram`, `message` (LED text), `divider`, `row`, `stack` (a
-  column), `chip` (a small colored box), `panel` (a band across the sign) and `tab` (on top of the sign).
+- **Part types:** `text`, `shield`, `arrow`, `diagram`, `led` (LED text), `divider`, `row`, `column`, `chip` (a small colored box), `panel` (a band across the sign) and `tab` (on top of the sign).
 - **Sizes** are in the theme's units: roughly inches of a full-size sign for every built-in theme.
 - **Spacing** follows the theme's `defaults`. Gaps scale from the legend (letter) height, as sign manuals specify.
+- **`formatVersion`** (currently 1) is stamped on every stored design and on theme.json. `Core/Formats.cs`
+  skips files from a newer format; a future format change bumps it there and upgrades older files on read.
 - **Sign-level fields:**
   - `board: "led"` makes the sign a message board.
   - `minLanes` / `laneKind` set a minimum width in lanes.
@@ -134,8 +134,9 @@ LED lettering is the renderer's own 5×7 dot-matrix font (`LED_GLYPHS`), drawn a
    - Materials copy a vanilla surface's template (a park light pole's), so the game's batch renderer accepts them.
    - Each face is its own material. Faces with LED lettering also get a glow (emissive) map.
    - The game draws an emissive map only for submeshes that the mesh's `EmissiveProperties` lists as lights. LED
-     faces are listed as always-on neon lights (`RuntimePrefabs.AddGlow`, the record's `GlowMeshes`), as the game's
-     asset importer does for neon signs. An emissive map on any other material is ignored.
+     faces are listed as lights of no purpose (`RuntimePrefabs.AddGlow`, the record's `GlowMeshes`), which the game
+     never animates. `LedLightSystem` sets their state from the game clock (on from 18:00 to 06:00, like the game's
+     night lights) just before light states reach the GPU. An emissive map on any other material is ignored.
    - The steel material is shared by every structure.
 5. **Prefab** (`RuntimePrefabs`). A `StaticObjectPrefab` with a `RenderPrefab` (mesh and materials, and the LOD) is
    added through `PrefabSystem.AddPrefab`. Lights are `EffectSource` entries pointing at a runtime `EffectPrefab`
@@ -196,20 +197,30 @@ dotnet build SignBuilder/SignBuilder.csproj -c Release
 ```
 
 The build compiles the mod, copies `Resources` and builds the UI into the game's local `Mods/SignBuilder` folder.
+This is the release build: it contains no test code.
+
+For the in-game tests, build with the test harness compiled in (it defines `TESTS`, compiles `SignBuilder/Tests`,
+ships the test pages and keeps the UI's test hooks):
+
+```bash
+dotnet build SignBuilder/SignBuilder.csproj -c Release -p:SignBuilderTests=true
+```
+
 `npm run build` in `SignBuilder/UI` rebuilds only the UI. Publishing uses the toolchain's profiles in
 `Properties/PublishProfiles` (`PublishNewMod`, `PublishNewVersion`) with `Properties/PublishConfiguration.xml`.
 
 ## Testing
 
-The in-game harness (`Spike/SpikeRunner*.cs`) only runs when `ModsData/SignBuilder/spike.flag` exists.
+The in-game harness (`Tests/SpikeRunner*.cs`, test builds only) runs when `ModsData/SignBuilder/spike.flag` exists.
 `scripts/run-spike.sh <mode> [save-guid]` writes the flag, launches the game through Steam (straight into a save),
 waits up to 5 minutes for it to start, and kills it after 10 minutes at most.
 
-| Mode | What it covers |
-|---|---|
-| `e2e` | Everything: every structure type, gantry arranging and editing, roadside editing, free and prop placement, the selected-object panel, performance (worst frame after selecting objects, opening the designer, selecting parts), templates, all themes, and a save. About 8 minutes |
-| `ui-e2e` | Only the designer: opening it and switching between parts, with the worst frame time of each. About 2 minutes |
-| `reload-e2e` | Loads the save written by `e2e` and checks that every structure came back |
+| Mode         | What it covers                                                                                                                                                                                                                                                                     |
+| ------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `e2e`        | Everything: every structure type, gantry arranging and editing, roadside editing, free and prop placement, the selected-object panel, performance (worst frame after selecting objects, opening the designer, selecting parts), templates, all themes, and a save. About 8 minutes |
+| `ui-e2e`     | Only the designer: opening it and switching between parts, with the worst frame time of each. About 2 minutes                                                                                                                                                                      |
+| `led-e2e` | An LED board and a lit roadside LED sign: their light states by day and at night, with screenshots. About 3 minutes |
+| `reload-e2e` | Loads the save written by `e2e` and checks that every structure came back                                                                                                                                                                                                          |
 
 Results go to `ModsData/SignBuilder/spike/results.json`, with screenshots next to it. The game's `Logs/UI.log`
 shows UI errors (focus errors included). `Logs/SignBuilder.Mod.log` has Sign Builder's own log: bake timings and

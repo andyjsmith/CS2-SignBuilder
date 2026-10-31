@@ -9,15 +9,12 @@ A theme for Sign Builder: Exampleland's guide signs, route plates and templates.
 Requires Sign Builder. Subscribe, then pick "Exampleland" from the Theme list in the sign designer.
 	</LongDescription>
 	<Thumbnail Value="Properties/Thumbnail.png" />
-	<Screenshot Value="" />
 	<Tag Value="Code Mod" />
 	<ForumLink Value="" />
 	<ModVersion Value="1.0" />
-	<GameVersion Value="1.*" />
-	<!--Sign Builder's Paradox Mods id, so players get it with your pack-->
-	<Dependency Id="" />
-	<RequiredDLC Value="" />
-	<ChangeLog Value="" />
-	<ExternalLink Type="" Url="" />
+	<GameVersion Value="1.6.*" />
+	<!--Sign Builder, so players get it with your pack: its Paradox Mods id-->
+	<Dependency Id="SIGN_BUILDER_MOD_ID" />
+	<ChangeLog Value="First release." />
 	<AccessLevel Value="Public" />
 </Publish>

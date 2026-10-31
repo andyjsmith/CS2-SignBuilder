@@ -4,7 +4,7 @@
 #
 #   scripts/run-spike.sh [mode] [save-guid]
 #     mode       "full" (default) runs every spike test; "smoke" only loads, screenshots and quits;
-#                "phase1" runs the Phase 1 batch; "e2e" the full end-to-end tests; "ui-e2e" only the designer
+#                "phase1" runs the Phase 1 batch; "e2e" the full end-to-end tests; "led-e2e" LED glow by day and night; "ui-e2e" only the designer
 #                UI tests (a couple of minutes); "debug" bakes one sign and idles with the UI
 #                DevTools on localhost:9444 (create spike/done.flag to quit early).
 #     save-guid  SaveGameMetadata guid to load (-startGame=...); omit to continue the last save.
@@ -19,6 +19,11 @@ user_dir="$LOCALAPPDATA/../LocalLow/Colossal Order/Cities Skylines II"
 
 if tasklist | grep -qi cities2.exe; then
   echo "Cities2.exe is already running; close it first." >&2
+  exit 1
+fi
+
+if [[ ! -d "$user_dir/Mods/SignBuilder/Resources/Spike" ]]; then
+  echo "The installed Sign Builder is a release build; build it with -p:SignBuilderTests=true first." >&2
   exit 1
 fi
 

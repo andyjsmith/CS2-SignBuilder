@@ -1,4 +1,5 @@
 {
+  "formatVersion": 1,
   "id": "fr",
   "name": "France",
   "description": "Autoroute (blue), main roads (green), local (white); Caractères stand-in",

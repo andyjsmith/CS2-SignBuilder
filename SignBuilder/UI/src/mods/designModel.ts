@@ -154,12 +154,12 @@ export function describe(item: Item, labels?: Record<string, string>): string {
     case "shield": return `Shield "${item.number ?? ""}"`;
     case "chip": return "Chip";
     case "diagram": return `Diagram ${String(item.shape ?? "exit-left").replace("-", " ")}`;
-    case "message": return `LED "${(item.lines ?? [])[0] ?? ""}"`;
+    case "led": return `LED "${(item.lines ?? [])[0] ?? ""}"`;
     case "panel": return "Panel";
     case "tab": return "Tab";
     case "arrow": return `Arrow ${String(item.direction ?? "up").replace("-", " ")}`;
     case "row": return "Row";
-    case "stack": return "Column";
+    case "column": return "Column";
     case "divider": return "Divider";
     default: return item.type;
   }
@@ -172,12 +172,12 @@ export function kindOf(item: Item, labels?: Record<string, string>): string {
     case "shield": return "Shield";
     case "chip": return "Chip";
     case "diagram": return "Diagram";
-    case "message": return "LED text";
+    case "led": return "LED text";
     case "panel": return "Panel";
     case "tab": return "Tab";
     case "arrow": return "Arrow";
     case "row": return "Row";
-    case "stack": return "Column";
+    case "column": return "Column";
     case "divider": return "Divider";
     default: return item.type;
   }

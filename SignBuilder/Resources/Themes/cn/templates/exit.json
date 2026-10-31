@@ -1,4 +1,5 @@
 {
+  "formatVersion": 1,
   "theme": "cn",
   "id": "exit",
   "name": "Exit",
@@ -36,7 +37,7 @@
       "type": "row",
       "items": [
         {
-          "type": "stack",
+          "type": "column",
           "align": "center",
           "items": [
             {

@@ -1,9 +1,12 @@
 using System.Collections.Generic;
-using SignBuilder.Spike;
 using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.HighDefinition;
+using SignBuilder.Core;
+using SignBuilder.Geometry;
+using SignBuilder.Assemblies;
+using SignBuilder.Tools;
 
 namespace SignBuilder.Rendering
 {

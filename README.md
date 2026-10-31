@@ -136,4 +136,8 @@ folder, so players only subscribe to the theme pack. A folder with the same id i
 ## Roadmap
 
 - More themes (and per-country spacing rules); lane arrows placed automatically over the detected lanes
-- Structures placed before the save-recipe change cannot be rebuilt on other PCs (re-place them)
+
+## License
+
+MIT, see [LICENSE](LICENSE). Bundled fonts and artwork keep their own licenses: see
+[THIRD-PARTY-NOTICES.md](SignBuilder/Resources/THIRD-PARTY-NOTICES.md).

@@ -1,4 +1,5 @@
 {
+  "formatVersion": 1,
   "theme": "jp",
   "id": "expressway",
   "name": "Expressway",
@@ -13,7 +14,7 @@
           "number": "1"
         },
         {
-          "type": "stack",
+          "type": "column",
           "align": "center",
           "items": [
             {
@@ -30,7 +31,7 @@
           ]
         },
         {
-          "type": "stack",
+          "type": "column",
           "align": "center",
           "items": [
             {

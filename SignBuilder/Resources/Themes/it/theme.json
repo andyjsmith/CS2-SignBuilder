@@ -1,4 +1,5 @@
 {
+  "formatVersion": 1,
   "id": "it",
   "name": "Italy",
   "description": "Autostrada (green), extra-urban (blue), urban (white); Transport fonts from the UK theme",

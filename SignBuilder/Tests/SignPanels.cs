@@ -3,8 +3,12 @@ using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.HighDefinition;
+using SignBuilder.Core;
+using SignBuilder.Geometry;
+using SignBuilder.Assemblies;
+using SignBuilder.Tools;
 
-namespace SignBuilder.Spike
+namespace SignBuilder.Tests
 {
     /// <summary>
     /// Draws baked sign faces as thin panels with the game's default lit shader (proven in runs 2-6).

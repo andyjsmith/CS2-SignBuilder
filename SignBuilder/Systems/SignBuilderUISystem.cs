@@ -185,6 +185,7 @@ namespace SignBuilder.Systems
                     try
                     {
                         var design = JObject.Parse(File.ReadAllText(file));
+                        if (!Formats.ReadDesign(design, file)) continue;
                         if (design["theme"] == null) design["theme"] = theme ?? Themes.DefaultId;
                         list.Add(new JObject
                         {
@@ -219,7 +220,7 @@ namespace SignBuilder.Systems
         public void SaveTemplate(JObject payload)
         {
             Directory.CreateDirectory(UserTemplatesDir);
-            var design = (JObject)payload["design"];
+            var design = Formats.StampDesign((JObject)payload["design"]);
             var name = (string)payload["name"] ?? "My sign";
             design["name"] = name;
             var path = UserPath((string)payload["id"]);

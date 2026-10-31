@@ -6,6 +6,14 @@
 		<!--The file where mod information which is required for publishing mod on PDX mods are stored-->
 		<PublishConfigurationPath>Properties\PublishConfiguration.xml</PublishConfigurationPath>
 	</PropertyGroup>
+
+	<!--The in-game test harness (Tests/) is only built with -p:SignBuilderTests=true; release builds never contain it-->
+	<PropertyGroup Condition="'$(SignBuilderTests)'=='true'">
+		<DefineConstants>$(DefineConstants);TESTS</DefineConstants>
+	</PropertyGroup>
+	<ItemGroup Condition="'$(SignBuilderTests)'!='true'">
+		<Compile Remove="Tests\**" />
+	</ItemGroup>
 	
 	<!--Imports must be after PropertyGroup block-->
 	<Import Project="$([System.Environment]::GetEnvironmentVariable('CSII_TOOLPATH', 'EnvironmentVariableTarget.User'))\Mod.props" />
@@ -13,6 +21,9 @@
 
 	<ItemGroup>
 		<Reference Include="Game">
+			<Private>false</Private>
+		</Reference>
+		<Reference Include="Colossal.Collections">
 			<Private>false</Private>
 		</Reference>
 		<Reference Include="Colossal.Core">
@@ -83,18 +94,20 @@
 		</Reference>
 	</ItemGroup>
 
-	<!--Ship fonts, spike pages and other static files next to the dll-->
+	<!--Ship fonts, themes, the renderer and other static files next to the dll (and the test pages in test builds)-->
 	<Target Name="DeployResources" AfterTargets="DeployWIP" Condition="'$(NeedBuild)'">
 		<ItemGroup>
 			<ResourceFilesToDeploy Include="Resources\**\*.*" />
+			<TestFilesToDeploy Include="Tests\Resources\**\*.*" Condition="'$(SignBuilderTests)'=='true'" />
 		</ItemGroup>
 		<Copy SourceFiles="@(ResourceFilesToDeploy)" DestinationFiles="@(ResourceFilesToDeploy->'$(DeployDir)\Resources\%(RecursiveDir)%(Filename)%(Extension)')" />
+		<Copy SourceFiles="@(TestFilesToDeploy)" DestinationFiles="@(TestFilesToDeploy->'$(DeployDir)\Resources\Spike\%(RecursiveDir)%(Filename)%(Extension)')" />
 	</Target>
 
 	<!--The UI module (React) builds straight into the deploy folder, which DeployWIP wipes first-->
 	<Target Name="BuildUI" AfterTargets="DeployResources" Condition="'$(NeedBuild)'">
 		<Exec Command="npm install --no-audit --no-fund" WorkingDirectory="UI" Condition="!Exists('UI/node_modules')" />
-		<Exec Command="npm run build" WorkingDirectory="UI" />
+		<Exec Command="npm run build" WorkingDirectory="UI" EnvironmentVariables="SIGNBUILDER_TESTS=$(SignBuilderTests)" />
 	</Target>
 
 	<ItemGroup>

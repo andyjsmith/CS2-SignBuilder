@@ -4,9 +4,11 @@ using Colossal.Mathematics;
 using Colossal.Serialization.Entities;
 using Game;
 using Game.Prefabs;
-using SignBuilder.Spike;
 using Unity.Entities;
 using Unity.Mathematics;
+using SignBuilder.Core;
+using SignBuilder.Geometry;
+using SignBuilder.Tools;
 
 namespace SignBuilder.Assemblies
 {

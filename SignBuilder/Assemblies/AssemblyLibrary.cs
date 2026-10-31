@@ -62,6 +62,8 @@ namespace SignBuilder.Assemblies
         public int LodIndexCount;
         public int LodVertexCount;
         public List<string> SurfaceIds = new();
+        /// <summary>Each sign's baked face key (see <see cref="Rendering.BakedFace.Key"/>), parallel to the face surfaces.</summary>
+        public List<string> FaceKeys = new();
         public float[] Bounds; // min xyz, max xyz in assembly-local space
         public int IndexCount;
         public int VertexCount;
@@ -92,6 +94,23 @@ namespace SignBuilder.Assemblies
 
         public static AssemblyRecord FromPrefabName(string prefabName) =>
             prefabName != null && prefabName.StartsWith("SignBuilder_A_") ? Get(prefabName.Substring("SignBuilder_A_".Length)) : null;
+
+        /// <summary>
+        /// The face material another structure already has for a face with this key: identical faces share one
+        /// material (and its textures) rather than storing a copy per structure. Null if none is stored.
+        /// </summary>
+        public static Colossal.IO.AssetDatabase.SurfaceAsset FaceSurface(string key)
+        {
+            Load();
+            if (string.IsNullOrEmpty(key)) return null;
+            foreach (var record in s_Records.Values)
+            {
+                var i = record.FaceKeys?.IndexOf(key) ?? -1;
+                if (i < 0 || i + 1 >= record.SurfaceIds.Count || !Colossal.Hash128.TryParse(record.SurfaceIds[i + 1], out var guid)) continue;
+                if (Colossal.IO.AssetDatabase.AssetDatabase.global.TryGetAsset(guid, out Colossal.IO.AssetDatabase.SurfaceAsset surface)) return surface;
+            }
+            return null;
+        }
 
         public static void Add(AssemblyRecord record)
         {
