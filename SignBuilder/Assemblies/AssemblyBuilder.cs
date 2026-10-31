@@ -483,7 +483,7 @@ namespace SignBuilder.Assemblies
             var steel = SignBuilderRuntime.Steel(prefabs);
             var surfaces = new List<Colossal.IO.AssetDatabase.SurfaceAsset> { steel };
             SignBuilderRuntime.Mark("build: materials");
-            surfaces.AddRange(faces.Select(f => SurfaceFactory.SignFace(db, SignBuilderRuntime.SurfaceFolder, donor, f.Texture, f.Key, lights ? 1.2f : 0.3f, f.Glow)));
+            surfaces.AddRange(faces.Select(f => SurfaceFactory.SignFace(db, SignBuilderRuntime.SurfaceFolder, donor, f.Texture, f.Key, f.Glow)));
             var bounds = new Bounds3(mesh.bounds.min, mesh.bounds.max);
             var indexCount = 0;
             for (var i = 0; i < mesh.subMeshCount; i++) indexCount += (int)mesh.GetIndexCount(i);
@@ -500,9 +500,12 @@ namespace SignBuilder.Assemblies
             record.IndexCount = indexCount;
             record.VertexCount = mesh.vertexCount;
             record.LightSpots = lights ? LightSpots(faces, record.Centers, options.SignScale, back) : null;
+            // Submesh 0 is the steel; sign i's face is submesh i + 1.
+            var glowing = Enumerable.Range(0, faces.Count).Where(i => faces[i].Glow != null).Select(i => i + 1).ToArray();
+            record.GlowMeshes = glowing.Length > 0 ? glowing : null;
             SignBuilderRuntime.Mark("build: registering the prefab");
             var prefab = prefabs.Register(record.PrefabName, geometry, surfaces.ToArray(), bounds, indexCount, mesh.vertexCount,
-                (lowGeometry, record.LodIndexCount, record.LodVertexCount), record.LightSpots);
+                (lowGeometry, record.LodIndexCount, record.LodVertexCount), record.LightSpots, record.GlowMeshes);
             UnityEngine.Object.Destroy(mesh);
             UnityEngine.Object.Destroy(lowMesh);
             AssemblyLibrary.Add(record);

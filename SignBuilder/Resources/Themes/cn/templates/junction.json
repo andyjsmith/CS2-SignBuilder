@@ -41,7 +41,7 @@
         {
           "type": "shield",
           "network": "G",
-          "number": "105"
+          "number": "207"
         },
         {
           "type": "stack",
@@ -49,12 +49,12 @@
           "items": [
             {
               "type": "text",
-              "text": "广州",
+              "text": "湛江",
               "height": 16
             },
             {
               "type": "text",
-              "text": "Guangzhou",
+              "text": "Zhanjiang",
               "height": 8.8,
               "gapBefore": 2.4
             }

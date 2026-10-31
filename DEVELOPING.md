@@ -132,8 +132,10 @@ LED lettering is the renderer's own 5×7 dot-matrix font (`LED_GLYPHS`), drawn a
      becomes the LOD mesh.
 4. **Materials** (`SurfaceFactory`):
    - Materials copy a vanilla surface's template (a park light pole's), so the game's batch renderer accepts them.
-   - Each face is its own material: base color plus a glow map. The glow is faint for retroreflective sheeting,
-     brighter with lights, and full LED brightness for LED lettering.
+   - Each face is its own material. Faces with LED lettering also get a glow (emissive) map.
+   - The game draws an emissive map only for submeshes that the mesh's `EmissiveProperties` lists as lights. LED
+     faces are listed as always-on neon lights (`RuntimePrefabs.AddGlow`, the record's `GlowMeshes`), as the game's
+     asset importer does for neon signs. An emissive map on any other material is ignored.
    - The steel material is shared by every structure.
 5. **Prefab** (`RuntimePrefabs`). A `StaticObjectPrefab` with a `RenderPrefab` (mesh and materials, and the LOD) is
    added through `PrefabSystem.AddPrefab`. Lights are `EffectSource` entries pointing at a runtime `EffectPrefab`
@@ -160,8 +162,7 @@ The meshes, materials and textures are saved as assets in Sign Builder's own ass
   - Delete an asset through its own database (`asset.database`), then remove its files.
     `SignBuilderRuntime.Database.DeleteAsset` on an asset indexed by another instance only drops it from the index
     and leaves the files on disk. That's how the cache once grew to 3 GB.
-- **Per face on disk:** the base texture, the glow map (a quarter of the size, or half for LED lettering) and a
-  tiny mask. Template textures such as the game's blue noise are not copied into our materials.
+- **Per face on disk:** the base texture, a tiny mask, and for LED lettering a glow map at half the size. Template textures such as the game's blue noise are not copied into our materials.
 
 ## The UI (SignBuilder/UI)
 

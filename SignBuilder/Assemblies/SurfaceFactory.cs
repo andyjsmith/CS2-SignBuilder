@@ -38,29 +38,28 @@ namespace SignBuilder.Assemblies
             return surface;
         }
 
-        /// <summary>How bright LED lettering glows, relative to the face's own color.</summary>
+        /// <summary>How bright LED lettering glows: its light's intensity (RuntimePrefabs.AddGlow).</summary>
         public const float kLedGlow = 3f;
 
+        /// <summary>The share of the face's own color that glows around LED lettering (a faintly lit board).</summary>
+        private const float kLedBoardGlow = 0.1f;
+
         /// <summary>
-        /// A sign face: the baked texture, matte non-metallic, transparent corners cut out. <paramref name="glow"/> is its
-        /// self-illumination: faint (retroreflective sheeting) by default, brighter for signs with lights.
-        /// <paramref name="lit"/> (LED lettering, the face's size) glows brightly on top of that.
+        /// A sign face: the baked texture, matte non-metallic, transparent corners cut out. <paramref name="lit"/> (LED
+        /// lettering, the face's size) is its glow map; the game only draws it for submeshes its mesh lists as lights.
         /// </summary>
-        public static SurfaceAsset SignFace(ILocalAssetDatabase database, string folder, SurfaceAsset template, Texture2D face, string key, float glow = 0.3f,
-            Texture2D lit = null)
+        public static SurfaceAsset SignFace(ILocalAssetDatabase database, string folder, SurfaceAsset template, Texture2D face, string key, Texture2D lit = null)
         {
             face = Savable(face);
-            // The glow map is saved as a texture of its own: at a quarter of the face's size (half for LED lettering,
-            // which must stay sharp), as faint retroreflective glow needs no detail.
+            // Saved at half the face's size: enough to keep the dots sharp.
             var led = lit != null && lit.width == face.width && lit.height == face.height;
-            var emissive = led ? Downscale(Emissive(face, lit, glow / kLedGlow), 2) : Downscale(face, 4);
-            var strength = led ? kLedGlow : glow;
+            var emissive = led ? Downscale(Emissive(face, lit, kLedBoardGlow), 2) : null;
             return Create(database, folder, "SignBuilder_Face_" + key.Substring(0, Math.Min(12, key.Length)), template, face, FaceMask(), m =>
             {
                 if (m.HasProperty("_AlphaCutoffEnable")) m.SetFloat("_AlphaCutoffEnable", 1f);
                 if (m.HasProperty("_AlphaCutoff")) m.SetFloat("_AlphaCutoff", 0.5f);
-                if (m.HasProperty("_EmissiveColorMap")) m.SetTexture("_EmissiveColorMap", emissive);
-                if (m.HasProperty("_EmissiveColor")) m.SetColor("_EmissiveColor", Color.white * strength);
+                if (m.HasProperty("_EmissiveColor")) m.SetColor("_EmissiveColor", led ? Color.white : Color.black);
+                if (led && m.HasProperty("_EmissiveColorMap")) m.SetTexture("_EmissiveColorMap", emissive);
             });
         }
 

@@ -83,10 +83,11 @@ namespace SignBuilder.Spike
         /// Registers a static object prefab named <paramref name="name"/> that renders an existing
         /// geometry asset with one surface per submesh. Used both for new builds and to re-create
         /// prefabs from stored asset ids before a save loads. Returns null if it already exists. <paramref name="lod"/>
-        /// (optional) is a low-detail geometry with the same submeshes, shown at a distance.
+        /// (optional) is a low-detail geometry with the same submeshes, shown at a distance. <paramref name="glowMeshes"/>
+        /// are the submeshes whose emissive map shines.
         /// </summary>
         public StaticObjectPrefab Register(string name, GeometryAsset geometry, SurfaceAsset[] surfaces, Bounds3 bounds, int indexCount, int vertexCount,
-            (GeometryAsset geometry, int indexCount, int vertexCount)? lod = null, float[] lightSpots = null)
+            (GeometryAsset geometry, int indexCount, int vertexCount)? lod = null, float[] lightSpots = null, int[] glowMeshes = null)
         {
             if (name.StartsWith("SignBuilder_A_")) Core.AssetNames.Add(name);
             if (m_PrefabSystem.TryGetPrefab(new PrefabID(nameof(StaticObjectPrefab), name), out var existing)) return existing as StaticObjectPrefab;
@@ -111,10 +112,12 @@ namespace SignBuilder.Spike
                 lodPrefab.vertexCount = lod.Value.vertexCount;
                 lodPrefab.meshCount = surfaces.Length;
                 lodPrefab.surfaceArea = renderPrefab.surfaceArea;
+                AddGlow(lodPrefab, glowMeshes);
                 if (!m_PrefabSystem.AddPrefab(lodPrefab)) throw new InvalidOperationException($"PrefabSystem.AddPrefab failed for {lodPrefab.name}");
                 var lods = renderPrefab.AddComponent<LodProperties>();
                 lods.m_LodMeshes = new[] { lodPrefab };
             }
+            AddGlow(renderPrefab, glowMeshes);
 
             var objectPrefab = ScriptableObject.CreateInstance<StaticObjectPrefab>();
             objectPrefab.name = name;
@@ -142,6 +145,24 @@ namespace SignBuilder.Spike
                 throw new InvalidOperationException($"PrefabSystem.AddPrefab failed for {name}");
             }
             return objectPrefab;
+        }
+
+        /// <summary>
+        /// The game draws a material's emissive map only for submeshes its mesh lists as lights; without that the map
+        /// is ignored. Lists <paramref name="glowMeshes"/> as always-on decorative lights (powered, day and night), as
+        /// the game's asset importer does for neon signs.
+        /// </summary>
+        private static void AddGlow(RenderPrefab mesh, int[] glowMeshes)
+        {
+            if (glowMeshes == null || glowMeshes.Length == 0) return;
+            var emissive = mesh.AddComponent<EmissiveProperties>();
+            emissive.m_SingleLights = glowMeshes.Select(i => new EmissiveProperties.SingleLightMapping
+            {
+                purpose = EmissiveProperties.Purpose.NeonSign, intensity = Assemblies.SurfaceFactory.kLedGlow, materialId = i,
+            }).ToList();
+            emissive.m_MultiLights = new List<EmissiveProperties.MultiLightMapping>();
+            emissive.m_AnimationCurves = new List<EmissiveProperties.AnimationProperties>();
+            emissive.m_SignalGroupAnimations = new List<EmissiveProperties.SignalGroupAnimation>();
         }
 
         private static EffectPrefab s_SignLight;

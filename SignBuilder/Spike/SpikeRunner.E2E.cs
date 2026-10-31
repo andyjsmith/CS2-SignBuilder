@@ -634,6 +634,11 @@ namespace SignBuilder.Spike
             planet.normalizedTime = 0.02f;
             yield return new WaitForSecondsRealtime(3f);
             yield return Shoot(board, "e2e_night_led.png", 10f, 35f);
+            // The LED face is one of the mesh's lights: the instance carries the game's light state, lit.
+            var boardEntity = InstancesOf(board.PrefabName).FirstOrDefault();
+            var states = em.HasBuffer<Game.Rendering.LightState>(boardEntity) ? em.GetBuffer<Game.Rendering.LightState>(boardEntity) : default;
+            SpikeReport.Set("e2e.features.ledLight", $"glowMeshes=[{string.Join(",", board.GlowMeshes ?? new int[0])}] emissive={em.HasBuffer<Game.Rendering.Emissive>(boardEntity)} " +
+                $"states=[{(states.IsCreated ? string.Join(",", Enumerable.Range(0, states.Length).Select(i => states[i].m_Intensity.ToString("F2"))) : "none")}]");
             if (m_LitRoadside != null) yield return Shoot(m_LitRoadside, "e2e_night_roadside.png", 15f, 20f);
             planet.normalizedTime = time;
             planet.overrideTime = overridden;

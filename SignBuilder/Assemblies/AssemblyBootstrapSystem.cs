@@ -58,7 +58,7 @@ namespace SignBuilder.Assemblies
                 {
                     lod = (lodGeometry, record.LodIndexCount, record.LodVertexCount);
                 }
-                TrackNewPrefab(prefabs.Register(record.PrefabName, geometry, surfaces.ToArray(), bounds, record.IndexCount, record.VertexCount, lod, record.LightSpots));
+                TrackNewPrefab(prefabs.Register(record.PrefabName, geometry, surfaces.ToArray(), bounds, record.IndexCount, record.VertexCount, lod, record.LightSpots, record.GlowMeshes));
                 ok++;
             }
             Mod.log.Info($"Registered {ok} sign assemblies before load ({missing} with missing assets)");

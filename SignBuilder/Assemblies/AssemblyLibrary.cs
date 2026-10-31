@@ -55,6 +55,8 @@ namespace SignBuilder.Assemblies
         public string GeometryId;
         /// <summary>Sign lights: position and aim (x y z, dx dy dz) per fixture, in assembly space; they shine at night.</summary>
         public float[] LightSpots;
+        /// <summary>Submeshes whose material glows (LED lettering): lit as the game lights neon signs.</summary>
+        public int[] GlowMeshes;
         /// <summary>The low-detail model shown at a distance (same submeshes and surfaces).</summary>
         public string LodGeometryId;
         public int LodIndexCount;
