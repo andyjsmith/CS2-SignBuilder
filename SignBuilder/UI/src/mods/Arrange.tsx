@@ -17,21 +17,17 @@ type Info = {
 };
 
 
-const nth = (n: number) => (n === 2 ? "2nd" : n === 3 ? "3rd" : `${n}th`);
-/** "Rightmost lane", "2nd lane from left", "+1.25 m from center", "With others". */
-export function anchorLabel(s: Sign): string {
-  const shift = s.offset ? `, ${s.offset >= 0 ? "+" : ""}${s.offset.toFixed(2)} m` : "";
-  if (s.mode === "lane") return (s.lane === 0 ? (s.fromRight ? "Rightmost lane" : "Leftmost lane") : `${nth(s.lane + 1)} lane from ${s.fromRight ? "right" : "left"}`) + shift;
-  if (s.mode === "free") return `${s.offset >= 0 ? "+" : ""}${s.offset.toFixed(2)} m from center`;
-  return "With others" + shift;
-}
-
 /**
  * The gantry arrangement panel, docked at the bottom of the screen: a to-scale view of the structure over the
  * lanes it crosses, as drivers see it. Drag signs sideways (they snap to lane centers); pick the structure; Build
  * makes it at the pinned road spot.
  */
-const Step = (p: { onClick: () => void; children: any; title?: string }) => <div className={styles.step} title={p.title} onClick={p.onClick}>{p.children}</div>;
+const Step = (p: { onClick: (e: { shiftKey?: boolean; ctrlKey?: boolean }) => void; children: any; title?: string }) => (
+  <div className={styles.step} title={p.title} onClick={p.onClick}>{p.children}</div>
+);
+/** Nudge step in meters: Shift for larger steps, Ctrl for finer ones (as the number boxes do). */
+const NUDGE = 0.25;
+const stepOf = (e: { shiftKey?: boolean; ctrlKey?: boolean }) => NUDGE * (e.shiftKey ? 10 : e.ctrlKey ? 0.1 : 1);
 const Label = (p: { children: any }) => <div className={styles.barLabel} style={{ marginLeft: "16rem" }}>{p.children}</div>;
 
 export const Arrange = (props: {
@@ -82,7 +78,6 @@ export const Arrange = (props: {
   const roadY = beamY + (maxH * scale) / 2 + 26;
   const height = roadY + 30;
   const nearest = (xs: number[], x: number) => (xs.length ? xs.reduce((b, l, k) => (Math.abs(l - x) < Math.abs(xs[b] - x) ? k : b), 0) : -1);
-  const nearestLane = (x: number) => nearest(info.lanes, x);
 
   const startDrag = (e: any, i: number) => {
     setSelected(signs[i].index);
@@ -109,16 +104,6 @@ export const Arrange = (props: {
     document.addEventListener("mouseup", onUp);
   };
 
-  const laneStep = (i: number, delta: number) => {
-    const n = info.lanes.length;
-    if (!n) return;
-    const s = signs[i];
-    const current = s.mode === "lane" ? (s.fromRight ? n - 1 - s.lane : s.lane) : nearestLane(s.x);
-    const next = Math.max(0, Math.min(n - 1, current + delta));
-    // Nearer edge; the middle lane of an odd count counts from the right (where exits usually are).
-    const fromRight = next >= (n - 1) / 2;
-    arrange({ op: "slot", index: s.index, mode: "lane", lane: fromRight ? n - 1 - next : next, fromRight, offset: 0 });
-  };
   const set = (field: string, value: number) => arrange({ op: "set", field, value });
   const laneXs = allLanes.map((l) => l[0]);
   const dragLane = drag ? nearest(laneXs, drag.x) : -1;
@@ -164,7 +149,7 @@ export const Arrange = (props: {
               onClick={() => arrange({ op: "swap" })}>Swap directions</div>
           )}
           <Label>Height</Label>
-          <NumberBox compact value={info.lift} step={0.25} min={-5.3} max={6} unit=" m" onChange={(v) => set("lift", v)} />
+          <NumberBox compact value={info.lift} step={0.25} min={-5.3} max={12} unit=" m" onChange={(v) => set("lift", v)} />
           {!info.free && (
             <>
               <Label>From road</Label>
@@ -217,31 +202,22 @@ export const Arrange = (props: {
             </div>
           ))}
         </div>
-        {info.span !== "cantilever" && <div className={styles.hint}>Click a road to add it to the gantry's span, or click it again to remove it.</div>}
-
         <div className={styles.barRow}>
           <div className={styles.chip} style={{ alignSelf: "center", marginRight: "14rem" }} onClick={props.onAddSign}>Add sign</div>
           {signs.length > 0 && (
           <>
-            <div className={styles.barLabel}>{`Sign ${sel + 1} of ${signs.length}${info.view === "back" ? " (back)" : ""}:`}</div>
-            <div className={styles.barValue}>{anchorLabel(signs[sel])}</div>
-            <div className={styles.chip} onClick={() => arrange({ op: "slot", index: signs[sel].index, mode: "auto", offset: 0 })}>With others</div>
-            {info.lanes.length > 0 && (
-              <>
-                <Step title="One lane left" onClick={() => laneStep(sel, -1)}><ArrowIcon direction="left" size={12} /></Step>
-                <div className={styles.barLabel}>lane</div>
-                <Step title="One lane right" onClick={() => laneStep(sel, 1)}><ArrowIcon direction="right" size={12} /></Step>
-              </>
-            )}
-            <div className={styles.barLabel} style={{ marginLeft: "12rem" }}>Nudge</div>
-            <Step onClick={() => arrange({ op: "nudge", index: signs[sel].index, value: -0.25 })}><ArrowIcon direction="left" size={12} /></Step>
-            <Step onClick={() => arrange({ op: "nudge", index: signs[sel].index, value: 0.25 })}><ArrowIcon direction="right" size={12} /></Step>
-            <Step title="Raise this sign" onClick={() => arrange({ op: "raiseSign", index: signs[sel].index, value: 0.25 })}><ArrowIcon direction="up" size={12} /></Step>
-            <Step title="Lower this sign" onClick={() => arrange({ op: "raiseSign", index: signs[sel].index, value: -0.25 })}><ArrowIcon direction="down" size={12} /></Step>
+            <div className={styles.barLabel}>Nudge</div>
+            <Step title="Left (Shift: more, Ctrl: less)" onClick={(e) => arrange({ op: "nudge", index: signs[sel].index, value: -stepOf(e) })}><ArrowIcon direction="left" size={12} /></Step>
+            <Step title="Right (Shift: more, Ctrl: less)" onClick={(e) => arrange({ op: "nudge", index: signs[sel].index, value: stepOf(e) })}><ArrowIcon direction="right" size={12} /></Step>
+            <Step title="Up (Shift: more, Ctrl: less)" onClick={(e) => arrange({ op: "raiseSign", index: signs[sel].index, value: stepOf(e) })}><ArrowIcon direction="up" size={12} /></Step>
+            <Step title="Down (Shift: more, Ctrl: less)" onClick={(e) => arrange({ op: "raiseSign", index: signs[sel].index, value: -stepOf(e) })}><ArrowIcon direction="down" size={12} /></Step>
             <div className={styles.chip} style={{ marginLeft: "12rem" }} onClick={() => props.onEditSign(signs[sel].index, signs[sel].design)}>Edit sign</div>
             <div className={styles.chip} onClick={() => arrange({ op: "duplicateSign", index: signs[sel].index })}>Duplicate</div>
             <div className={styles.chip} onClick={() => { arrange({ op: "removeSign", index: signs[sel].index }); setSelected(0); }}>Remove</div>
           </>
+          )}
+          {info.span !== "cantilever" && (
+            <div className={styles.hint} style={{ marginLeft: "auto" }}>Click a road to add it to the gantry's span, or click it again to remove it.</div>
           )}
         </div>
         {props.overlay}

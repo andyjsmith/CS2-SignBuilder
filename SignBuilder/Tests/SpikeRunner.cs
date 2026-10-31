@@ -179,7 +179,23 @@ namespace SignBuilder.Tests
             if (autoSave != null) autoSave.Enabled = false;
             SpikeReport.Set("game.loaded", true);
             SpikeReport.Set("game.autoSaveDisabled", autoSave != null);
+            // The launcher loads the test save by its id (written here for the next run).
+            var test = AssetDatabase.user.GetAssets<SaveGameMetadata>().FirstOrDefault(m => m.name == kContinueSave);
+            if (test != null) File.WriteAllText(Path.Combine(SignBuilderRuntime.DataDir, "test-save.guid"), test.id.guid.ToString());
+            // Never test in a player's own city: anything but the test city quits at once, untouched.
+            var city = World.DefaultGameObjectInjectionWorld.GetExistingSystemManaged<Game.City.CityConfigurationSystem>()?.cityName;
+            SpikeReport.Set("game.city", city);
+            if (city != kTestCity)
+            {
+                SpikeReport.Set("game.refused", $"loaded city \"{city}\" is not the test city \"{kTestCity}\"; nothing was run");
+                RestoreContinueTarget();
+                Finish();
+                while (true) yield return null;
+            }
         }
+
+        /// <summary>The test save's city: tests run only there.</summary>
+        private const string kTestCity = "ModTest";
 
         // ------------------------------------------------------------------ tests
 

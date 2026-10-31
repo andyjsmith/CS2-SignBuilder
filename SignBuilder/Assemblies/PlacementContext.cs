@@ -97,7 +97,7 @@ namespace SignBuilder.Assemblies
         public float[] Point;
         public float[] Tangent;
         public float[] Right;
-        /// <summary>Per carriageway: offset, width.</summary>
+        /// <summary>Per carriageway: offset, width, and (since 2026-10) retaining walls left and right as 0/1.</summary>
         public List<float[]> Carriageways = new();
         /// <summary>Per lane: offset, direction, width, carriageway.</summary>
         public List<float[]> Lanes = new();
@@ -108,7 +108,7 @@ namespace SignBuilder.Assemblies
             Point = new[] { s.Point.x, s.Point.y, s.Point.z },
             Tangent = new[] { s.Tangent.x, s.Tangent.y, s.Tangent.z },
             Right = new[] { s.Right.x, s.Right.y, s.Right.z },
-            Carriageways = s.Carriageways.Select(c => new[] { c.Offset, c.Width }).ToList(),
+            Carriageways = s.Carriageways.Select(c => new[] { c.Offset, c.Width, c.WallLeft ? 1f : 0f, c.WallRight ? 1f : 0f }).ToList(),
             Lanes = s.Lanes.Select(l => new[] { l.Offset, l.Direction, l.Width, l.Carriageway }).ToList(),
             Options = (options ?? new LayoutOptions()).Clone(),
         };
@@ -122,7 +122,10 @@ namespace SignBuilder.Assemblies
                 Tangent = new float3(Tangent[0], Tangent[1], Tangent[2]),
                 Right = new float3(Right[0], Right[1], Right[2]),
             };
-            foreach (var c in Carriageways) s.Carriageways.Add(new RoadProbe.Carriageway { Offset = c[0], Width = c[1] });
+            foreach (var c in Carriageways)
+            {
+                s.Carriageways.Add(new RoadProbe.Carriageway { Offset = c[0], Width = c[1], WallLeft = c.Length > 2 && c[2] > 0f, WallRight = c.Length > 3 && c[3] > 0f });
+            }
             foreach (var l in Lanes)
             {
                 s.Lanes.Add(new RoadProbe.LaneInfo { Offset = l[0], Direction = (int)l[1], Width = l[2], Carriageway = (int)l[3] });

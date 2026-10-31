@@ -773,6 +773,18 @@ namespace SignBuilder.Tests
             yield return PlaceAndWait(() => tool.PlaceForTest(spots[1].edge, spots[1].t, new List<JObject> { Template("services-blue") }, tight));
             SpikeReport.Set("e2e.layout.negativeGap", Describe(SignPlacementToolSystem.LastPlaced));
             yield return Shoot(SignPlacementToolSystem.LastPlaced, "e2e_layout_negative_gap.png", 15f, 30f);
+            // The span follows the gap at every value (the sign is narrower than the road).
+            var spans = new List<string>();
+            foreach (var gap in new[] { -2f, 0f, 2.5f, 5f, 8f })
+            {
+                var o = Options("straight", "single");
+                o.RoadGap = gap;
+                var snap = new RoadProbe(em, world.GetOrCreateSystemManaged<PrefabSystem>()).SnapAt(spots[1].edge, spots[1].t);
+                var sizes = new List<Vector2> { new Vector2(2.5f, 1.2f) };
+                var placement = AssemblyBuilder.Layout(snap, sizes, o);
+                spans.Add($"{gap:F1}->{placement.StructureX.y - placement.StructureX.x:F2}");
+            }
+            SpikeReport.Set("e2e.layout.gapSpans", string.Join(" ", spans));
 
             // At a node: the nearest connected road, just short of the node.
             var edge = spots[2].edge;
@@ -797,10 +809,7 @@ namespace SignBuilder.Tests
                     RoadProbe.Snap s;
                     try { s = probe.SnapAt(e, 0.5f); } catch { continue; }
                     if (s == null || s.Carriageways.Count == 0) continue;
-                    var half = s.Carriageways[0].Width * 0.5f + 2f;
-                    var l = s.Point - s.Right * half;
-                    var rr = s.Point + s.Right * half;
-                    if (AssemblyBuilder.TerrainHeight(l) - s.Point.y > 2f || AssemblyBuilder.TerrainHeight(rr) - s.Point.y > 2f) { cut = s; break; }
+                    if (s.Carriageways[0].WallLeft || s.Carriageways[0].WallRight) { cut = s; break; }
                 }
             }
             if (cut == null)
@@ -809,10 +818,8 @@ namespace SignBuilder.Tests
                 yield break;
             }
             var width = cut.Carriageways[0].Width;
-            var leftWall = AssemblyBuilder.TerrainHeight(cut.Point - cut.Right * (width * 0.5f + 2f)) - cut.Point.y;
-            var rightWall = AssemblyBuilder.TerrainHeight(cut.Point + cut.Right * (width * 0.5f + 2f)) - cut.Point.y;
             yield return PlaceAndWait(() => tool.PlaceForTest(cut.Edge, 0.5f, new List<JObject> { Template("services-blue") }, Options("doubleTruss", "single")));
-            SpikeReport.Set("e2e.layout.sunken", $"road width={width:F1} wall rise left={leftWall:F1} right={rightWall:F1}; {Describe(SignPlacementToolSystem.LastPlaced)}");
+            SpikeReport.Set("e2e.layout.sunken", $"road width={width:F1} walls left={cut.Carriageways[0].WallLeft} right={cut.Carriageways[0].WallRight}; {Describe(SignPlacementToolSystem.LastPlaced)}");
             yield return Shoot(SignPlacementToolSystem.LastPlaced, "e2e_layout_sunken.png", 15f, 30f);
         }
 

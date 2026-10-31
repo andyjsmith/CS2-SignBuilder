@@ -58,8 +58,6 @@ namespace SignBuilder.Assemblies
         private const float kElevatedDrop = 2f;
         /// <summary>Post center distance inside the deck edge on elevated roads (on the shoulder, inside the barrier).</summary>
         private const float kDeckInset = 0.7f;
-        /// <summary>Ground this far above the road surface beside it is a retaining wall (a sunken road's cut).</summary>
-        private const float kSunkenRise = 1.5f;
         /// <summary>Lowest a roadside sign may sink: its bottom edge 0.2 m above the ground.</summary>
         public const float kMinGroundLift = 0.2f - GantryFactory.kGroundClearance;
         /// <summary>Lowest bottom edge for overhead signs (about 17.5 ft).</summary>
@@ -119,8 +117,9 @@ namespace SignBuilder.Assemblies
             // On elevated roads and bridges there is no ground beside the deck: posts that would stand off it
             // move onto the deck, just inside its edges, and the structure narrows to match.
             bool OffDeck(float3 post) => !o.Free && post.y - TerrainHeight(post) > kElevatedDrop;
-            // A sunken road's retaining walls: a post there would stand in the wall, so it moves onto the road too.
-            bool InWall(float3 post) => !o.Free && TerrainHeight(post) - post.y > kSunkenRise;
+            // A post that cannot stand beside the road (off a deck, or in a retaining wall) stands on the road just
+            // inside its edge instead; "posts from road" below its default moves it further in from there.
+            var inset = kDeckInset - math.min(o.RoadGap - LayoutOptions.kGantryRoadGap, 0f);
             // How far below the structure's origin the terrain is under its posts: posts reach down to it
             // (plus a footing) so sloped verges never leave them hovering. Free placement uses its elevation.
             float GroundUnder(params float3[] posts)
@@ -263,10 +262,12 @@ namespace SignBuilder.Assemblies
                 // only as far as the signs need. Free placement puts the post at the cursor.
                 var side = o.LeftSide ? -1f : 1f;
                 var postOffset = o.Free ? 0f : dir * side * (baseWidth * 0.5f + math.max(o.RoadGap, -2f));
-                if (OffDeck(basePoint + s.Right * postOffset) || InWall(basePoint + s.Right * postOffset))
+                var baseRoad = s.Carriageways.Count > 0 ? s.Carriageways[baseIndex] : default;
+                var walled = !o.Free && (postOffset < 0f ? baseRoad.WallLeft : baseRoad.WallRight);
+                if (OffDeck(basePoint + s.Right * postOffset) || walled)
                 {
-                    postOffset = dir * side * (baseWidth * 0.5f - kDeckInset);
-                    elevated = true;
+                    postOffset = dir * side * (baseWidth * 0.5f - inset);
+                    elevated = !walled;
                 }
                 var post = basePoint + s.Right * postOffset;
                 var ground = GroundUnder(post);
@@ -298,39 +299,36 @@ namespace SignBuilder.Assemblies
             }
             else
             {
-                // The span crosses the chosen roads, centered on them.
+                // The span crosses the chosen roads. Post positions are offsets along Right from the roads' center: the
+                // road gap beyond their edges, on the road where there is no ground beside it (a deck) or a
+                // retaining wall (that side only), and always clear of the signs.
                 var lo = roads.Min(r => s.Carriageways.Count > 0 ? s.Carriageways[r].Offset - s.Carriageways[r].Width * 0.5f : -5f);
                 var hi = roads.Max(r => s.Carriageways.Count > 0 ? s.Carriageways[r].Offset + s.Carriageways[r].Width * 0.5f : 5f);
                 var center = (lo + hi) * 0.5f;
                 var deckWidth = hi - lo;
                 var xs = SignXs(center);
-                var needed = 2f * (Reach(xs) + postClear);
-                var span = math.max(deckWidth + 2f * math.max(o.RoadGap, -2f), needed);
-                // Post positions across the road (offsets along Right from the roads' center).
-                var left = -span * 0.5f;
-                var right = span * 0.5f;
+                var outside = deckWidth * 0.5f + math.max(o.RoadGap, -2f);
+                var onRoad = deckWidth * 0.5f - inset;
                 float3 At(float offset) => s.Point + s.Right * (center + offset);
-                if (OffDeck(At(left)) || OffDeck(At(right)))
+                elevated = OffDeck(At(-outside)) || OffDeck(At(outside));
+                bool Walled(bool rightSide)
                 {
-                    elevated = true;
-                    span = math.max(deckWidth - 2f * kDeckInset, needed);
-                    left = -span * 0.5f;
-                    right = span * 0.5f;
+                    if (s.Carriageways.Count == 0) return false;
+                    var outer = rightSide
+                        ? roads.OrderByDescending(r => s.Carriageways[r].Offset + s.Carriageways[r].Width * 0.5f).First()
+                        : roads.OrderBy(r => s.Carriageways[r].Offset - s.Carriageways[r].Width * 0.5f).First();
+                    return rightSide ? s.Carriageways[outer].WallRight : s.Carriageways[outer].WallLeft;
                 }
-                else
+                var left = -(elevated || Walled(false) ? onRoad : outside);
+                var right = elevated || Walled(true) ? onRoad : outside;
+                // Signs' extents across the road (x is along Right times dir).
+                for (var i = 0; i < n; i++)
                 {
-                    // In a cut, each post standing in a retaining wall moves onto the road; the other stays put. If
-                    // the signs would no longer fit between the posts, the structure keeps its full span.
-                    var inner = deckWidth * 0.5f - kDeckInset;
-                    var l = InWall(At(left)) ? -inner : left;
-                    var r = InWall(At(right)) ? inner : right;
-                    if (r - l >= needed && (l != left || r != right))
-                    {
-                        left = l;
-                        right = r;
-                        span = r - l;
-                    }
+                    var across = xs[i] * dir;
+                    left = math.min(left, across - sizes[i].x * 0.5f - postClear);
+                    right = math.max(right, across + sizes[i].x * 0.5f + postClear);
                 }
+                var span = right - left;
                 // The structure is centered between its posts; signs keep their places over the lanes.
                 var reference = center + (left + right) * 0.5f;
                 var shift = (reference - center) * dir;

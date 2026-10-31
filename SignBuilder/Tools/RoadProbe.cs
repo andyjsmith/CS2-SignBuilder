@@ -35,6 +35,9 @@ namespace SignBuilder.Tools
             public Entity Edge;
             public float Offset;     // center, meters along Right
             public float Width;
+            /// <summary>A retaining wall along the road's edge on the snap's left (-Right) / right (+Right) side.</summary>
+            public bool WallLeft;
+            public bool WallRight;
         }
 
         public sealed class Snap
@@ -91,19 +94,26 @@ namespace SignBuilder.Tools
             var list = new List<EdgeCandidate>();
             foreach (var e in entities)
             {
-                var prefab = m_EM.GetComponentData<PrefabRef>(e).m_Prefab;
-                if (!m_EM.HasComponent<RoadData>(prefab)) continue;
-                var composition = m_EM.GetComponentData<Composition>(e).m_Edge;
-                if (!m_EM.HasComponent<NetCompositionData>(composition)) continue;
-                list.Add(new EdgeCandidate
-                {
-                    Entity = e,
-                    Curve = m_EM.GetComponentData<Curve>(e),
-                    Width = m_EM.GetComponentData<NetCompositionData>(composition).m_Width,
-                    Name = m_PrefabSystem.TryGetPrefab(prefab, out PrefabBase p) ? p.name : prefab.ToString(),
-                });
+                if (Candidate(e) is EdgeCandidate c) list.Add(c);
             }
             return list;
+        }
+
+        /// <summary>The edge as a road to snap to; null when it is not a road (a path, a track, a pipe).</summary>
+        private EdgeCandidate? Candidate(Entity e)
+        {
+            if (!m_EM.HasComponent<Edge>(e) || !m_EM.HasComponent<Curve>(e) || !m_EM.HasComponent<Composition>(e) || !m_EM.HasComponent<PrefabRef>(e)) return null;
+            var prefab = m_EM.GetComponentData<PrefabRef>(e).m_Prefab;
+            if (!m_EM.HasComponent<RoadData>(prefab)) return null;
+            var composition = m_EM.GetComponentData<Composition>(e).m_Edge;
+            if (!m_EM.HasComponent<NetCompositionData>(composition)) return null;
+            return new EdgeCandidate
+            {
+                Entity = e,
+                Curve = m_EM.GetComponentData<Curve>(e),
+                Width = m_EM.GetComponentData<NetCompositionData>(composition).m_Width,
+                Name = m_PrefabSystem.TryGetPrefab(prefab, out PrefabBase p) ? p.name : prefab.ToString(),
+            };
         }
 
         /// <summary>Picks the best road edge near <paramref name="near"/>: highways first, then the widest/longest.</summary>
@@ -119,17 +129,13 @@ namespace SignBuilder.Tools
                 .ThenBy(x => x.dist)
                 .ToList();
             log("nearestEdges=" + string.Join(" | ", scored.Take(6).Select(x => $"{x.e.Name} d={x.dist:F0} len={x.e.Curve.m_Length:F0} w={x.e.Width:F1}")));
-            return SnapAt(scored[0].e, 0.5f, edges);
+            return SnapAt(scored[0].e, 0.5f);
         }
 
-        /// <summary>Snaps to <paramref name="edge"/> at curve parameter <paramref name="t"/>, finds lanes and a paired carriageway.</summary>
-        public Snap SnapAt(Entity edge, float t)
-        {
-            var all = RoadEdges();
-            return SnapAt(all.First(e => e.Entity == edge), t, all);
-        }
+        /// <summary>Snaps to road <paramref name="edge"/> at curve parameter <paramref name="t"/> and finds its lanes; null if it is not a road.</summary>
+        public Snap SnapAt(Entity edge, float t) => Candidate(edge) is EdgeCandidate road ? SnapAt(road, t) : null;
 
-        private Snap SnapAt(EdgeCandidate edge, float t, List<EdgeCandidate> all)
+        private Snap SnapAt(EdgeCandidate edge, float t)
         {
             var bezier = edge.Curve.m_Bezier;
             var point = MathUtils.Position(bezier, t);
@@ -149,7 +155,8 @@ namespace SignBuilder.Tools
                 Right = right,
             };
             // Only the clicked road: roads alongside join a gantry's span when the player clicks them (AddRoad).
-            snap.Carriageways.Add(new Carriageway { Edge = edge.Entity, Offset = 0f, Width = edge.Width });
+            var walls = Walls(edge.Entity, true);
+            snap.Carriageways.Add(new Carriageway { Edge = edge.Entity, Offset = 0f, Width = edge.Width, WallLeft = walls.x, WallRight = walls.y });
             AddLanes(snap, edge.Entity, 0);
             return snap;
         }
@@ -192,9 +199,26 @@ namespace SignBuilder.Tools
             }
             var composition = m_EM.GetComponentData<Composition>(edge).m_Edge;
             var width = m_EM.HasComponent<NetCompositionData>(composition) ? m_EM.GetComponentData<NetCompositionData>(composition).m_Width : 8f;
-            snap.Carriageways.Add(new Carriageway { Edge = edge, Offset = offset, Width = width });
+            var sideWalls = Walls(edge, math.dot(math.normalizesafe(tangent), snap.Tangent) > 0f);
+            snap.Carriageways.Add(new Carriageway { Edge = edge, Offset = offset, Width = width, WallLeft = sideWalls.x, WallRight = sideWalls.y });
             AddLanes(snap, edge, snap.Carriageways.Count - 1);
             return snap.Carriageways.Count - 1;
+        }
+
+        /// <summary>
+        /// Retaining walls along the edge (a sunken road, or the walled ramp down to a tunnel), as (left, right) of the
+        /// snap: the edge's own sides when it runs the snap's way, swapped when it runs against it.
+        /// </summary>
+        private bool2 Walls(Entity edge, bool sameWay)
+        {
+            if (!m_EM.HasComponent<Composition>(edge)) return false;
+            var composition = m_EM.GetComponentData<Composition>(edge).m_Edge;
+            if (!m_EM.HasComponent<NetCompositionData>(composition)) return false;
+            var flags = m_EM.GetComponentData<NetCompositionData>(composition).m_Flags;
+            const CompositionFlags.Side wall = CompositionFlags.Side.Lowered | CompositionFlags.Side.LowTransition;
+            var left = (flags.m_Left & wall) != 0;
+            var right = (flags.m_Right & wall) != 0;
+            return sameWay ? new bool2(left, right) : new bool2(right, left);
         }
 
         private void AddLanes(Snap snap, Entity edge, int carriageway)

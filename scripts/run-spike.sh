@@ -7,7 +7,8 @@
 #                "phase1" runs the Phase 1 batch; "e2e" the full end-to-end tests; "led-e2e" LED glow by day and night; "ui-e2e" only the designer
 #                UI tests (a couple of minutes); "debug" bakes one sign and idles with the UI
 #                DevTools on localhost:9444 (create spike/done.flag to quit early).
-#     save-guid  SaveGameMetadata guid to load (-startGame=...); omit to continue the last save.
+#     save-guid  SaveGameMetadata guid to load (-startGame=...); omit for the ModTest save (or the last save on a
+#                first run). Tests only run in the ModTest city.
 #
 # Needs the Steam launch option `"<game dir>\Cities2.exe" %command%` so the Paradox launcher is
 # skipped. runOnce.txt is read once by the game at boot, appended to its command line and deleted.
@@ -31,6 +32,10 @@ mkdir -p "$user_dir/ModsData/SignBuilder"
 printf '%s' "$mode" > "$user_dir/ModsData/SignBuilder/spike.flag"
 extra=""
 [[ "$mode" == "debug" || "$mode" == "uitest" || "$mode" == *e2e* ]] && extra=" -uiDeveloperMode"
+# Without a save id, load the test save (its id is recorded by the previous run): "continue" would load whatever
+# was played last, and the harness refuses to run in any city but the test one.
+guid_file="$user_dir/ModsData/SignBuilder/test-save.guid"
+[[ -z "$save" && -f "$guid_file" ]] && save="$(cat "$guid_file")"
 if [[ -n "$save" ]]; then
   printf -- '-startGame=%s -noSplash%s' "$save" "$extra" > "$user_dir/runOnce.txt"
 else

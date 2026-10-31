@@ -194,7 +194,7 @@ namespace SignBuilder.Tools
                 // Snapped to a road the sign or structure itself goes up and down; freely placed, its base does.
                 case "up":
                     if (m_Options.Free || m_Options.Type == "surface") goto case "raise";
-                    m_Options.Lift = math.min(m_Options.Lift + 0.25f, 6f);
+                    m_Options.Lift = math.min(m_Options.Lift + 0.25f, kMaxLift);
                     break;
                 case "down":
                     if (m_Options.Free || m_Options.Type == "surface") goto case "lower";
@@ -215,6 +215,8 @@ namespace SignBuilder.Tools
         private const float kMinRoadGap = -1f;
         /// <summary>Gantry posts may stand this far inside the road's edge (tight spots between roads).</summary>
         private const float kMinGantryRoadGap = -2f;
+        /// <summary>Highest a structure (or roadside sign) can be raised above its usual height, in meters.</summary>
+        private const float kMaxLift = 12f;
 
         /// <summary>
         /// How far free placement may sink below the clicked surface: a roadside sign until its bottom edge is
@@ -231,7 +233,7 @@ namespace SignBuilder.Tools
             switch (field)
             {
                 case "lift":
-                    m_Options.Lift = math.clamp(value, m_Options.Type == "ground" ? AssemblyBuilder.kMinGroundLift : -kMinOverheadClearance, 6f);
+                    m_Options.Lift = math.clamp(value, m_Options.Type == "ground" ? AssemblyBuilder.kMinGroundLift : -kMinOverheadClearance, kMaxLift);
                     break;
                 case "gap": m_Options.RoadGap = math.clamp(value, m_Options.Type == "ground" ? kMinRoadGap : kMinGantryRoadGap, 30f); break;
                 case "scale": m_Options.SignScale = math.clamp(value / 100f, 0.5f, 1.7f) * LayoutOptions.kDefaultScale; break;
@@ -276,7 +278,7 @@ namespace SignBuilder.Tools
                 case "reverse": m_Options.Reverse = (bool?)a["value"] ?? false; break;
                 case "swap": m_Options.Reverse = !m_Options.Reverse; break;
                 case "scale": m_Options.SignScale = Step(m_Options.SignScale, (int?)a["value"] ?? 0); break;
-                case "lift": m_Options.Lift = math.clamp(m_Options.Lift + ((float?)a["value"] ?? 0f), -kMinOverheadClearance, 6f); break;
+                case "lift": m_Options.Lift = math.clamp(m_Options.Lift + ((float?)a["value"] ?? 0f), -kMinOverheadClearance, kMaxLift); break;
                 case "lights": m_Options.Lights = (bool?)a["value"] ?? false; break;
                 case "set": SetValue((string)a["field"], (float?)a["value"] ?? 0f); break;
                 case "duplicateSign":
@@ -546,7 +548,7 @@ namespace SignBuilder.Tools
                 if (EntityManager.HasComponent<Edge>(entity) && EntityManager.HasComponent<Curve>(entity))
                 {
                     var deck = new RoadProbe(EntityManager, m_PrefabSystem).SnapAt(entity, raycast.m_CurvePosition);
-                    if (deck.Point.y - AssemblyBuilder.TerrainHeight(deck.Point) > 2f)
+                    if (deck != null && deck.Point.y - AssemblyBuilder.TerrainHeight(deck.Point) > 2f)
                     {
                         onDeck = true;
                         snap = deck;
@@ -624,7 +626,8 @@ namespace SignBuilder.Tools
             var best = float.MaxValue;
             foreach (var connected in EntityManager.GetBuffer<ConnectedEdge>(node, true))
             {
-                if (!EntityManager.HasComponent<Curve>(connected.m_Edge)) continue;
+                if (!EntityManager.HasComponent<Curve>(connected.m_Edge) || !EntityManager.HasComponent<PrefabRef>(connected.m_Edge)
+                    || !EntityManager.HasComponent<RoadData>(EntityManager.GetComponentData<PrefabRef>(connected.m_Edge).m_Prefab)) continue;
                 var curve = EntityManager.GetComponentData<Curve>(connected.m_Edge).m_Bezier;
                 var distance = Colossal.Mathematics.MathUtils.Distance(curve.xz, point.xz, out var along);
                 if (distance >= best) continue;
