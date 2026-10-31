@@ -1,47 +1,62 @@
 ﻿<Publish>
-	<!--Id must be set in order to update existed mod. it is not required for publishing mod for the first time-->
-	<ModId Value="" />
-	<!--Name of the mod to display to players-->
+	<ModId Value="165726" />
 	<DisplayName Value="Sign Builder" />
-	<!--Short description of the mod-->
-	<ShortDescription Value="Design road signs in game and place them on gantries, posts or any surface" />
-	<!--Long description of the mod. Single line or multi line. Supports minimal markdown subset-->
+	<ShortDescription Value="Design road signs in game and place them on gantries, posts, or any surface" />
 	<LongDescription>
-Design road signs in game and put them on your roads.
+# Sign Builder
+**Design, edit, and build road signs in game and put them on your roads.**
 
-**Designer**
-- Live, to-scale preview with templates for 13 countries: United States, Canada, Germany, United Kingdom, Nordic, France, Netherlands, Italy, Switzerland, Russia, Australia, Japan and China
-- Parts: text, route shields, arrows, lane diagrams (exits, forks, roundabouts), LED text, dividers, rows and columns, chips, full-width panels (EXIT ONLY) and exit tabs
+## Features
+- Sign designer
+- Gantry editor
+- Place signs on gantries, posts, or any surface
+
+## Designer
+- Live, to-scale preview with templates for multiple countries.
+- Parts: text, route shields, arrows, lane diagrams (exits, forks, roundabouts), LED text,
+dividers, exit tabs, and more.
 - LED message boards with dot-matrix lettering that glows at night
-- Fonts, colors and spacing from each country's sign style; save your own templates
+- Fonts, colors, and spacing from each country's sign style; save your own templates
 
-**Placement**
-- Gantries across the road: double or single truss, curved or straight tube, span or cantilever, signs on both sides
-- Arrange signs over lanes, drag them, add lights
-- Roadside signs on posts, or just the sign as a prop on any surface or the side of an elevated road
-- Click a placed sign to edit, move or duplicate it
+## Placement
+- Place gantries across roads: double or single truss, curved or straight tube, span or
+cantilever, signs on both sides
+- Arrange signs over lanes and add lights
+- Roadside signs on posts, or the sign as a prop on any surface
+- Edit placed signs and gantries
 
-**Sharing**
-- Placed signs are normal objects saved with your city; the city rebuilds them on any PC with Sign Builder
-- Themes are plain files: make your own, or publish theme packs on Paradox Mods (template included on GitHub)
+## Sharing
+- Placed signs are normal objects saved with your city; the city rebuilds them on any PC
+with Sign Builder.
+- Themes are plain files: make your own, or publish theme packs on Paradox Mods (template
+included on GitHub)
+- Safe: The mod can be removed without any save corruption, signs will remain as unrendered gray blobs you can delete.
+
+# How to Use
+1. Click the Sign Builder button in the top-left toolbar.
+2. Pick a template from the library, or start from scratch. Click a part in the preview to edit it, or use Add part to add text, route shields, arrows, lane diagrams and more.
+3. Choose how to place the sign:
+    - **Gantry**: click a road to place a gantry across it. Click other roads alongside to widen the span, add more signs, move them over lanes, set the height and the posts' distance from the road, then click Build.
+    - **Roadside**: a sign on posts beside the road. Rotate it with right-drag, raise or lower it with Ctrl + mouse wheel, and move it closer to or farther from the road with Alt + mouse wheel.
+    - **Prop**: just the sign, on any surface or the side of an elevated road.
+4. To change a placed sign or gantry, click it and choose Edit, Move or Duplicate.
+
+## Tips
+- Hold Shift for bigger steps or Ctrl for finer steps on the nudge buttons.
+- Save your own designs to the template library to reuse them.
+- Turn on Lights to add a light below each sign; it switches on at dusk.
 	</LongDescription>
-	<!--Thumbnail-->
 	<Thumbnail Value="Properties/Thumbnail.png" />
-	<!--Screenshot, can be set multiple times: <Screenshot Value="Properties/Screenshot1.png" />-->
-	<!--Tag, can be set multiple times: <Tag Value="..." />-->
-	<!--Link to the forum post where the mod can be discussed-->
+	<Screenshot Value="Properties/Screenshot1.png" />
+	<Screenshot Value="Properties/Screenshot2.png" />
+	<Screenshot Value="Properties/Screenshot3.png" />
+	<Screenshot Value="Properties/Screenshot4.png" />
+	<Screenshot Value="Properties/Screenshot5.png" />
+	<Screenshot Value="Properties/Screenshot6.png" />
 	<ForumLink Value="" />
-	<!--Version of the mod-->
-	<ModVersion Value="1.0" />
-	<!--Recommended version of the base game to use the mod-->
+	<ModVersion Value="1.0.0" />
 	<GameVersion Value="1.6.*" />
-	<!--Dependency for the mod, can be set multiple times: <Dependency Id="..." /> (Sign Builder has none)-->
-	<!--Required DLC, can be set multiple times. Supported values are "Landmark Buildings", "San Fransisco Set", "Beach Properties", "Urban Promenades", "Modern Architecture"-->
-	<!--Change log for new version. Single line or multi line. Supports minimal markdown subset-->
-	<ChangeLog Value="First release." />
-	<!--<ChangeLog>
-	</ChangeLog>-->
-	<!--External link, can be set multiple times. supported types are "discord", "github", "youtube", "twitch", "x", "paypal", "patreon", "buymeacoffee", "kofi", "crowdin", "gitlab", "gofundme"-->
-	<!--Supported values Public, Private, Unlisted-->
+	<ChangeLog>First release</ChangeLog>
+	<ExternalLink Type="github" Url="https://github.com/andyjsmith/CS2-SignBuilder" />
 	<AccessLevel Value="Public" />
 </Publish>

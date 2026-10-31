@@ -14,7 +14,7 @@ Requires Sign Builder. Subscribe, then pick "Exampleland" from the Theme list in
 	<ModVersion Value="1.0" />
 	<GameVersion Value="1.6.*" />
 	<!--Sign Builder, so players get it with your pack: its Paradox Mods id-->
-	<Dependency Id="SIGN_BUILDER_MOD_ID" />
+	<Dependency Id="165726" />
 	<ChangeLog Value="First release." />
 	<AccessLevel Value="Public" />
 </Publish>
