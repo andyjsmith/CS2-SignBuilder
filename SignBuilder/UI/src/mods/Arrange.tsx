@@ -217,7 +217,11 @@ export const Arrange = (props: {
           </>
           )}
           {info.span !== "cantilever" && (
-            <div className={styles.hint} style={{ marginLeft: "auto" }}>Click a road to add it to the gantry's span, or click it again to remove it.</div>
+            <>
+              {/* Pushes the hint to the right end (Gameface has no auto margins). */}
+              <div style={{ flexGrow: 1 }} />
+              <div className={styles.hint}>Click a road to add it to the gantry's span, or click it again to remove it.</div>
+            </>
           )}
         </div>
         {props.overlay}
