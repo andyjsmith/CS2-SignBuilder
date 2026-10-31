@@ -189,7 +189,7 @@ namespace SignBuilder.Tools
                 case "rotateRight": m_Options.Angle = (m_Options.Angle + 15f) % 360f; break;
                 case "raise": m_Options.Elevation = math.min(m_Options.Elevation + 0.25f, 40f); break;
                 case "lower": m_Options.Elevation = math.max(m_Options.Elevation - 0.25f, MinElevation); break;
-                case "closer": m_Options.RoadGap = math.max(m_Options.RoadGap - 0.25f, m_Options.Type == "ground" ? kMinRoadGap : 0.5f); break;
+                case "closer": m_Options.RoadGap = math.max(m_Options.RoadGap - 0.25f, m_Options.Type == "ground" ? kMinRoadGap : kMinGantryRoadGap); break;
                 case "farther": m_Options.RoadGap = math.min(m_Options.RoadGap + 0.25f, 30f); break;
                 // Snapped to a road the sign or structure itself goes up and down; freely placed, its base does.
                 case "up":
@@ -213,6 +213,8 @@ namespace SignBuilder.Tools
 
         /// <summary>Closest a roadside sign's edge may come to the road's edge (negative: over the shoulder).</summary>
         private const float kMinRoadGap = -1f;
+        /// <summary>Gantry posts may stand this far inside the road's edge (tight spots between roads).</summary>
+        private const float kMinGantryRoadGap = -2f;
 
         /// <summary>
         /// How far free placement may sink below the clicked surface: a roadside sign until its bottom edge is
@@ -231,7 +233,7 @@ namespace SignBuilder.Tools
                 case "lift":
                     m_Options.Lift = math.clamp(value, m_Options.Type == "ground" ? AssemblyBuilder.kMinGroundLift : -kMinOverheadClearance, 6f);
                     break;
-                case "gap": m_Options.RoadGap = math.clamp(value, m_Options.Type == "ground" ? kMinRoadGap : 0.5f, 30f); break;
+                case "gap": m_Options.RoadGap = math.clamp(value, m_Options.Type == "ground" ? kMinRoadGap : kMinGantryRoadGap, 30f); break;
                 case "scale": m_Options.SignScale = math.clamp(value / 100f, 0.5f, 1.7f) * LayoutOptions.kDefaultScale; break;
                 case "angle": m_Options.Angle = ((value % 360f) + 360f) % 360f; break;
                 case "elevation": m_Options.Elevation = math.clamp(value, MinElevation, 40f); break;
@@ -340,6 +342,13 @@ namespace SignBuilder.Tools
                         m_Options.Signs[i].Offset += (float?)a["value"] ?? 0f;
                     }
                     break;
+                case "raiseSign":
+                    if (i >= 0)
+                    {
+                        m_Options.EnsureSigns(i + 1);
+                        m_Options.Signs[i].Raise += (float?)a["value"] ?? 0f;
+                    }
+                    break;
                 case "auto":
                     foreach (var slot in m_Options.Signs) { slot.Mode = "auto"; slot.Offset = 0; }
                     break;
@@ -440,6 +449,7 @@ namespace SignBuilder.Tools
                     ["x"] = V(p.SignXs != null && i < p.SignXs.Length ? p.SignXs[i] : 0f),
                     ["w"] = sizes[i].x, ["h"] = sizes[i].y, ["ready"] = m_Faces[i] != null,
                     ["mode"] = slot.Mode, ["lane"] = slot.Lane, ["fromRight"] = slot.FromRight, ["offset"] = slot.Offset,
+                    ["raise"] = slot.Raise,
                     ["design"] = m_Designs[i],
                 });
             }
@@ -518,6 +528,11 @@ namespace SignBuilder.Tools
             HandleKeys();
 
             var hit = GetRaycastResult(out Entity entity, out RaycastHit raycast);
+            if (hit && !EntityManager.HasComponent<Edge>(entity) && EdgeAtNode(entity, raycast.m_HitPosition, out var nodeEdge, out var nodeT))
+            {
+                entity = nodeEdge;
+                raycast.m_CurvePosition = nodeT;
+            }
 #if TESTS
             Hovered = hit ? entity : Entity.Null;
 #endif
@@ -560,20 +575,14 @@ namespace SignBuilder.Tools
             if (m_Mode == Mode.Arrange)
             {
                 // The pinned gantry is previewed. Clicking a road alongside adds it to (or removes it from) the span;
-                // clicking anywhere else moves the gantry there.
-                if (snap != null && !m_Busy && applyAction.WasPressedThisFrame())
+                // other clicks do nothing: the gantry only moves with "Move gantry".
+                if (snap != null && !m_Busy && applyAction.WasPressedThisFrame() && !m_Options.Free && m_Options.Span != "cantilever")
                 {
-                    var road = m_Options.Free ? -1 : RoadAlongside(entity);
-                    m_Changed = true;
-                    if (road > 0 && m_Options.Span != "cantilever" && road != m_LastPlacement?.BaseRoad)
+                    var road = RoadAlongside(entity);
+                    if (road > 0 && road != m_LastPlacement?.BaseRoad)
                     {
+                        m_Changed = true;
                         if (!m_Options.ExtraRoads.Remove(road)) m_Options.ExtraRoads.Add(road);
-                    }
-                    else if (road < 0 || m_Options.Span == "cantilever")
-                    {
-                        m_Pinned = snap;
-                        m_Options.ExtraRoads.Clear();
-                        if (m_Options.Free) m_FreePoint = raycast.m_HitPosition;
                     }
                 }
                 if (m_Pinned != null) DrawPreview(m_Pinned, "pinned " + m_Pinned.Point);
@@ -602,6 +611,29 @@ namespace SignBuilder.Tools
         /// </summary>
         private int RoadAlongside(Entity edge) =>
             m_Pinned == null ? -1 : new RoadProbe(EntityManager, m_PrefabSystem).AddRoad(m_Pinned, edge);
+
+        /// <summary>
+        /// A node (where road pieces join, an intersection) stands for the nearest of its roads, at the point closest to
+        /// the cursor just short of the node: placing there snaps as it does along the road.
+        /// </summary>
+        private bool EdgeAtNode(Entity node, float3 point, out Entity edge, out float t)
+        {
+            edge = Entity.Null;
+            t = 0f;
+            if (!EntityManager.HasComponent<Game.Net.Node>(node) || !EntityManager.HasBuffer<ConnectedEdge>(node)) return false;
+            var best = float.MaxValue;
+            foreach (var connected in EntityManager.GetBuffer<ConnectedEdge>(node, true))
+            {
+                if (!EntityManager.HasComponent<Curve>(connected.m_Edge)) continue;
+                var curve = EntityManager.GetComponentData<Curve>(connected.m_Edge).m_Bezier;
+                var distance = Colossal.Mathematics.MathUtils.Distance(curve.xz, point.xz, out var along);
+                if (distance >= best) continue;
+                best = distance;
+                edge = connected.m_Edge;
+                t = math.clamp(along, 0.02f, 0.98f);
+            }
+            return edge != Entity.Null;
+        }
 
         private void Cancel()
         {

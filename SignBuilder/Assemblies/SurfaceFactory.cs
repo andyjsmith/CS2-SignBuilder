@@ -39,7 +39,7 @@ namespace SignBuilder.Assemblies
         }
 
         /// <summary>How bright LED lettering glows: its light's intensity (RuntimePrefabs.AddGlow).</summary>
-        public const float kLedGlow = 1f;
+        public const float kLedGlow = 0.25f;
 
         /// <summary>The share of the face's own color that glows around LED lettering (a faintly lit board).</summary>
         private const float kLedBoardGlow = 0.04f;
@@ -139,7 +139,9 @@ namespace SignBuilder.Assemblies
             if (tex == null || tex.format == TextureFormat.RGBA32 || tex.format == TextureFormat.DXT5) return tex;
             var copy = new Texture2D(tex.width, tex.height, TextureFormat.RGBA32, tex.mipmapCount > 1, !tex.isDataSRGB)
             {
-                name = tex.name, wrapMode = tex.wrapMode, filterMode = tex.filterMode,
+                name = tex.name,
+                wrapMode = tex.wrapMode,
+                filterMode = tex.filterMode,
             };
             copy.SetPixels32(tex.GetPixels32());
             copy.Apply(updateMipmaps: true);

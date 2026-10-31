@@ -147,6 +147,7 @@ namespace SignBuilder.Tests
             yield return Test("e2e.free", TestFreePlacement(tool));
             yield return Test("e2e.standalone", TestStandalone(tool));
             yield return Test("e2e.features", TestFeatures(tool));
+            yield return Test("e2e.layout", TestLayoutOptions(tool));
             yield return Test("e2e.perf", TestPerformance(ui, tool));
             yield return Test("e2e.templates", TestTemplates(ui));
             yield return Test("e2e.themes", TestThemes(ui, tool));
@@ -742,6 +743,77 @@ namespace SignBuilder.Tests
             type.GetField("m_IsNightTime", field)?.SetValue(flags, night);
             type.GetField("m_LastTimeChange", field)?.SetValue(flags, 0u);
             Systems.LedLightSystem.ForceNight = night ? true : (bool?)null;
+        }
+
+        /// <summary>
+        /// Per-sign height, a gantry with its posts inside the road's edges, placing at a node, and a gantry in a cut
+        /// (when the city has a sunken road).
+        /// </summary>
+        private IEnumerator TestLayoutOptions(SignPlacementToolSystem tool)
+        {
+            var world = World.DefaultGameObjectInjectionWorld;
+            var em = world.EntityManager;
+            var near = (float3)(CameraController()?.pivot ?? Camera.main.transform.position);
+            var spots = HighwaySpots(em, near, 3);
+            if (spots.Count < 3) { SpikeReport.Set("e2e.layout.spots", spots.Count); yield break; }
+
+            // Two signs on one gantry, the first raised half a meter and the second lowered 0.4 m.
+            var raised = Options("doubleTruss", "single");
+            raised.EnsureSigns(2);
+            raised.Signs[0].Raise = 0.5f;
+            raised.Signs[1].Raise = -0.4f;
+            yield return PlaceAndWait(() => tool.PlaceForTest(spots[0].edge, spots[0].t, new List<JObject> { Template("guide-exit-tab"), Template("guide-exit-tab") }, raised));
+            var r = SignPlacementToolSystem.LastPlaced;
+            SpikeReport.Set("e2e.layout.raise", $"centerY=[{string.Join(" ", r.Centers.Select(c => c.y.ToString("F2")))}] (same signs: first should be 0.9 above the second)");
+            yield return Shoot(r, "e2e_layout_raise.png", 10f, 35f);
+
+            // Posts 2 m inside the road's edges, and the same at the default gap, for comparison.
+            var tight = Options("straight", "single");
+            tight.RoadGap = -2f;
+            yield return PlaceAndWait(() => tool.PlaceForTest(spots[1].edge, spots[1].t, new List<JObject> { Template("services-blue") }, tight));
+            SpikeReport.Set("e2e.layout.negativeGap", Describe(SignPlacementToolSystem.LastPlaced));
+            yield return Shoot(SignPlacementToolSystem.LastPlaced, "e2e_layout_negative_gap.png", 15f, 30f);
+
+            // At a node: the nearest connected road, just short of the node.
+            var edge = spots[2].edge;
+            var node = em.GetComponentData<Game.Net.Edge>(edge).m_End;
+            var nodePoint = em.GetComponentData<Game.Net.Node>(node).m_Position;
+            var snapped = tool.EdgeAtNodeForTest(node, nodePoint + new float3(0.5f, 0f, 0.5f), out var nodeEdge, out var nodeT);
+            SpikeReport.Set("e2e.layout.node", $"snapped={snapped} edge={(nodeEdge == edge ? "same road" : nodeEdge.ToString())} t={nodeT:F2}");
+            if (snapped)
+            {
+                yield return PlaceAndWait(() => tool.PlaceForTest(nodeEdge, nodeT, new List<JObject> { Template("services-blue") }, Options("straight", "single")));
+                SpikeReport.Set("e2e.layout.nodePlaced", Describe(SignPlacementToolSystem.LastPlaced));
+            }
+
+            // A sunken road (ground well above the road just outside it), if this city has one.
+            var probe = new RoadProbe(em, world.GetOrCreateSystemManaged<PrefabSystem>());
+            RoadProbe.Snap cut = null;
+            using (var query = em.CreateEntityQuery(ComponentType.ReadOnly<Game.Net.Edge>(), ComponentType.ReadOnly<Game.Net.Curve>(), ComponentType.Exclude<Game.Common.Deleted>(), ComponentType.Exclude<Game.Tools.Temp>()))
+            using (var edges = query.ToEntityArray(Unity.Collections.Allocator.Temp))
+            {
+                foreach (var e in edges.Take(4000))
+                {
+                    RoadProbe.Snap s;
+                    try { s = probe.SnapAt(e, 0.5f); } catch { continue; }
+                    if (s == null || s.Carriageways.Count == 0) continue;
+                    var half = s.Carriageways[0].Width * 0.5f + 2f;
+                    var l = s.Point - s.Right * half;
+                    var rr = s.Point + s.Right * half;
+                    if (AssemblyBuilder.TerrainHeight(l) - s.Point.y > 2f || AssemblyBuilder.TerrainHeight(rr) - s.Point.y > 2f) { cut = s; break; }
+                }
+            }
+            if (cut == null)
+            {
+                SpikeReport.Set("e2e.layout.sunken", "no sunken road in this city");
+                yield break;
+            }
+            var width = cut.Carriageways[0].Width;
+            var leftWall = AssemblyBuilder.TerrainHeight(cut.Point - cut.Right * (width * 0.5f + 2f)) - cut.Point.y;
+            var rightWall = AssemblyBuilder.TerrainHeight(cut.Point + cut.Right * (width * 0.5f + 2f)) - cut.Point.y;
+            yield return PlaceAndWait(() => tool.PlaceForTest(cut.Edge, 0.5f, new List<JObject> { Template("services-blue") }, Options("doubleTruss", "single")));
+            SpikeReport.Set("e2e.layout.sunken", $"road width={width:F1} wall rise left={leftWall:F1} right={rightWall:F1}; {Describe(SignPlacementToolSystem.LastPlaced)}");
+            yield return Shoot(SignPlacementToolSystem.LastPlaced, "e2e_layout_sunken.png", 15f, 30f);
         }
 
         /// <summary>The designer path ("0", "1.2", ...) of the first part of <paramref name="type"/> in a design.</summary>

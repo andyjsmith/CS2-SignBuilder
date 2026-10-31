@@ -138,9 +138,13 @@ namespace SignBuilder.Assemblies
                     var aim = new float3(lightSpots[i + 3], lightSpots[i + 4], lightSpots[i + 5]);
                     source.m_Effects.Add(new EffectSource.EffectSettings
                     {
-                        m_Effect = effect, m_PositionOffset = new float3(lightSpots[i], lightSpots[i + 1], lightSpots[i + 2]),
-                        m_Rotation = quaternion.LookRotationSafe(aim, new float3(0, 1, 0)), m_Scale = new float3(1f), m_Intensity = 1f,
-                        m_ParentMesh = 0, m_AnimationIndex = -1,
+                        m_Effect = effect,
+                        m_PositionOffset = new float3(lightSpots[i], lightSpots[i + 1], lightSpots[i + 2]),
+                        m_Rotation = quaternion.LookRotationSafe(aim, new float3(0, 1, 0)),
+                        m_Scale = new float3(1f),
+                        m_Intensity = 1f,
+                        m_ParentMesh = 0,
+                        m_AnimationIndex = -1,
                     });
                 }
             }
@@ -162,7 +166,9 @@ namespace SignBuilder.Assemblies
             var emissive = mesh.AddComponent<EmissiveProperties>();
             emissive.m_SingleLights = glowMeshes.Select(i => new EmissiveProperties.SingleLightMapping
             {
-                purpose = EmissiveProperties.Purpose.None, intensity = Assemblies.SurfaceFactory.kLedGlow, materialId = i,
+                purpose = EmissiveProperties.Purpose.None,
+                intensity = Assemblies.SurfaceFactory.kLedGlow,
+                materialId = i,
             }).ToList();
             emissive.m_MultiLights = new List<EmissiveProperties.MultiLightMapping>();
             emissive.m_AnimationCurves = new List<EmissiveProperties.AnimationProperties>();
@@ -195,7 +201,7 @@ namespace SignBuilder.Assemblies
             light.m_InnerSpotPercentage = 5f;
             light.m_Range = 6f;
             light.m_LightUnit = Game.Rendering.LightUnit.Lumen;
-            light.m_Intensity = 700f;
+            light.m_Intensity = 400f;
             light.m_UseColorTemperature = true;
             light.m_ColorTemperature = 4200f;
             light.m_Color = Color.white;

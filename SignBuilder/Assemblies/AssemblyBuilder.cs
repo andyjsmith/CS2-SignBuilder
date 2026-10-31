@@ -58,6 +58,8 @@ namespace SignBuilder.Assemblies
         private const float kElevatedDrop = 2f;
         /// <summary>Post center distance inside the deck edge on elevated roads (on the shoulder, inside the barrier).</summary>
         private const float kDeckInset = 0.7f;
+        /// <summary>Ground this far above the road surface beside it is a retaining wall (a sunken road's cut).</summary>
+        private const float kSunkenRise = 1.5f;
         /// <summary>Lowest a roadside sign may sink: its bottom edge 0.2 m above the ground.</summary>
         public const float kMinGroundLift = 0.2f - GantryFactory.kGroundClearance;
         /// <summary>Lowest bottom edge for overhead signs (about 17.5 ft).</summary>
@@ -117,6 +119,8 @@ namespace SignBuilder.Assemblies
             // On elevated roads and bridges there is no ground beside the deck: posts that would stand off it
             // move onto the deck, just inside its edges, and the structure narrows to match.
             bool OffDeck(float3 post) => !o.Free && post.y - TerrainHeight(post) > kElevatedDrop;
+            // A sunken road's retaining walls: a post there would stand in the wall, so it moves onto the road too.
+            bool InWall(float3 post) => !o.Free && TerrainHeight(post) - post.y > kSunkenRise;
             // How far below the structure's origin the terrain is under its posts: posts reach down to it
             // (plus a footing) so sloped verges never leave them hovering. Free placement uses its elevation.
             float GroundUnder(params float3[] posts)
@@ -194,8 +198,10 @@ namespace SignBuilder.Assemblies
                 "curved" => GantryFactory.kCurvedPipeRadius + mount,
                 _ => (cantilever ? GantryFactory.kCantileverArmRadius : GantryFactory.kMonotubeRadius) + mount,
             };
+            // A sign raised or lowered on its own still overlaps the beam by a little, so it stays bolted to it.
+            float Raise(int i) => math.clamp(o.Slot(i).Raise, -(sizes[i].y * 0.5f - 0.15f), sizes[i].y * 0.5f - 0.15f);
             Vector3[] Centers(float[] xs) =>
-                Enumerable.Range(0, n).Select(i => new Vector3(xs[i], centerY(sizes[i].y), IsBack(i) ? depth : -depth)).ToArray();
+                Enumerable.Range(0, n).Select(i => new Vector3(xs[i], centerY(sizes[i].y) + Raise(i), IsBack(i) ? depth : -depth)).ToArray();
             // Clear distance from a post to the nearest sign edge. Signs may overlap a curved tube's bend a little
             // so they can still sit centered over the outermost lanes.
             var postClear = type switch { "curved" => 1.3f, "doubleTruss" => 1.1f, "singleTruss" => 0.6f, _ => 0.5f };
@@ -256,8 +262,8 @@ namespace SignBuilder.Assemblies
                 // Post just off the carriageway edge on the drivers' right (or left), arm reaching over the lanes
                 // only as far as the signs need. Free placement puts the post at the cursor.
                 var side = o.LeftSide ? -1f : 1f;
-                var postOffset = o.Free ? 0f : dir * side * (baseWidth * 0.5f + math.max(o.RoadGap, 0.5f));
-                if (OffDeck(basePoint + s.Right * postOffset))
+                var postOffset = o.Free ? 0f : dir * side * (baseWidth * 0.5f + math.max(o.RoadGap, -2f));
+                if (OffDeck(basePoint + s.Right * postOffset) || InWall(basePoint + s.Right * postOffset))
                 {
                     postOffset = dir * side * (baseWidth * 0.5f - kDeckInset);
                     elevated = true;
@@ -295,17 +301,41 @@ namespace SignBuilder.Assemblies
                 // The span crosses the chosen roads, centered on them.
                 var lo = roads.Min(r => s.Carriageways.Count > 0 ? s.Carriageways[r].Offset - s.Carriageways[r].Width * 0.5f : -5f);
                 var hi = roads.Max(r => s.Carriageways.Count > 0 ? s.Carriageways[r].Offset + s.Carriageways[r].Width * 0.5f : 5f);
-                var reference = (lo + hi) * 0.5f;
+                var center = (lo + hi) * 0.5f;
                 var deckWidth = hi - lo;
-                var origin = s.Point + s.Right * reference;
-                var xs = SignXs(reference);
+                var xs = SignXs(center);
                 var needed = 2f * (Reach(xs) + postClear);
-                var span = math.max(deckWidth + 2f * math.max(o.RoadGap, 0.5f), needed);
-                if (OffDeck(origin - s.Right * span * 0.5f) || OffDeck(origin + s.Right * span * 0.5f))
+                var span = math.max(deckWidth + 2f * math.max(o.RoadGap, -2f), needed);
+                // Post positions across the road (offsets along Right from the roads' center).
+                var left = -span * 0.5f;
+                var right = span * 0.5f;
+                float3 At(float offset) => s.Point + s.Right * (center + offset);
+                if (OffDeck(At(left)) || OffDeck(At(right)))
                 {
                     elevated = true;
                     span = math.max(deckWidth - 2f * kDeckInset, needed);
+                    left = -span * 0.5f;
+                    right = span * 0.5f;
                 }
+                else
+                {
+                    // In a cut, each post standing in a retaining wall moves onto the road; the other stays put. If
+                    // the signs would no longer fit between the posts, the structure keeps its full span.
+                    var inner = deckWidth * 0.5f - kDeckInset;
+                    var l = InWall(At(left)) ? -inner : left;
+                    var r = InWall(At(right)) ? inner : right;
+                    if (r - l >= needed && (l != left || r != right))
+                    {
+                        left = l;
+                        right = r;
+                        span = r - l;
+                    }
+                }
+                // The structure is centered between its posts; signs keep their places over the lanes.
+                var reference = center + (left + right) * 0.5f;
+                var shift = (reference - center) * dir;
+                for (var i = 0; i < n; i++) xs[i] -= shift;
+                var origin = s.Point + s.Right * reference;
                 var ground = GroundUnder(origin - s.Right * span * 0.5f, origin + s.Right * span * 0.5f);
                 var spec = type switch
                 {
@@ -321,7 +351,7 @@ namespace SignBuilder.Assemblies
                     LaneXs = LaneXs(frontLanes, reference, dir), BackLaneXs = LaneXs(backLanes, reference, -dir),
                     PostXs = new[] { -span * 0.5f, span * 0.5f },
                     StructureX = new float2(-span * 0.5f, span * 0.5f),
-                    DeckX = Edges(reference, reference, deckWidth),
+                    DeckX = Edges(reference, center, deckWidth),
                 };
             }
             result.SignBack = Enumerable.Range(0, n).Select(IsBack).ToArray();

@@ -36,6 +36,9 @@ namespace SignBuilder.Tools
 
         public bool PreviewReady => FacesReady && m_Designs.Count > 0;
 
+        /// <summary>The road a click on a node snaps to.</summary>
+        public bool EdgeAtNodeForTest(Entity node, float3 point, out Entity edge, out float t) => EdgeAtNode(node, point, out edge, out t);
+
         /// <summary>Draws the preview for a road position (as hovering would).</summary>
         public void PreviewForTest(Entity edge, float t) => DrawPreview(new RoadProbe(EntityManager, m_PrefabSystem).SnapAt(edge, t), $"road {edge} {t}");
 

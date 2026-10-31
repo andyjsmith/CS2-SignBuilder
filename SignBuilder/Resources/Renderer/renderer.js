@@ -255,8 +255,9 @@
       }));
       if (def.border) {
         box.appendChild(el("div", null, {
-          position: "absolute", left: px(h * 0.06), top: px(h * 0.06), width: px(w - h * 0.12 - h * 0.04), height: px(h * 0.84),
-          borderRadius: px(h / 2), border: px(h * 0.02) + " solid " + def.border,
+          // Inset evenly on every side (the border is inside the box).
+          position: "absolute", left: px(h * 0.06), top: px(h * 0.06), width: px(w - h * 0.12), height: px(h * 0.88),
+          boxSizing: "border-box", borderRadius: px(h / 2), border: px(h * 0.02) + " solid " + def.border,
         }));
       }
     } else {
@@ -550,7 +551,11 @@
       case "text": e = renderText(item, ctx); break;
       case "shield": e = renderShield(item, ctx); break;
       case "arrow": e = renderArrow(item, ctx); break;
-      case "row": e = renderContainer(item, ctx, true, path); break;
+      case "row":
+        e = renderContainer(item, ctx, true, path);
+        // A spread-out row in another row (a panel's parts) takes the width left there: stretching only reaches across.
+        if (inRow && (item.justify === "between" || item.justify === "even")) e.style.flexGrow = "1";
+        break;
       case "column": e = renderContainer(item, ctx, false, path); break;
       case "chip": e = renderChip(item, ctx, path); break;
       case "diagram": e = renderDiagram(item, ctx); break;
@@ -614,7 +619,11 @@
       e.style.borderBottomRightRadius = px(innerRadius);
     }
     var gap = item.gap != null ? item.gap : (spacingHeight(item) || h) * 0.75;
-    e.appendChild(renderContainer({ type: "row", items: item.items || [], gap: gap }, { font: ctx.font, fg: c.fg, bg: c.bg, led: ctx.led }, true, path));
+    var inner = renderContainer({ type: "row", items: item.items || [], gap: gap }, { font: ctx.font, fg: c.fg, bg: c.bg, led: ctx.led }, true, path);
+    // The parts fill the band (so a spread-out row in it has room to spread), aligned as the panel says.
+    inner.style.flexGrow = "1";
+    inner.style.justifyContent = { start: "flex-start", end: "flex-end" }[item.align] || "center";
+    e.appendChild(inner);
     return e;
   }
 

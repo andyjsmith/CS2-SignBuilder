@@ -8,7 +8,7 @@ import { ArrowIcon } from "./Icons";
 import { SignPreview } from "./SignPreview";
 import styles from "./SignEditor.module.scss";
 
-type Sign = { index: number; x: number; w: number; h: number; ready: boolean; mode: string; lane: number; fromRight: boolean; offset: number; design: Design };
+type Sign = { index: number; x: number; w: number; h: number; ready: boolean; mode: string; lane: number; fromRight: boolean; offset: number; raise?: number; design: Design };
 type Info = {
   lanes: number[]; allLanes: [number, boolean][]; deck: number[]; roads: [number, number, boolean][]; structure: number[]; posts: number[]; signs: Sign[];
   type: string; span: string; side: string; reverse: boolean; free: boolean; scale: number; lift: number; lights: boolean; gap: number;
@@ -168,7 +168,7 @@ export const Arrange = (props: {
           {!info.free && (
             <>
               <Label>From road</Label>
-              <NumberBox compact value={info.gap ?? 2} step={0.25} min={0.5} max={30} unit=" m" onChange={(v) => set("gap", v)} />
+              <NumberBox compact value={info.gap ?? 2} step={0.25} min={-2} max={30} unit=" m" onChange={(v) => set("gap", v)} />
             </>
           )}
         </div>
@@ -211,7 +211,7 @@ export const Arrange = (props: {
           ))}
           {signs.map((s, i) => (
             <div key={s.index} className={i === sel ? styles.signBoxOn : styles.signBox}
-              style={{ left: px(xOf(i) - s.w / 2) + "px", top: beamY - (s.h * scale) / 2 + "px", width: s.w * scale + "px", height: s.h * scale + "px" }}
+              style={{ left: px(xOf(i) - s.w / 2) + "px", top: beamY - (s.h * scale) / 2 - (s.raise ?? 0) * scale + "px", width: s.w * scale + "px", height: s.h * scale + "px" }}
               onMouseDown={(e) => startDrag(e, i)}>
               <SignPreview design={s.design} interactive={false} maxWidth={s.w * scale} maxHeight={s.h * scale} padding={0} />
             </div>
@@ -236,6 +236,8 @@ export const Arrange = (props: {
             <div className={styles.barLabel} style={{ marginLeft: "12rem" }}>Nudge</div>
             <Step onClick={() => arrange({ op: "nudge", index: signs[sel].index, value: -0.25 })}><ArrowIcon direction="left" size={12} /></Step>
             <Step onClick={() => arrange({ op: "nudge", index: signs[sel].index, value: 0.25 })}><ArrowIcon direction="right" size={12} /></Step>
+            <Step title="Raise this sign" onClick={() => arrange({ op: "raiseSign", index: signs[sel].index, value: 0.25 })}><ArrowIcon direction="up" size={12} /></Step>
+            <Step title="Lower this sign" onClick={() => arrange({ op: "raiseSign", index: signs[sel].index, value: -0.25 })}><ArrowIcon direction="down" size={12} /></Step>
             <div className={styles.chip} style={{ marginLeft: "12rem" }} onClick={() => props.onEditSign(signs[sel].index, signs[sel].design)}>Edit sign</div>
             <div className={styles.chip} onClick={() => arrange({ op: "duplicateSign", index: signs[sel].index })}>Duplicate</div>
             <div className={styles.chip} onClick={() => { arrange({ op: "removeSign", index: signs[sel].index }); setSelected(0); }}>Remove</div>

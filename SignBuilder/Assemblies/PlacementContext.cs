@@ -20,6 +20,8 @@ namespace SignBuilder.Assemblies
         public float Offset;
         /// <summary>On the structure's back, facing the opposite direction's traffic.</summary>
         public bool Back;
+        /// <summary>Height shift in meters (+ = up) from where the sign would hang; it still overlaps its beam.</summary>
+        public float Raise;
 
         public SignSlot Clone() => (SignSlot)MemberwiseClone();
     }
