@@ -11,6 +11,9 @@ namespace SignBuilder
         public static ILog log = LogManager.GetLogger($"{nameof(SignBuilder)}.{nameof(Mod)}").SetShowsErrorsInUI(false);
         private Setting m_Setting;
 
+        /// <summary>The key binding that opens or closes Sign Builder (unset until the player picks a key).</summary>
+        public static Game.Input.ProxyAction ToggleAction { get; private set; }
+
         public void OnLoad(UpdateSystem updateSystem)
         {
             log.Info(nameof(OnLoad));
@@ -48,6 +51,9 @@ namespace SignBuilder
             m_Setting = new Setting(this);
             m_Setting.RegisterInOptionsUI();
             GameManager.instance.localizationManager.AddSource("en-US", new LocaleEN(m_Setting));
+            m_Setting.RegisterKeyBindings();
+            ToggleAction = m_Setting.GetAction(Setting.kToggleAction);
+            ToggleAction.shouldBeEnabled = true;
             Core.AssetNames.Register();
 
 

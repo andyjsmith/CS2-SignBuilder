@@ -102,6 +102,7 @@ namespace SignBuilder.Systems
         protected override void OnUpdate()
         {
             base.OnUpdate();
+            if (Mod.ToggleAction != null && Mod.ToggleAction.WasPerformedThisFrame()) SetEditorOpen(!m_EditorOpen.value);
             var mode = m_Tool.ModeName;
             if (mode != m_ToolMode.value) m_ToolMode.Update(mode);
             var info = m_Tool.PlacementInfo;

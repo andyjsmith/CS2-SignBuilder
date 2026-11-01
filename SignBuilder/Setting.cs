@@ -2,6 +2,7 @@
 using System.IO;
 using Colossal;
 using Colossal.IO.AssetDatabase;
+using Game.Input;
 using Game.Modding;
 using Game.Settings;
 
@@ -9,17 +10,25 @@ namespace SignBuilder
 {
     /// <summary>Sign Builder's page in the game's Options.</summary>
     [FileLocation(nameof(SignBuilder))]
-    [SettingsUIGroupOrder(kMaintenanceGroup, kFoldersGroup)]
-    [SettingsUIShowGroupName(kMaintenanceGroup, kFoldersGroup)]
+    [SettingsUIGroupOrder(kKeysGroup, kMaintenanceGroup, kFoldersGroup)]
+    [SettingsUIShowGroupName(kKeysGroup, kMaintenanceGroup, kFoldersGroup)]
+    [SettingsUIKeyboardAction(kToggleAction)]
     public class Setting : ModSetting
     {
         public const string kSection = "Main";
+        public const string kKeysGroup = "Keys";
         public const string kMaintenanceGroup = "Maintenance";
         public const string kFoldersGroup = "Folders";
+        public const string kToggleAction = "ToggleSignBuilder";
 
         public Setting(IMod mod) : base(mod)
         {
         }
+
+        /// <summary>Opens or closes Sign Builder, like its toolbar button. No key by default.</summary>
+        [SettingsUIKeyboardBinding(kToggleAction)]
+        [SettingsUISection(kSection, kKeysGroup)]
+        public ProxyBinding ToggleBinding { get; set; }
 
         /// <summary>Deletes sign structures not used in the open city (their meshes, materials and library entries).</summary>
         [SettingsUIButton]
@@ -70,8 +79,14 @@ namespace SignBuilder
             {
                 { m_Setting.GetSettingsLocaleID(), "Sign Builder" },
                 { m_Setting.GetOptionTabLocaleID(Setting.kSection), "Main" },
+                { m_Setting.GetOptionGroupLocaleID(Setting.kKeysGroup), "Key bindings" },
                 { m_Setting.GetOptionGroupLocaleID(Setting.kMaintenanceGroup), "Maintenance" },
                 { m_Setting.GetOptionGroupLocaleID(Setting.kFoldersGroup), "Folders" },
+
+                { m_Setting.GetOptionLabelLocaleID(nameof(Setting.ToggleBinding)), "Open or close Sign Builder" },
+                { m_Setting.GetOptionDescLocaleID(nameof(Setting.ToggleBinding)), "Opens or closes Sign Builder, like its toolbar button." },
+                { m_Setting.GetBindingKeyLocaleID(Setting.kToggleAction), "Open or close Sign Builder" },
+                { m_Setting.GetBindingMapLocaleID(), "Sign Builder" },
 
                 { m_Setting.GetOptionLabelLocaleID(nameof(Setting.CleanUpUnused)), "Delete unused sign structures" },
                 { m_Setting.GetOptionDescLocaleID(nameof(Setting.CleanUpUnused)),
