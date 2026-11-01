@@ -109,6 +109,21 @@ namespace SignBuilder.Tests
                 yield return RunLedE2E();
                 yield break;
             }
+            if (m_Mode == "leak-e2e")
+            {
+                yield return RunLeakE2E();
+                yield break;
+            }
+            if (m_Mode == "lights-perf")
+            {
+                yield return RunLightsPerf();
+                yield break;
+            }
+            if (m_Mode == "render-perf")
+            {
+                yield return RunRenderPerf();
+                yield break;
+            }
             if (m_Mode == "ui-e2e")
             {
                 yield return RunUIE2E();

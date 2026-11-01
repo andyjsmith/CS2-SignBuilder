@@ -37,6 +37,10 @@ namespace SignBuilder.Systems
 
         public bool EditorOpen => m_EditorOpen.value;
 
+#if TESTS
+        public string TestReport { get; set; }
+#endif
+
         /// <summary>Player templates: one JSON file per template, easy to share.</summary>
         public static string UserTemplatesDir => Path.Combine(SignBuilderRuntime.DataDir, "Templates");
         private static string HiddenFile => Path.Combine(SignBuilderRuntime.DataDir, "hidden-templates.json");
@@ -55,6 +59,10 @@ namespace SignBuilder.Systems
             AddBinding(m_ArrangeInfo = new ValueBinding<string>(Group, "arrangeInfo", ""));
             AddBinding(m_Replacing = new ValueBinding<bool>(Group, "replacing", false));
             AddBinding(new TriggerBinding<bool>(Group, "setEditorOpen", SetEditorOpen));
+#if TESTS
+            // leak-e2e: counters read from the UI page.
+            AddBinding(new TriggerBinding<string>(Group, "testReport", report => TestReport = report));
+#endif
             AddBinding(new TriggerBinding<string>(Group, "startPosts", json => Guard(() =>
             {
                 var o = JObject.Parse(json);

@@ -126,9 +126,9 @@ namespace SignBuilder.Assemblies
             objectPrefab.name = name;
             objectPrefab.m_Meshes = new[] { new ObjectMeshInfo { m_Mesh = renderPrefab, m_Position = float3.zero, m_Rotation = quaternion.identity } };
             var lit = lightSpots != null && lightSpots.Length >= 6;
-            if (lit || (glowMeshes != null && glowMeshes.Length > 0)) Systems.SignLightSystem.Track(objectPrefab);
             if (lit)
             {
+                Systems.SignLightSystem.Track(objectPrefab);
                 // Real lights: a spot light per fixture, shining onto the sign at night (as street lights do).
                 var source = objectPrefab.AddComponent<EffectSource>();
                 source.m_Effects = new List<EffectSource.EffectSettings>();
@@ -158,8 +158,8 @@ namespace SignBuilder.Assemblies
 
         /// <summary>
         /// The game draws a material's emissive map only for submeshes its mesh lists as lights; without that the map
-        /// is ignored. Lists <paramref name="glowMeshes"/> as lights of no purpose, which the game never animates:
-        /// <see cref="Systems.SignLightSystem"/> switches them on when it gets dark.
+        /// is ignored. Lists <paramref name="glowMeshes"/> as neon signs, which the game keeps lit day and night (as
+        /// it does the glowing signs on buildings): a standalone object counts as powered.
         /// </summary>
         private static void AddGlow(RenderPrefab mesh, int[] glowMeshes)
         {
@@ -167,7 +167,7 @@ namespace SignBuilder.Assemblies
             var emissive = mesh.AddComponent<EmissiveProperties>();
             emissive.m_SingleLights = glowMeshes.Select(i => new EmissiveProperties.SingleLightMapping
             {
-                purpose = EmissiveProperties.Purpose.None,
+                purpose = EmissiveProperties.Purpose.NeonSign,
                 intensity = Assemblies.SurfaceFactory.kLedGlow,
                 materialId = i,
             }).ToList();

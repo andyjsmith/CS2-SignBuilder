@@ -79,6 +79,10 @@ namespace SignBuilder.Rendering
 #if TESTS
         /// <summary>Lit pixels in the last glow pass (diagnostics for the tests).</summary>
         public int LastGlowPixels { get; private set; }
+
+        /// <summary>Scripts pushed into the off-screen page, and frames it was drawn (leak-e2e: both stay 0 when idle).</summary>
+        public int ScriptRuns { get; set; }
+        public int DrawnFrames { get; set; }
 #endif
 
         /// <summary>Whether ExecuteScript re-rendering works in this game build; null until first tried.</summary>
@@ -201,6 +205,9 @@ namespace SignBuilder.Rendering
                 if (ScriptMode != false)
                 {
                     ScriptProbe = $"readyForBindings={m_View.View.IsReadyForBindings()}";
+#if TESTS
+                    ScriptRuns++;
+#endif
                     Timed("script", () => { m_View.View.ExecuteScript($"window.hsRender({json}, {ppiText});"); return 0; });
                     yield return DrawFrames(4);
                     int w = 0, h = 0;
@@ -263,6 +270,9 @@ namespace SignBuilder.Rendering
                 // What glows at night: the same layout drawn again with only the LED lettering showing.
                 if (LastMode == "script" && Glows(design))
                 {
+#if TESTS
+                    ScriptRuns++;
+#endif
                     Timed("glow script", () => { m_View.View.ExecuteScript($"window.hsRender({json}, {ppiText}, true);"); return 0; });
                     yield return DrawFrames(4);
                     int gw = 0, gh = 0;
@@ -345,6 +355,9 @@ namespace SignBuilder.Rendering
         private void OnEndFrame(ScriptableRenderContext ctx, Camera[] cameras)
         {
             if (!m_Drawing) return;
+#if TESTS
+            DrawnFrames++;
+#endif
             m_SendRenderEvent.Invoke(null, new[] { m_BeginFrame, m_UISystem.id, 0u });
             m_View.Draw();
             m_SendRenderEvent.Invoke(null, new[] { m_EndFrame, m_UISystem.id, 0u });

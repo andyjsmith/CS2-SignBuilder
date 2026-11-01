@@ -35,7 +35,9 @@ namespace SignBuilder
             updateSystem.UpdateAt<Tools.SignPlacementToolSystem>(SystemUpdatePhase.ToolUpdate);
             updateSystem.UpdateAt<Systems.SignBuilderUISystem>(SystemUpdatePhase.UIUpdate);
             updateSystem.UpdateAt<Systems.SignInfoSection>(SystemUpdatePhase.UIUpdate);
-            // Sign lights on when it gets dark: set after the game animates its lights, before they reach the GPU.
+            // Sign light fixtures on when it gets dark (by the rendered daylight, as street lights). The signs to switch
+            // are collected as they are created (Created is set until modifications end).
+            updateSystem.UpdateAt<Systems.SignLightTrackingSystem>(SystemUpdatePhase.ModificationEnd);
             updateSystem.UpdateAfter<Systems.SignLightSystem, Game.Rendering.ObjectInterpolateSystem>(SystemUpdatePhase.Rendering);
             updateSystem.UpdateBefore<Systems.SignLightSystem, Game.Rendering.ProceduralUploadSystem>(SystemUpdatePhase.Rendering);
 

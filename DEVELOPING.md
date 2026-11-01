@@ -134,11 +134,15 @@ LED lettering is the renderer's own 5×7 dot-matrix font (`LED_GLYPHS`), drawn a
    - Materials copy a vanilla surface's template (a park light pole's), so the game's batch renderer accepts them.
    - Each face is its own material. Faces with LED lettering also get a glow (emissive) map.
    - The game draws an emissive map only for submeshes that the mesh's `EmissiveProperties` lists as lights. LED
-     faces are listed as lights of no purpose (`RuntimePrefabs.AddGlow`, the record's `GlowMeshes`), which the game
-     never animates. `SignLightSystem` switches them, and the light fixtures, the way the game switches street lights:
-     by the rendered daylight (`LightingSystem.dayLightBrightness`, which the debug time of day also moves), each sign
-     below its own 20-30 % threshold. Fixtures are effects forbidden while the sign's `StreetLight` state is
-     `TurnedOff`; LED light states are set directly, just before they reach the GPU. An emissive map on any other material is ignored.
+     faces are listed as neon signs (`RuntimePrefabs.AddGlow`, the record's `GlowMeshes`), which the game keeps lit
+     day and night like the glowing signs on buildings; a standalone object counts as powered. An emissive map on any
+     other material is ignored.
+   - Light fixtures switch the way the game switches street lights: by the rendered daylight
+     (`LightingSystem.dayLightBrightness`, which the debug time of day also moves), each sign below its own 20-30 %
+     threshold. They are effects forbidden while the sign's `StreetLight` state is `TurnedOff`. The game sets that
+     state only on lamps a road or building owns, so `SignLightSystem` sets it for signs. It visits only signs with
+     fixtures, which `SignLightTrackingSystem` collects: every object once after a city loads, then only objects
+     as they are created.
    - The steel material is shared by every structure.
 5. **Prefab** (`RuntimePrefabs`). A `StaticObjectPrefab` with a `RenderPrefab` (mesh and materials, and the LOD) is
    added through `PrefabSystem.AddPrefab`. Lights are `EffectSource` entries pointing at a runtime `EffectPrefab`
@@ -222,6 +226,9 @@ waits up to 5 minutes for it to start, and kills it after 10 minutes at most.
 | `e2e`        | Everything: every structure type, gantry arranging and editing, roadside editing, free and prop placement, the selected-object panel, performance (worst frame after selecting objects, opening the designer, selecting parts), templates, all themes, and a save. About 8 minutes |
 | `ui-e2e`     | Only the designer: opening it and switching between parts, with the worst frame time of each. About 2 minutes                                                                                                                                                                      |
 | `led-e2e` | An LED board and a lit roadside LED sign: their light states by day and at night, with screenshots. About 3 minutes |
+| `lights-perf` | The cost of switching sign lights (the old whole-city pass against the tracked signs), then LED signs with and without fixtures by day and at night. About 4 minutes |
+| `render-perf` | LOD setup against a vanilla prop, frame times with signs shown and hidden, and with the designer and gantry editor open and closed. About 4 minutes |
+| `leak-e2e` | Whether anything of Sign Builder keeps running once its panel is closed: renderer and baker counters, frame times and memory per phase. About 3 minutes |
 | `reload-e2e` | Loads the save written by `e2e` and checks that every structure came back                                                                                                                                                                                                          |
 
 Results go to `ModsData/SignBuilder/spike/results.json`, with screenshots next to it. The game's `Logs/UI.log`
