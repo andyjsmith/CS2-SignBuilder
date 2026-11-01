@@ -117,19 +117,22 @@ export const SignEditor = () => {
 
   let title = "Sign Builder";
   let actions: DesignerAction[];
-  switch (context.kind) {
+  // Once the placed sign is saved, moved or duplicated (nothing is being replaced), it is a plain design again.
+  const shown: Context = context.kind === "postsEdit" && !replacing ? { kind: "new" } : context;
+  const editingPosts = shown.kind === "postsEdit";
+  switch (shown.kind) {
     case "postsEdit":
       title = "Edit roadside sign";
-      actions = replacing
-        ? [{ label: "Save", primary: true, onSelect: () => { settle(); setLights({ placed: lights.now, now: lights.now }); savePosts(design, lights.now); } },
-          { label: "Cancel", title: "Keep the placed sign as it is",
-            onSelect: () => guard(dirty, "Discard your changes to this sign?", close) }]
-        : [{ label: "Roadside", primary: true, onSelect: () => { settle(); startPosts(design); } }];
+      actions = [
+        { label: "Save", primary: true, onSelect: () => { settle(); setLights({ placed: lights.now, now: lights.now }); savePosts(design, lights.now); } },
+        { label: "Cancel", title: "Keep the placed sign as it is",
+          onSelect: () => guard(dirty, "Discard your changes to this sign?", close) },
+      ];
       break;
     case "gantrySign":
-      title = `Edit gantry sign ${context.index + 1}`;
+      title = `Edit gantry sign ${shown.index + 1}`;
       actions = [
-        { label: "Done", primary: true, onSelect: () => { arrange({ op: "replaceSign", index: context.index, design }); setContext({ kind: "new" }); } },
+        { label: "Done", primary: true, onSelect: () => { arrange({ op: "replaceSign", index: shown.index, design }); setContext({ kind: "new" }); } },
         { label: "Cancel", onSelect: () => guard(dirty, "Discard your changes to this sign?", () => setContext({ kind: "new" })) },
       ];
       break;
@@ -156,7 +159,7 @@ export const SignEditor = () => {
     <Designer design={design} setDesign={setDesign} onTemplateSaved={settle}
       onLoad={(d, then) => guard(dirty, "Load this? Your changes to the current sign will be lost.", () => { load(d); then(); })} templates={templates} themes={themes}
       title={title} actions={actions} onClose={requestClose} overlay={overlay}
-      extra={context.kind === "postsEdit" && replacing ? (
+      extra={editingPosts ? (
         <Field label="Lights">
           <Choice options={[{ value: "off", label: "Off" }, { value: "on", label: "On", title: "A light fixture below the sign, lit at night" }]}
             value={lights.now ? "on" : "off"} onChange={(v) => setLights({ ...lights, now: v === "on" })} />
