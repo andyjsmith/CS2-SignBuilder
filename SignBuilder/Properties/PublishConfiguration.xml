@@ -55,9 +55,13 @@ included on GitHub)
 	<Screenshot Value="Properties/Screenshot5.png" />
 	<Screenshot Value="Properties/Screenshot6.png" />
 	<ForumLink Value="https://forum.paradoxplaza.com/forum/threads/sign-builder.1947897/" />
-	<ModVersion Value="1.0.0" />
+	<ModVersion Value="1.0.1" />
 	<GameVersion Value="1.6.*" />
-	<ChangeLog>First release</ChangeLog>
+	<ChangeLog>
+Bug fixes:
+- Fix sign state bug causing only roadside/prop button to appear in editor after editing/moving a roadside sign.
+- Remove stroke-dasharray, unsupported SVG option
+	</ChangeLog>
 	<ExternalLink Type="github" Url="https://github.com/andyjsmith/CS2-SignBuilder" />
 	<AccessLevel Value="Public" />
 </Publish>
