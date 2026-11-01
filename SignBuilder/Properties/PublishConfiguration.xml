@@ -55,12 +55,15 @@ included on GitHub)
 	<Screenshot Value="Properties/Screenshot5.png" />
 	<Screenshot Value="Properties/Screenshot6.png" />
 	<ForumLink Value="https://forum.paradoxplaza.com/forum/threads/sign-builder.1947897/" />
-	<ModVersion Value="1.0.1" />
+	<ModVersion Value="1.0.2" />
 	<GameVersion Value="1.6.*" />
 	<ChangeLog>
-Bug fixes:
-- Fix sign state bug causing only roadside/prop button to appear in editor after editing/moving a roadside sign.
-- Remove stroke-dasharray, unsupported SVG option
+Performance:
+- Fix large FPS drop in big cities once a sign with lights or LED lettering was placed. Switching sign lights at dusk no longer checks every object in the city.
+
+Changes:
+- LED lettering now stays lit day and night, like the game's neon signs. Sign lights still turn on at dusk.
+- Added optional keybinding for opening Sign Builder.
 	</ChangeLog>
 	<ExternalLink Type="github" Url="https://github.com/andyjsmith/CS2-SignBuilder" />
 	<AccessLevel Value="Public" />
