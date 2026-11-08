@@ -60,7 +60,7 @@ namespace SignBuilder.Tests
             ""formatVersion"": " + format + @", ""theme"": ""us"", ""scheme"": ""green"", ""align"": ""center"",
             ""items"": [
               { ""type"": ""row"", ""items"": [
-                { ""type"": ""symbol"", ""symbol"": ""mutcd/snowflake"", ""box"": {} },
+                { ""type"": ""symbol"", ""symbol"": ""mutcd/winter-recreation"", ""box"": {} },
                 { ""type"": ""symbol"", ""symbol"": ""mutcd/ev-charging"" },
                 { ""type"": ""symbol"", ""symbol"": ""mutcd/ev-charging"", ""box"": { ""background"": ""#1f4ea1"" } },
                 { ""type"": ""text"", ""text"": ""SYMBOLS"" } ] },
@@ -108,7 +108,7 @@ namespace SignBuilder.Tests
             yield return new WaitForSecondsRealtime(2f);
             ui.OpenForEdit(new AssemblyRecord { Designs = new List<JObject> { SymbolDesign(2) } }, "new");
             yield return new WaitForSecondsRealtime(3f);
-            // The boxed snowflake: its settings.
+            // The boxed snowflake (winter recreation): its settings.
             Run("window.__signBuilderSelect('0.0');");
             yield return new WaitForSecondsRealtime(1.5f);
             SpikeReport.Screenshot("sym_designer_symbol.png");
@@ -117,7 +117,7 @@ namespace SignBuilder.Tests
             Run("window.__signBuilderPickSymbol();");
             yield return new WaitForSecondsRealtime(1.5f);
             SpikeReport.Screenshot("sym_picker_symbols.png");
-            yield return Ask(ui, "var t = document.body.textContent; return { open: t.indexOf('Choose a symbol') >= 0, roadConditions: t.indexOf('Road conditions') >= 0, services: t.indexOf('Services') >= 0, arrowsStandard: t.indexOf('Arrows: Standard') >= 0, arrowsLane: t.indexOf('Arrows: Lane') >= 0, arrowsWide: t.indexOf('Arrows: Wide') >= 0 };", "sym.picker.categories");
+            yield return Ask(ui, "var t = document.body.textContent; return { open: t.indexOf('Choose a symbol') >= 0, recreation: t.indexOf('Recreation') >= 0, services: t.indexOf('Services') >= 0, arrowsStandard: t.indexOf('Arrows: Standard') >= 0, arrowsLane: t.indexOf('Arrows: Lane') >= 0, arrowsWide: t.indexOf('Arrows: Wide') >= 0 };", "sym.picker.categories");
             Run(ClickText + "clickText('Arrows: Standard');");
             yield return new WaitForSecondsRealtime(1.5f);
             SpikeReport.Screenshot("sym_picker_arrows.png");
@@ -173,7 +173,7 @@ namespace SignBuilder.Tests
             yield return Shoot(SignPlacementToolSystem.LastPlaced, "sym_formats.png", 10f, 40f);
             // Symbols and the new arrows on a gantry, and a yellow sign with a boxed symbol on roadside posts.
             var yellow = JObject.Parse(@"{ ""formatVersion"": 2, ""theme"": ""us"", ""scheme"": ""yellow"", ""items"": [
-                { ""type"": ""row"", ""items"": [ { ""type"": ""text"", ""text"": ""ICY"" }, { ""type"": ""symbol"", ""symbol"": ""mutcd/snowflake"", ""box"": {} } ] } ] }");
+                { ""type"": ""row"", ""items"": [ { ""type"": ""text"", ""text"": ""ICY"" }, { ""type"": ""symbol"", ""symbol"": ""mutcd/winter-recreation"", ""box"": {} } ] } ] }");
             var t2 = math.clamp(spot.t + 0.25f, 0.05f, 0.95f);
             yield return PlaceAndWait(() => tool.PlaceForTest(spot.edge, t2, new List<JObject> { SymbolDesign(2) }, Options("doubleTruss", "full")));
             SpikeReport.Set("sym.place.symbols", Describe(SignPlacementToolSystem.LastPlaced));

@@ -222,11 +222,6 @@
     "backSlope": 0.2407
   },
   "symbols": {
-    "snowflake": {
-      "name": "Snowflake",
-      "category": "Road conditions",
-      "file": "symbols/snowflake.svg"
-    },
     "ev-charging": {
       "name": "Electric vehicle charging",
       "category": "Services",
@@ -258,13 +253,13 @@
     },
     "deer-viewing": {
       "name": "Deer viewing area",
-      "category": "Recreation: wildlife",
+      "category": "Recreation",
       "number": "RS-011",
       "file": "symbols/deer-viewing.svg"
     },
     "bear-viewing": {
       "name": "Bear viewing area",
-      "category": "Recreation: wildlife",
+      "category": "Recreation",
       "number": "RS-012",
       "file": "symbols/bear-viewing.svg"
     },
@@ -354,55 +349,55 @@
     },
     "cross-country-skiing": {
       "name": "Cross-country skiing",
-      "category": "Recreation: winter",
+      "category": "Recreation",
       "number": "RS-046",
       "file": "symbols/cross-country-skiing.svg"
     },
     "sledding": {
       "name": "Sledding",
-      "category": "Recreation: winter",
+      "category": "Recreation",
       "number": "RS-049",
       "file": "symbols/sledding.svg"
     },
     "marina": {
       "name": "Marina",
-      "category": "Recreation: water",
+      "category": "Recreation",
       "number": "RS-053",
       "file": "symbols/marina.svg"
     },
     "boat-ramp": {
       "name": "Boat ramp",
-      "category": "Recreation: water",
+      "category": "Recreation",
       "number": "RS-054",
       "file": "symbols/boat-ramp.svg"
     },
     "motorboating": {
       "name": "Motorboating",
-      "category": "Recreation: water",
+      "category": "Recreation",
       "number": "RS-055",
       "file": "symbols/motorboating.svg"
     },
     "waterskiing": {
       "name": "Waterskiing",
-      "category": "Recreation: water",
+      "category": "Recreation",
       "number": "RS-058",
       "file": "symbols/waterskiing.svg"
     },
     "scuba-diving": {
       "name": "Scuba diving",
-      "category": "Recreation: water",
+      "category": "Recreation",
       "number": "RS-060",
       "file": "symbols/scuba-diving.svg"
     },
     "swimming": {
       "name": "Swimming",
-      "category": "Recreation: water",
+      "category": "Recreation",
       "number": "RS-061",
       "file": "symbols/swimming.svg"
     },
     "fishing-area": {
       "name": "Fishing area",
-      "category": "Recreation: water",
+      "category": "Recreation",
       "number": "RS-063",
       "file": "symbols/fishing-area.svg"
     },
@@ -426,25 +421,25 @@
     },
     "wildlife-viewing": {
       "name": "Wildlife viewing",
-      "category": "Recreation: wildlife",
+      "category": "Recreation",
       "number": "RS-076",
       "file": "symbols/wildlife-viewing.svg"
     },
     "winter-recreation": {
       "name": "Winter recreation area",
-      "category": "Recreation: winter",
+      "category": "Recreation",
       "number": "RS-077",
       "file": "symbols/winter-recreation.svg"
     },
     "snowshoeing": {
       "name": "Snowshoeing",
-      "category": "Recreation: winter",
+      "category": "Recreation",
       "number": "RS-078",
       "file": "symbols/snowshoeing.svg"
     },
     "canoeing": {
       "name": "Canoeing",
-      "category": "Recreation: water",
+      "category": "Recreation",
       "number": "RS-079",
       "file": "symbols/canoeing.svg"
     },
@@ -510,19 +505,19 @@
     },
     "chair-lift": {
       "name": "Chair lift",
-      "category": "Recreation: winter",
+      "category": "Recreation",
       "number": "RS-105",
       "file": "symbols/chair-lift.svg"
     },
     "seal-viewing": {
       "name": "Seal viewing",
-      "category": "Recreation: wildlife",
+      "category": "Recreation",
       "number": "RS-106",
       "file": "symbols/seal-viewing.svg"
     },
     "whale-viewing": {
       "name": "Whale viewing",
-      "category": "Recreation: wildlife",
+      "category": "Recreation",
       "number": "RS-107",
       "file": "symbols/whale-viewing.svg"
     },
@@ -540,13 +535,13 @@
     },
     "small-boat-launch": {
       "name": "Small boat launch",
-      "category": "Recreation: water",
+      "category": "Recreation",
       "number": "RS-117",
       "file": "symbols/small-boat-launch.svg"
     },
     "jet-ski": {
       "name": "Personal watercraft",
-      "category": "Recreation: water",
+      "category": "Recreation",
       "number": "RS-121",
       "file": "symbols/jet-ski.svg"
     },
@@ -576,25 +571,25 @@
     },
     "nature-study-area": {
       "name": "Nature study area",
-      "category": "Recreation: wildlife",
+      "category": "Recreation",
       "number": "RS-141",
       "file": "symbols/nature-study-area.svg"
     },
     "dog-sledding": {
       "name": "Dog sledding",
-      "category": "Recreation: winter",
+      "category": "Recreation",
       "number": "RS-143",
       "file": "symbols/dog-sledding.svg"
     },
     "snow-tubing": {
       "name": "Snow tubing",
-      "category": "Recreation: winter",
+      "category": "Recreation",
       "number": "RS-144",
       "file": "symbols/snow-tubing.svg"
     },
     "beach": {
       "name": "Beach",
-      "category": "Recreation: water",
+      "category": "Recreation",
       "number": "RS-145",
       "file": "symbols/beach.svg"
     },

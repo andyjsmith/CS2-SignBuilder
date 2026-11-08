@@ -246,7 +246,7 @@ with the id of an existing one replaces it (the log says so), so pick a unique i
   },
   "diagramHead": { "outline": [[0, 0], …], "backSlope": 0.24 },
   "symbols": {
-    "snowflake": { "name": "Snowflake", "category": "Road conditions", "number": "…", "file": "symbols/snowflake.svg" }
+    "winter-recreation": { "name": "Winter recreation area", "category": "Recreation", "number": "RS-077", "file": "symbols/winter-recreation.svg" }
   }
 }
 ```
