@@ -1,0 +1,45 @@
+{
+  "formatVersion": 2,
+  "theme": "us",
+  "id": "services-symbols",
+  "name": "Services (symbols)",
+  "scheme": "blue",
+  "align": "center",
+  "items": [
+    {
+      "type": "text",
+      "text": "EXIT 12",
+      "height": 13,
+      "font": "RG2014D"
+    },
+    {
+      "type": "row",
+      "items": [
+        {
+          "type": "symbol",
+          "symbol": "mutcd/gas",
+          "height": 30,
+          "box": {}
+        },
+        {
+          "type": "symbol",
+          "symbol": "mutcd/food",
+          "height": 30,
+          "box": {}
+        },
+        {
+          "type": "symbol",
+          "symbol": "mutcd/lodging",
+          "height": 30,
+          "box": {}
+        },
+        {
+          "type": "symbol",
+          "symbol": "mutcd/hospital",
+          "height": 30,
+          "box": {}
+        }
+      ]
+    }
+  ]
+}

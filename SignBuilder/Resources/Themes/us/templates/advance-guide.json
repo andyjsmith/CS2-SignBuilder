@@ -4,7 +4,7 @@
   "id": "advance-guide",
   "name": "Advance guide",
   "scheme": "green",
-  "support": "ground",
+  "align": "center",
   "items": [
     {
       "type": "tab",
@@ -30,21 +30,21 @@
         {
           "type": "text",
           "text": "WEST",
-          "height": 13,
+          "height": 15,
           "font": "RG2014D"
         }
       ]
     },
     {
       "type": "text",
-      "text": "Concord",
-      "height": 13
+      "text": "Concord"
     },
     {
       "type": "text",
       "text": "1 MILE",
-      "height": 12,
+      "height": 13,
       "font": "RG2014D"
     }
-  ]
+  ],
+  "support": "ground"
 }

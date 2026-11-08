@@ -4,7 +4,20 @@
   "id": "guide-long",
   "name": "Downtown",
   "scheme": "green",
+  "align": "center",
   "items": [
+    {
+      "type": "tab",
+      "align": "right",
+      "items": [
+        {
+          "type": "text",
+          "text": "EXIT 12",
+          "height": 10,
+          "font": "RG2014E"
+        }
+      ]
+    },
     {
       "type": "row",
       "items": [
@@ -37,21 +50,10 @@
       "text": "Convention Center"
     },
     {
-      "type": "row",
-      "items": [
-        {
-          "type": "arrow",
-          "direction": "up",
-          "height": 24
-        },
-        {
-          "type": "text",
-          "text": "1/2 MILE",
-          "height": 12,
-          "font": "RG2014D"
-        }
-      ],
-      "align": "center"
+      "type": "text",
+      "text": "1/2 MILE",
+      "height": 13,
+      "font": "RG2014D"
     }
   ]
 }

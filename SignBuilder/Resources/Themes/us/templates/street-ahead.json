@@ -8,7 +8,7 @@
   "items": [
     {
       "type": "tab",
-      "align": "left",
+      "align": "right",
       "items": [
         {
           "type": "text",
@@ -24,21 +24,10 @@
       "height": 16
     },
     {
-      "type": "row",
-      "items": [
-        {
-          "type": "text",
-          "text": "EXIT",
-          "height": 12,
-          "font": "RG2014D"
-        },
-        {
-          "type": "text",
-          "text": "1/4 MILE",
-          "height": 12,
-          "font": "RG2014D"
-        }
-      ]
+      "type": "text",
+      "text": "1/4 MILE",
+      "height": 12,
+      "font": "RG2014D"
     }
   ]
 }

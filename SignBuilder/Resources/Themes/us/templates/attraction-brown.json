@@ -18,17 +18,30 @@
       "type": "row",
       "items": [
         {
-          "type": "text",
-          "text": "EXIT 2",
-          "height": 13,
-          "font": "RG2014D"
+          "type": "symbol",
+          "symbol": "mutcd/swimming",
+          "height": 30,
+          "box": {}
         },
         {
-          "type": "arrow",
-          "direction": "up-right",
-          "height": 18
+          "type": "symbol",
+          "symbol": "mutcd/hiking-trail",
+          "height": 30,
+          "box": {}
+        },
+        {
+          "type": "symbol",
+          "symbol": "mutcd/picnic-site",
+          "height": 30,
+          "box": {}
         }
       ]
+    },
+    {
+      "type": "text",
+      "text": "EXIT 2",
+      "height": 13,
+      "font": "RG2014D"
     }
   ]
 }

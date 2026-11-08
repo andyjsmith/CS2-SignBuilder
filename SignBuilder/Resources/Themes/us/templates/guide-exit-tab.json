@@ -2,7 +2,7 @@
   "formatVersion": 2,
   "theme": "us",
   "id": "guide-exit-tab",
-  "name": "Exit guide",
+  "name": "Exit direction",
   "scheme": "green",
   "items": [
     {
@@ -39,8 +39,19 @@
       "text": "Boston"
     },
     {
-      "type": "text",
-      "text": "Portsmouth NH"
+      "type": "row",
+      "align": "end",
+      "items": [
+        {
+          "type": "text",
+          "text": "Portsmouth NH"
+        },
+        {
+          "type": "arrow",
+          "direction": "up-right",
+          "height": 24
+        }
+      ]
     }
   ]
 }

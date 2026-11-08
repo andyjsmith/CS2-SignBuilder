@@ -2,8 +2,9 @@
   "formatVersion": 2,
   "theme": "us",
   "id": "split-lane-arrows",
-  "name": "Split with lanes",
+  "name": "Arrow per lane",
   "scheme": "green",
+  "minLanes": 4,
   "items": [
     {
       "type": "tab",
@@ -12,35 +13,16 @@
         {
           "type": "text",
           "text": "EXIT 27",
-          "height": 15,
+          "height": 10,
           "font": "RG2014E"
         }
       ]
     },
     {
       "type": "row",
+      "align": "end",
+      "justify": "even",
       "items": [
-        {
-          "type": "column",
-          "align": "center",
-          "items": [
-            {
-              "type": "text",
-              "text": "SOUTH",
-              "height": 15,
-              "font": "RG2014D"
-            },
-            {
-              "type": "shield",
-              "network": "I",
-              "number": "494",
-              "height": 48
-            }
-          ]
-        },
-        {
-          "type": "divider"
-        },
         {
           "type": "column",
           "align": "center",
@@ -66,57 +48,100 @@
               "type": "text",
               "text": "St Cloud",
               "height": 20
-            }
-          ]
-        }
-      ],
-      "align": "start",
-      "justify": "even"
-    },
-    {
-      "type": "row",
-      "items": [
-        {
-          "type": "row",
-          "align": "end",
-          "items": [
-            {
-              "type": "arrow",
-              "direction": "turn-left",
-              "style": "lane",
-              "height": 60
             },
             {
-              "type": "chip",
-              "scheme": "yellow",
+              "type": "row",
+              "justify": "even",
+              "align": "end",
+              "gapBefore": 18,
               "items": [
                 {
+                  "type": "arrow",
+                  "direction": "up",
+                  "height": 60,
+                  "style": "lane"
+                },
+                {
+                  "type": "arrow",
+                  "direction": "up",
+                  "height": 60,
+                  "style": "lane"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "divider"
+        },
+        {
+          "type": "column",
+          "align": "center",
+          "items": [
+            {
+              "type": "row",
+              "items": [
+                {
+                  "type": "shield",
+                  "network": "I",
+                  "number": "494",
+                  "height": 48
+                },
+                {
                   "type": "text",
-                  "text": "50 MPH",
+                  "text": "SOUTH",
                   "height": 15,
                   "font": "RG2014D"
                 }
-              ],
-              "radius": 2
+              ]
+            },
+            {
+              "type": "text",
+              "text": "Minneapolis",
+              "height": 20
+            },
+            {
+              "type": "row",
+              "justify": "even",
+              "align": "end",
+              "gapBefore": 18,
+              "items": [
+                {
+                  "type": "arrow",
+                  "direction": "split-right",
+                  "height": 60,
+                  "style": "lane"
+                },
+                {
+                  "type": "column",
+                  "align": "center",
+                  "items": [
+                    {
+                      "type": "arrow",
+                      "direction": "slight-right",
+                      "height": 60,
+                      "style": "lane"
+                    },
+                    {
+                      "type": "chip",
+                      "scheme": "yellow",
+                      "radius": 2,
+                      "items": [
+                        {
+                          "type": "text",
+                          "text": "EXIT ONLY",
+                          "height": 12,
+                          "font": "RG2014E"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
             }
           ]
-        },
-        {
-          "type": "arrow",
-          "direction": "split-left",
-          "style": "lane",
-          "height": 60
-        },
-        {
-          "type": "arrow",
-          "direction": "up",
-          "style": "lane",
-          "height": 60
         }
-      ],
-      "justify": "even",
-      "align": "end"
+      ]
     }
-  ],
-  "minLanes": 3
+  ]
 }
