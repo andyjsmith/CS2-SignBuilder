@@ -231,6 +231,609 @@
       "name": "Electric vehicle charging",
       "category": "Services",
       "file": "symbols/ev-charging.svg"
+    },
+    "smoking": {
+      "name": "Smoking",
+      "category": "Services",
+      "number": "RS-002",
+      "file": "symbols/smoking.svg"
+    },
+    "tunnel": {
+      "name": "Tunnel",
+      "category": "Recreation",
+      "number": "RS-005",
+      "file": "symbols/tunnel.svg"
+    },
+    "lookout-tower": {
+      "name": "Lookout tower",
+      "category": "Recreation",
+      "number": "RS-006",
+      "file": "symbols/lookout-tower.svg"
+    },
+    "lighthouse": {
+      "name": "Lighthouse",
+      "category": "Recreation",
+      "number": "RS-007",
+      "file": "symbols/lighthouse.svg"
+    },
+    "deer-viewing": {
+      "name": "Deer viewing area",
+      "category": "Recreation: wildlife",
+      "number": "RS-011",
+      "file": "symbols/deer-viewing.svg"
+    },
+    "bear-viewing": {
+      "name": "Bear viewing area",
+      "category": "Recreation: wildlife",
+      "number": "RS-012",
+      "file": "symbols/bear-viewing.svg"
+    },
+    "mens-restroom": {
+      "name": "Men's restroom",
+      "category": "Services",
+      "number": "RS-021",
+      "file": "symbols/mens-restroom.svg"
+    },
+    "restrooms": {
+      "name": "Restrooms",
+      "category": "Services",
+      "number": "RS-022",
+      "file": "symbols/restrooms.svg"
+    },
+    "womens-restroom": {
+      "name": "Women's restroom",
+      "category": "Services",
+      "number": "RS-023",
+      "file": "symbols/womens-restroom.svg"
+    },
+    "first-aid": {
+      "name": "First aid",
+      "category": "Services",
+      "number": "RS-024",
+      "file": "symbols/first-aid.svg"
+    },
+    "post-office": {
+      "name": "Post office",
+      "category": "Services",
+      "number": "RS-026",
+      "file": "symbols/post-office.svg"
+    },
+    "bus-stop": {
+      "name": "Bus stop",
+      "category": "Transportation",
+      "number": "RS-031",
+      "file": "symbols/bus-stop.svg"
+    },
+    "parking": {
+      "name": "Parking",
+      "category": "Services",
+      "number": "RS-034",
+      "file": "symbols/parking.svg"
+    },
+    "showers": {
+      "name": "Showers",
+      "category": "Services",
+      "number": "RS-035",
+      "file": "symbols/showers.svg"
+    },
+    "viewing-area": {
+      "name": "Viewing area",
+      "category": "Recreation",
+      "number": "RS-036",
+      "file": "symbols/viewing-area.svg"
+    },
+    "sleeping-shelter": {
+      "name": "Sleeping shelter",
+      "category": "Recreation",
+      "number": "RS-037",
+      "file": "symbols/sleeping-shelter.svg"
+    },
+    "picnic-shelter": {
+      "name": "Picnic shelter",
+      "category": "Recreation",
+      "number": "RS-039",
+      "file": "symbols/picnic-shelter.svg"
+    },
+    "trailer-site": {
+      "name": "Trailer site",
+      "category": "Recreation",
+      "number": "RS-040",
+      "file": "symbols/trailer-site.svg"
+    },
+    "campfires": {
+      "name": "Campfires",
+      "category": "Recreation",
+      "number": "RS-042",
+      "file": "symbols/campfires.svg"
+    },
+    "picnic-site": {
+      "name": "Picnic site",
+      "category": "Recreation",
+      "number": "RS-044",
+      "file": "symbols/picnic-site.svg"
+    },
+    "cross-country-skiing": {
+      "name": "Cross-country skiing",
+      "category": "Recreation: winter",
+      "number": "RS-046",
+      "file": "symbols/cross-country-skiing.svg"
+    },
+    "sledding": {
+      "name": "Sledding",
+      "category": "Recreation: winter",
+      "number": "RS-049",
+      "file": "symbols/sledding.svg"
+    },
+    "marina": {
+      "name": "Marina",
+      "category": "Recreation: water",
+      "number": "RS-053",
+      "file": "symbols/marina.svg"
+    },
+    "boat-ramp": {
+      "name": "Boat ramp",
+      "category": "Recreation: water",
+      "number": "RS-054",
+      "file": "symbols/boat-ramp.svg"
+    },
+    "motorboating": {
+      "name": "Motorboating",
+      "category": "Recreation: water",
+      "number": "RS-055",
+      "file": "symbols/motorboating.svg"
+    },
+    "waterskiing": {
+      "name": "Waterskiing",
+      "category": "Recreation: water",
+      "number": "RS-058",
+      "file": "symbols/waterskiing.svg"
+    },
+    "scuba-diving": {
+      "name": "Scuba diving",
+      "category": "Recreation: water",
+      "number": "RS-060",
+      "file": "symbols/scuba-diving.svg"
+    },
+    "swimming": {
+      "name": "Swimming",
+      "category": "Recreation: water",
+      "number": "RS-061",
+      "file": "symbols/swimming.svg"
+    },
+    "fishing-area": {
+      "name": "Fishing area",
+      "category": "Recreation: water",
+      "number": "RS-063",
+      "file": "symbols/fishing-area.svg"
+    },
+    "horse-trail": {
+      "name": "Horse trail",
+      "category": "Recreation",
+      "number": "RS-064",
+      "file": "symbols/horse-trail.svg"
+    },
+    "hiking-trail": {
+      "name": "Hiking trail",
+      "category": "Recreation",
+      "number": "RS-068",
+      "file": "symbols/hiking-trail.svg"
+    },
+    "tramway": {
+      "name": "Tramway",
+      "category": "Recreation",
+      "number": "RS-071",
+      "file": "symbols/tramway.svg"
+    },
+    "wildlife-viewing": {
+      "name": "Wildlife viewing",
+      "category": "Recreation: wildlife",
+      "number": "RS-076",
+      "file": "symbols/wildlife-viewing.svg"
+    },
+    "winter-recreation": {
+      "name": "Winter recreation area",
+      "category": "Recreation: winter",
+      "number": "RS-077",
+      "file": "symbols/winter-recreation.svg"
+    },
+    "snowshoeing": {
+      "name": "Snowshoeing",
+      "category": "Recreation: winter",
+      "number": "RS-078",
+      "file": "symbols/snowshoeing.svg"
+    },
+    "canoeing": {
+      "name": "Canoeing",
+      "category": "Recreation: water",
+      "number": "RS-079",
+      "file": "symbols/canoeing.svg"
+    },
+    "technical-rock-climbing": {
+      "name": "Technical rock climbing",
+      "category": "Recreation",
+      "number": "RS-081",
+      "file": "symbols/technical-rock-climbing.svg"
+    },
+    "climbing": {
+      "name": "Climbing",
+      "category": "Recreation",
+      "number": "RS-082",
+      "file": "symbols/climbing.svg"
+    },
+    "caves": {
+      "name": "Spelunking (caves)",
+      "category": "Recreation",
+      "number": "RS-084",
+      "file": "symbols/caves.svg"
+    },
+    "laundromat": {
+      "name": "Laundromat",
+      "category": "Services",
+      "number": "RS-085",
+      "file": "symbols/laundromat.svg"
+    },
+    "fire-extinguisher": {
+      "name": "Fire extinguisher",
+      "category": "Services",
+      "number": "RS-090",
+      "file": "symbols/fire-extinguisher.svg"
+    },
+    "trash-dumpster": {
+      "name": "Trash dumpster",
+      "category": "Services",
+      "number": "RS-091",
+      "file": "symbols/trash-dumpster.svg"
+    },
+    "all-terrain-trail": {
+      "name": "All-terrain vehicle trail",
+      "category": "Recreation",
+      "number": "RS-095",
+      "file": "symbols/all-terrain-trail.svg"
+    },
+    "baseball": {
+      "name": "Baseball",
+      "category": "Recreation",
+      "number": "RS-096",
+      "file": "symbols/baseball.svg"
+    },
+    "skateboarding": {
+      "name": "Skateboarding",
+      "category": "Recreation",
+      "number": "RS-098",
+      "file": "symbols/skateboarding.svg"
+    },
+    "rv-site": {
+      "name": "Recreational vehicle site",
+      "category": "Recreation",
+      "number": "RS-104",
+      "file": "symbols/rv-site.svg"
+    },
+    "chair-lift": {
+      "name": "Chair lift",
+      "category": "Recreation: winter",
+      "number": "RS-105",
+      "file": "symbols/chair-lift.svg"
+    },
+    "seal-viewing": {
+      "name": "Seal viewing",
+      "category": "Recreation: wildlife",
+      "number": "RS-106",
+      "file": "symbols/seal-viewing.svg"
+    },
+    "whale-viewing": {
+      "name": "Whale viewing",
+      "category": "Recreation: wildlife",
+      "number": "RS-107",
+      "file": "symbols/whale-viewing.svg"
+    },
+    "seaplane": {
+      "name": "Seaplane",
+      "category": "Transportation",
+      "number": "RS-115",
+      "file": "symbols/seaplane.svg"
+    },
+    "archery": {
+      "name": "Archery",
+      "category": "Recreation",
+      "number": "RS-116",
+      "file": "symbols/archery.svg"
+    },
+    "small-boat-launch": {
+      "name": "Small boat launch",
+      "category": "Recreation: water",
+      "number": "RS-117",
+      "file": "symbols/small-boat-launch.svg"
+    },
+    "jet-ski": {
+      "name": "Personal watercraft",
+      "category": "Recreation: water",
+      "number": "RS-121",
+      "file": "symbols/jet-ski.svg"
+    },
+    "in-line-skating": {
+      "name": "In-line skating",
+      "category": "Recreation",
+      "number": "RS-125",
+      "file": "symbols/in-line-skating.svg"
+    },
+    "golfing": {
+      "name": "Golfing",
+      "category": "Recreation",
+      "number": "RS-128",
+      "file": "symbols/golfing.svg"
+    },
+    "tennis": {
+      "name": "Tennis",
+      "category": "Recreation",
+      "number": "RS-129",
+      "file": "symbols/tennis.svg"
+    },
+    "pickup-truck": {
+      "name": "Pickup truck",
+      "category": "Recreation",
+      "number": "RS-140",
+      "file": "symbols/pickup-truck.svg"
+    },
+    "nature-study-area": {
+      "name": "Nature study area",
+      "category": "Recreation: wildlife",
+      "number": "RS-141",
+      "file": "symbols/nature-study-area.svg"
+    },
+    "dog-sledding": {
+      "name": "Dog sledding",
+      "category": "Recreation: winter",
+      "number": "RS-143",
+      "file": "symbols/dog-sledding.svg"
+    },
+    "snow-tubing": {
+      "name": "Snow tubing",
+      "category": "Recreation: winter",
+      "number": "RS-144",
+      "file": "symbols/snow-tubing.svg"
+    },
+    "beach": {
+      "name": "Beach",
+      "category": "Recreation: water",
+      "number": "RS-145",
+      "file": "symbols/beach.svg"
+    },
+    "electrical-hook-up": {
+      "name": "Electrical hook-up",
+      "category": "Services",
+      "number": "RS-150",
+      "file": "symbols/electrical-hook-up.svg"
+    },
+    "recycling": {
+      "name": "Recycling",
+      "category": "Services",
+      "number": "RS-200",
+      "file": "symbols/recycling.svg"
+    },
+    "letter-a": {
+      "name": "Letter A",
+      "category": "Letters",
+      "file": "symbols/letter-a.svg"
+    },
+    "letter-b": {
+      "name": "Letter B",
+      "category": "Letters",
+      "file": "symbols/letter-b.svg"
+    },
+    "letter-c": {
+      "name": "Letter C",
+      "category": "Letters",
+      "file": "symbols/letter-c.svg"
+    },
+    "fallout-shelter": {
+      "name": "Fallout shelter",
+      "category": "Services",
+      "file": "symbols/fallout-shelter.svg"
+    },
+    "511": {
+      "name": "511 traveler information",
+      "category": "Routes and programs",
+      "file": "symbols/511.svg"
+    },
+    "airport": {
+      "name": "Airport",
+      "category": "Transportation",
+      "file": "symbols/airport.svg"
+    },
+    "americas-byways": {
+      "name": "America's Byways",
+      "category": "Routes and programs",
+      "file": "symbols/americas-byways.svg"
+    },
+    "bicycle": {
+      "name": "Bicycle",
+      "category": "Traffic and tolls",
+      "file": "symbols/bicycle.svg"
+    },
+    "biofuel": {
+      "name": "Biodiesel",
+      "category": "Fuel",
+      "file": "symbols/biofuel.svg"
+    },
+    "bus-station": {
+      "name": "Bus station",
+      "category": "Transportation",
+      "file": "symbols/bus-station.svg"
+    },
+    "camping": {
+      "name": "Camping",
+      "category": "Services",
+      "file": "symbols/camping.svg"
+    },
+    "cng": {
+      "name": "Compressed natural gas",
+      "category": "Fuel",
+      "file": "symbols/cng.svg"
+    },
+    "diesel": {
+      "name": "Diesel",
+      "category": "Fuel",
+      "file": "symbols/diesel.svg"
+    },
+    "accessible": {
+      "name": "Accessible (disability)",
+      "category": "Services",
+      "file": "symbols/accessible.svg"
+    },
+    "eisenhower-interstate": {
+      "name": "Eisenhower Interstate System",
+      "category": "Routes and programs",
+      "file": "symbols/eisenhower-interstate.svg"
+    },
+    "equestrian": {
+      "name": "Equestrian",
+      "category": "Traffic and tolls",
+      "file": "symbols/equestrian.svg"
+    },
+    "e85": {
+      "name": "Ethanol (E85)",
+      "category": "Fuel",
+      "file": "symbols/e85.svg"
+    },
+    "exact-change": {
+      "name": "Exact change",
+      "category": "Traffic and tolls",
+      "file": "symbols/exact-change.svg"
+    },
+    "food": {
+      "name": "Food",
+      "category": "Services",
+      "file": "symbols/food.svg"
+    },
+    "gas": {
+      "name": "Gas",
+      "category": "Fuel",
+      "file": "symbols/gas.svg"
+    },
+    "hospital": {
+      "name": "Hospital",
+      "category": "Services",
+      "file": "symbols/hospital.svg"
+    },
+    "hov": {
+      "name": "HOV (diamond)",
+      "category": "Traffic and tolls",
+      "file": "symbols/hov.svg"
+    },
+    "hydrogen": {
+      "name": "Hydrogen",
+      "category": "Fuel",
+      "file": "symbols/hydrogen.svg"
+    },
+    "information": {
+      "name": "Information",
+      "category": "Services",
+      "file": "symbols/information.svg"
+    },
+    "library": {
+      "name": "Library",
+      "category": "Services",
+      "file": "symbols/library.svg"
+    },
+    "light-rail-station": {
+      "name": "Light rail station",
+      "category": "Transportation",
+      "file": "symbols/light-rail-station.svg"
+    },
+    "lng": {
+      "name": "Liquefied natural gas",
+      "category": "Fuel",
+      "file": "symbols/lng.svg"
+    },
+    "lpg": {
+      "name": "Liquefied petroleum gas",
+      "category": "Fuel",
+      "file": "symbols/lpg.svg"
+    },
+    "litter-container": {
+      "name": "Litter container",
+      "category": "Services",
+      "file": "symbols/litter-container.svg"
+    },
+    "lodging": {
+      "name": "Lodging",
+      "category": "Services",
+      "file": "symbols/lodging.svg"
+    },
+    "medical": {
+      "name": "Medical services",
+      "category": "Services",
+      "file": "symbols/medical.svg"
+    },
+    "park-and-ride": {
+      "name": "Park and ride",
+      "category": "Transportation",
+      "file": "symbols/park-and-ride.svg"
+    },
+    "passenger-ferry": {
+      "name": "Passenger ferry",
+      "category": "Transportation",
+      "file": "symbols/passenger-ferry.svg"
+    },
+    "pedestrian": {
+      "name": "Pedestrian",
+      "category": "Traffic and tolls",
+      "file": "symbols/pedestrian.svg"
+    },
+    "pharmacy": {
+      "name": "Pharmacy",
+      "category": "Services",
+      "file": "symbols/pharmacy.svg"
+    },
+    "rv-sanitary-station": {
+      "name": "RV sanitary station",
+      "category": "Services",
+      "file": "symbols/rv-sanitary-station.svg"
+    },
+    "skaters": {
+      "name": "Skaters",
+      "category": "Traffic and tolls",
+      "file": "symbols/skaters.svg"
+    },
+    "tty": {
+      "name": "Telecommunications for the deaf (TTY)",
+      "category": "Services",
+      "file": "symbols/tty.svg"
+    },
+    "telephone": {
+      "name": "Telephone",
+      "category": "Services",
+      "file": "symbols/telephone.svg"
+    },
+    "toll-collector": {
+      "name": "Toll collector",
+      "category": "Traffic and tolls",
+      "file": "symbols/toll-collector.svg"
+    },
+    "train-station": {
+      "name": "Train station",
+      "category": "Transportation",
+      "file": "symbols/train-station.svg"
+    },
+    "truck-parking": {
+      "name": "Truck parking",
+      "category": "Services",
+      "file": "symbols/truck-parking.svg"
+    },
+    "us-bicycle-route": {
+      "name": "U.S. Bicycle Route",
+      "category": "Routes and programs",
+      "file": "symbols/us-bicycle-route.svg"
+    },
+    "vehicle-ferry": {
+      "name": "Vehicle ferry",
+      "category": "Transportation",
+      "file": "symbols/vehicle-ferry.svg"
+    },
+    "wifi": {
+      "name": "Wireless internet",
+      "category": "Services",
+      "file": "symbols/wifi.svg"
     }
   }
 }

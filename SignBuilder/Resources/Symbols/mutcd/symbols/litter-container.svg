@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg width="100%" height="100%" viewBox="0 0 1154 1250" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xml:space="preserve" xmlns:serif="http://www.serif.com/" style="fill-rule:evenodd;clip-rule:evenodd;stroke-linejoin:round;stroke-miterlimit:2;">
+    <g transform="matrix(4.16667,0,0,4.16667,685.166,235.066)">
+        <path d="M0,233.827L20.821,145.909C29.474,121.744 37.294,106.404 49.192,88.894L41.806,40.805L22.591,64.798L-29.541,95.843L-38.296,83.013L14.169,45.584L35.156,-3.808L49.192,-9.757L59.284,-8.822C79.1,-6.982 87.186,13.236 91.029,30.614L97.311,59.017C100.221,68.843 101.089,73.853 101.59,81.509L112.484,243.584L90.563,243.451L73.787,145.47C72.517,141.893 71.448,138.922 70.612,134.609L50.696,157.065L26.565,241.547L0,233.827Z" style="fill:white;fill-rule:nonzero;"/>
+    </g>
+    <g transform="matrix(4.16667,0,0,4.16667,520.767,1244.59)">
+        <path d="M0,-134.273L-24.425,0L-100.723,0L-124.984,-134.273L-107.339,-134.273L-86.052,-17.612L-39.099,-17.612L-17.41,-134.273L0,-134.273Z" style="fill:white;fill-rule:nonzero;"/>
+    </g>
+    <g transform="matrix(-4.16667,0,0,4.16667,800.115,181.004)">
+        <path d="M0,-43.441C-11.996,-43.441 -21.721,-33.716 -21.721,-21.72C-21.721,-9.724 -11.996,0 0,0C11.996,0 21.721,-9.724 21.721,-21.72C21.721,-33.716 11.996,-43.441 0,-43.441" style="fill:white;fill-rule:nonzero;"/>
+    </g>
+    <g transform="matrix(-2.94647,2.94609,2.94609,2.94647,392.162,591.949)">
+        <rect x="-26.117" y="-10.818" width="21.622" height="21.669" style="fill:white;"/>
+    </g>
+    <g transform="matrix(-2.94609,2.94647,2.94647,2.94609,245.315,640.712)">
+        <rect x="-26.115" y="-10.82" width="21.62" height="21.668" style="fill:white;"/>
+    </g>
+    <g transform="matrix(-4.16667,0,0,4.16667,1178.37,-1096.48)">
+        <rect x="214.1" y="433.43" width="21.655" height="21.623" style="fill:white;"/>
+    </g>
+</svg>
