@@ -101,11 +101,15 @@
 .confirmText { font-size: 15rem; color: #fff; margin-bottom: 12rem; }
 .dangerButton { padding: 5rem 14rem; margin-right: 10rem; font-size: 14rem; font-weight: bold; color: #fff; border-radius: 4rem; background-color: #b23a3a; }
 .dangerButton:hover { background-color: #cc4545; }
-.marginGrid { display: flex; flex-direction: column; }
-.marginSide { display: flex; flex-direction: row; align-items: center; margin: 0 6rem 3rem 0; }
-.marginLabel { width: 40rem; font-size: 12rem; color: rgba(255, 255, 255, 0.7); }
-.marginSide .numberInput { width: 36rem; }
-.marginSide .stepValue { margin: 0 2rem; }
+/* Two sides to a row, sharing its width (the number boxes give way, not the - and + buttons). */
+.marginGrid { display: flex; flex-direction: column; align-self: stretch; }
+.marginGrid .inlineRow { align-self: stretch; }
+.marginSide { display: flex; flex-direction: row; align-items: center; flex: 1 1 0; min-width: 0; margin: 0 6rem 3rem 0; }
+.marginLabel { width: 40rem; flex-shrink: 0; font-size: 12rem; color: rgba(255, 255, 255, 0.7); }
+.marginSide .stepperCompact { flex: 1 1 0; min-width: 0; }
+.marginSide .stepValue { flex: 1 1 0; min-width: 0; margin: 0 2rem; }
+.marginSide .stepperCompact .numberInput { width: 100%; min-width: 0; }
+.marginSide .step { flex-shrink: 0; }
 .cardBadge { position: absolute; right: 26rem; bottom: 4rem; opacity: 0.7; }
 .stepperCompact { display: flex; flex-direction: row; align-items: center; }
 .stepperCompact .stepValue { width: auto; }

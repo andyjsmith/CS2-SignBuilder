@@ -695,7 +695,8 @@ export const Designer = (props: {
         </div>
 
         <div className={styles.column}>
-          <Scrollable vertical trackVisibility="scrollable" className={styles.partsScroll}>
+          {/* The scrollbar keeps its own space: drawn over the parts, it covered the controls at their right edge. */}
+          <Scrollable vertical trackVisibility="reserve" className={styles.partsScroll}>
           <div className={styles.heading}>Parts</div>
           <PartsList design={design} selected={selected} onSelect={setSelected} labels={labels}
             onChange={(d, path) => { setDesign(d); setSelected(path); }}
