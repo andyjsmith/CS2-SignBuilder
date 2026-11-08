@@ -586,10 +586,14 @@
     // An arrowhead at <e> pointing along <d>. Its base reaches a little back into the shaft, so no seam of
     // background shows between them (anti-aliased edges that only touch leave a faint line).
     var head = function (e, d, half) {
-      var n = [-d[1], d[0]], back = 0.8;
+      var n = [-d[1], d[0]], back = 0.8, len = lengthFor(half);
       var b = [e[0] - d[0] * back, e[1] - d[1] * back];
-      return [[b[0] + n[0] * half, b[1] + n[1] * half], [e[0] + d[0] * headLen, e[1] + d[1] * headLen], [b[0] - n[0] * half, b[1] - n[1] * half]];
+      return [[b[0] + n[0] * half, b[1] + n[1] * half], [e[0] + d[0] * len, e[1] + d[1] * len], [b[0] - n[0] * half, b[1] - n[1] * half]];
     };
+    // Arrowheads for three lanes or more grow with them, wider and longer (a fixed size looked squeezed on a wide
+    // branch, its lane lines running into it). One and two lanes keep theirs.
+    var halfFor = function (lanes) { return lanes * L / 2 + headOver + Math.max(0, lanes - 2) * L * 0.3; };
+    var lengthFor = function (half) { return headLen * (1 + Math.max(0, half / halfFor(2) - 1) * 0.5); };
     // A library's arrowhead (the first of the theme's libraries that has one; the MUTCD's: a rounded tip, rounded
     // corners and a back edge swept slightly back from the shaft), else a plain triangle. Its outline as (back from
     // the tip, across) per unit of half-width, ending where the back edge leaves the side; the back edge then runs at
@@ -604,10 +608,10 @@
     // diagrams keep their size). A head longer than that reaches back over the shaft's end; a shorter one brings a
     // piece of shaft to meet it. Either way it ends one unit into the shaft, so no seam shows.
     var mutcdHead = function (e, d, half, shaftHalf) {
-      var n = [-d[1], d[0]], hb = headBack(half, shaftHalf);
-      var tip = [e[0] + d[0] * headLen, e[1] + d[1] * headLen];
+      var n = [-d[1], d[0]], hb = headBack(half, shaftHalf), len = lengthFor(half);
+      var tip = [e[0] + d[0] * len, e[1] + d[1] * len];
       var pt = function (back, across) { return [tip[0] - d[0] * back + n[0] * across, tip[1] - d[1] * back + n[1] * across]; };
-      var side = HEAD.map(function (p) { return [p[0] * half, p[1] * half]; }).concat([[hb, shaftHalf], [Math.max(hb, headLen) + 1, shaftHalf]]);
+      var side = HEAD.map(function (p) { return [p[0] * half, p[1] * half]; }).concat([[hb, shaftHalf], [Math.max(hb, len) + 1, shaftHalf]]);
       return side.map(function (p) { return pt(p[0], p[1]); }).concat(side.slice(1).reverse().map(function (p) { return pt(p[0], -p[1]); }));
     };
     var dash = function (cx, cy, dx, dy) {
@@ -648,12 +652,13 @@
         : Math.max(1, Math.round(item.lanes || 2));
       var sw = lanes * L, sx = -sw / 2, bottom = 150, top = 0;
       // The through arrow's tip is at the top; with a MUTCD head the shaft starts where the head's back edge meets it.
-      var throughBack = mutcd ? Math.max(headLen, headBack(sw / 2 + headOver, sw / 2)) : headLen;
+      var throughHalf = halfFor(lanes), throughLen = lengthFor(throughHalf);
+      var throughBack = mutcd ? Math.max(throughLen, headBack(throughHalf, sw / 2)) : throughLen;
       var shaftTop = fork ? 75 : top + throughBack;
       // Exit-only lanes (exits only): beside the through lanes, from the bottom up to where the exit leaves.
       var exitOnly = fork || item.sharedLanes == null ? 0 : Math.max(0, exitLanes - Math.min(1, Math.max(0, Math.round(item.sharedLanes))));
       shapes.push(rect(sx, shaftTop, sw, bottom - shaftTop));
-      if (!fork) shapes.push(mutcd ? mutcdHead([0, top + headLen], [0, -1], sw / 2 + headOver, sw / 2) : head([0, shaftTop], [0, -1], sw / 2 + headOver));
+      if (!fork) shapes.push(mutcd ? mutcdHead([0, top + throughLen], [0, -1], throughHalf, sw / 2) : head([0, shaftTop], [0, -1], throughHalf));
       for (var lane = 1; lane < lanes; lane++) {
         for (var y = bottom - 7; y > shaftTop + 6; y -= 15) dash(sx + lane * L, y, 0, -1);
       }
@@ -688,7 +693,10 @@
         shapes.push(outer.concat(inner.reverse()));
         var end = at(-sweep, Rc);
         var d = [side * Math.sin(sweep), -Math.cos(sweep)];
-        shapes.push(mutcd ? mutcdHead(end, d, bw / 2 + headOver, bw / 2) : head(end, d, bw / 2 + headOver));
+        var branchHalf = halfFor(branchLanes);
+        shapes.push(mutcd ? mutcdHead(end, d, branchHalf, bw / 2) : head(end, d, branchHalf));
+        // How far the head reaches back over the curve: lane lines stop short of it.
+        var headOverCurve = mutcd ? Math.max(0, headBack(branchHalf, bw / 2) - lengthFor(branchHalf)) : 0;
         for (var bl = 1; bl < branchLanes; bl++) {
           var r = Rc - bw / 2 + bl * L;
           // Along the curve: five even steps, or, below exit-only lanes, on from their dashes every 15 units.
@@ -696,6 +704,8 @@
           if (exitOnly > 0) { for (var sd = 9; sd < r * sweep * 0.82; sd += 15) steps.push(-sd / r); }
           else { for (var k3 = 1; k3 < 5; k3++) steps.push(-sweep * (k3 / 5)); }
           steps.forEach(function (ph) {
+            // Not under the arrowhead (a dash is 8 long: half of it either side).
+            if (r * (sweep + ph) < headOverCurve + 4) return;
             var p0 = at(ph, r), p1 = at(ph - 0.01, r);
             var len = Math.hypot(p1[0] - p0[0], p1[1] - p0[1]) || 1;
             dash(p0[0], p0[1], (p1[0] - p0[0]) / len, (p1[1] - p0[1]) / len);
