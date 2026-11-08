@@ -16,7 +16,7 @@ namespace SignBuilder
 
         public void OnLoad(UpdateSystem updateSystem)
         {
-            log.Info(nameof(OnLoad));
+            log.Info($"Sign Builder {typeof(Mod).Assembly.GetName().Version.ToString(3)}");
 
             // Generated meshes and materials live in a mod-owned database; it must be registered
             // before any save that uses them is loaded.
