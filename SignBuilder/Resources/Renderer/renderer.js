@@ -68,15 +68,11 @@
     for (var k in BASE_DEFAULTS) DEFAULTS[k] = BASE_DEFAULTS[k];
     var d = T.def.defaults || {};
     for (var j in d) DEFAULTS[j] = d[j];
-    // Designs made with Sign Builder 1.0 (format 1) keep its arrows: the theme's own "arrow" and the basic library.
-    legacy = ((doc && doc.formatVersion) || 1) < 2;
     // Designs are measured in the theme's units: inches, or millimeters for metric countries.
     ppu = ppi / (T.def.units === "mm" ? 25.4 : 1);
   }
 
   var ppu = 3;
-  // Set while drawing a design made with Sign Builder 1.0 (see useTheme).
-  var legacy = false;
   // Set while drawing a sign's glow (see hsRender).
   var glowOnly = false;
   var ppi = 3;
@@ -335,11 +331,12 @@
     libsVersion++;
   }
 
-  // The theme's libraries, most important first: [{ lib, only (one arrow category, or null) }]. A design made with 1.0
-  // has only the basic one (and the theme's own "arrow"); an arrow borrowing a library ("library") has that one.
+  // The theme's libraries, most important first: [{ lib, only (one arrow category, or null) }]; an arrow borrowing a
+  // library ("library") has that one. Every design draws with them, made with 1.0 or since (1.0's arrows and road
+  // diagram arrowheads are the same size as the theme's, so its signs keep their layout).
   function themeLibs(borrowed) {
     var list = [];
-    (borrowed ? [borrowed] : legacy ? [] : T.def.libraries || []).forEach(function (entry) {
+    (borrowed ? [borrowed] : T.def.libraries || []).forEach(function (entry) {
       var parts = String(entry).split("/");
       if (LIBS[parts[0]]) list.push({ lib: LIBS[parts[0]].def, only: parts[1] || null });
     });
@@ -386,7 +383,7 @@
   // way if it can, else turned or mirrored. The theme's own "arrow" (1.0's single straight arrow) comes after its
   // libraries, before the basic one.
   function arrowCategories(borrowed) {
-    var cacheKey = borrowed ? "categoriesFrom:" + borrowed : legacy ? "categories1" : "categories2";
+    var cacheKey = borrowed ? "categoriesFrom:" + borrowed : "categories";
     if (T[cacheKey] && T[cacheKey + "Version"] === libsVersion) return T[cacheKey];
     var cats = [], byId = {};
     var add = function (id, info, shapes) {
@@ -1082,11 +1079,11 @@
     registerLibrary: registerLibrary,
     themes: THEMES,
     libraries: LIBS,
-    // The arrow styles a theme offers a design of <formatVersion> (the current one when absent), or those of the
-    // library <library> (an arrow borrowing it), for the editor: [{ id, label, title, perRow, directions, box }].
-    // <box> is a square that fits every direction of the style (so its icons share one scale).
+    // The arrow styles a theme offers, or those of the library <library> (an arrow borrowing it), for the editor:
+    // [{ id, label, title, perRow, directions, box }]. <box> is a square that fits every direction of the style (so
+    // its icons share one scale). <formatVersion> is no longer used (every design draws with the theme's arrows).
     arrowStyles: function (themeId, formatVersion, library) {
-      useTheme({ theme: themeId, formatVersion: formatVersion || 2 });
+      useTheme({ theme: themeId });
       var borrowed = library && LIBS[library] ? library : null;
       return arrowCategories(borrowed).map(function (c) {
         var directions = c.order.filter(function (d) { return c.ways[d]; });
@@ -1104,12 +1101,12 @@
     },
     // One arrow's outline in a theme (or borrowed from <library>): { d, transform, viewBox }.
     arrowGeometry: function (themeId, style, direction, formatVersion, library) {
-      useTheme({ theme: themeId, formatVersion: formatVersion || 2 });
+      useTheme({ theme: themeId });
       return arrowGeometry(style, direction, library);
     },
     // The theme's own symbol libraries (no arrow-only entries), most important first.
     symbolLibraries: function (themeId) {
-      useTheme({ theme: themeId, formatVersion: 2 });
+      useTheme({ theme: themeId });
       return themeLibs().filter(function (l) { return !l.only && l.lib.symbols; }).map(function (l) { return l.lib.id; });
     },
   };

@@ -25,12 +25,12 @@ export const ArrowIcon = (props: { direction: string; size?: number; color?: str
  * what the sign gets). <box>: the view box shared by the style's buttons; the arrow's own when absent.
  */
 export const ThemeArrowIcon = (props: {
-  theme: string; style?: string; direction: string; version?: number; library?: string; box?: number[]; size?: number; color?: string;
+  theme: string; style?: string; direction: string; library?: string; box?: number[]; size?: number; color?: string;
 }) => {
   const renderer = useRenderer();
   const size = props.size ?? 18;
   if (!renderer) return <svg width={size + "rem"} height={size + "rem"} />;
-  const g = renderer.arrowGeometry(props.theme, props.style, props.direction, props.version, props.library);
+  const g = renderer.arrowGeometry(props.theme, props.style, props.direction, undefined, props.library);
   const v = g.viewBox, s = Math.max(v[2], v[3]);
   const box = props.box ?? [v[0] + v[2] / 2 - s / 2, v[1] + v[3] / 2 - s / 2, s, s];
   return (

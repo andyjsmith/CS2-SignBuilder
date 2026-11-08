@@ -10,8 +10,8 @@ namespace SignBuilder.Core
     {
         public const string Key = "formatVersion";
         /// <summary>
-        /// 2: arrows (and road diagram arrowheads) come from the theme's symbol libraries. A design keeps the version it
-        /// was made with, so signs made with 1.0 keep 1.0's arrows wherever they are drawn again.
+        /// 2: arrows (and road diagram arrowheads) come from the theme's symbol libraries. Designs made with 1.0 (format 1)
+        /// are drawn the same way: its arrows were the same size, so its signs keep their layout.
         /// </summary>
         public const int Design = 2;
         /// <summary>2: arrows come from symbol libraries ("symbols"); 1.0 skips such themes rather than draw them wrong.</summary>

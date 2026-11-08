@@ -8,12 +8,8 @@ import { Design, Item, clone, duplicateItem, getItem, insertItem, kindOf, remove
 import { PartsList } from "./PartsList";
 import { SignPreview, useRenderer } from "./SignPreview";
 import { Template, TemplateLibrary } from "./TemplateLibrary";
-import { DESIGN_FORMAT, LibrarySymbol, SymbolLibrary, Theme, baseParts, blankFor, convertDesign, themeOf } from "./themeModel";
+import { LibrarySymbol, SymbolLibrary, Theme, baseParts, blankFor, convertDesign, themeOf } from "./themeModel";
 import styles from "./SignEditor.module.scss";
-
-/** Whether a design has parts whose look depends on its format (arrows and road diagrams). */
-const usesArrows = (design: { items?: Item[]; [key: string]: any }): boolean =>
-  (design.items ?? []).some((i) => i.type === "arrow" || i.type === "diagram" || usesArrows(i));
 
 /** An arrow's style ("" for straight arrows): lane arrows saved before there were styles have none. */
 const arrowStyleOf = (item: Item): string =>
@@ -189,7 +185,7 @@ export type PickedArrow = { library?: string; style: string; direction: string }
  * inside the parts panel it would be laid out and clipped there.
  */
 const SymbolPicker = (props: {
-  libraries: Record<string, SymbolLibrary>; own: string[]; value?: string; themeId: string; version: number;
+  libraries: Record<string, SymbolLibrary>; own: string[]; value?: string; themeId: string;
   onPick: (ref: string) => void; onPickArrow: (arrow: PickedArrow) => void; onClose: () => void;
 }) => {
   const renderer = useRenderer();
@@ -203,7 +199,7 @@ const SymbolPicker = (props: {
   const all = (ids: string[]) => ids.flatMap((id) => Object.entries(props.libraries[id]?.symbols ?? {}).map(([key, sym]) => ({ ref: `${id}/${key}`, lib: id, sym })));
   const entries = all(shown);
   // The arrows of the theme (as the sign draws them), or of the library shown.
-  const arrowStyles = renderer ? renderer.arrowStyles(props.themeId, library ? 2 : props.version, library || undefined) : [];
+  const arrowStyles = renderer ? renderer.arrowStyles(props.themeId, undefined, library || undefined) : [];
   const arrowCategory = (label: string) => "Arrows: " + label;
   const categories = [...Array.from(new Set(entries.map((e) => e.sym.category ?? "Other"))).sort(), ...arrowStyles.map((s) => arrowCategory(s.label))];
   const [category, setCategory] = useState<string | null>(null);
@@ -217,7 +213,7 @@ const SymbolPicker = (props: {
   const arrowCells = arrowStyle ? arrowStyle.directions.map((d) => (
     <div key={d} className={styles.symbolCell} title={`${arrowStyle.label}: ${d}`}
       onClick={() => { props.onPickArrow({ library: library || undefined, style: arrowStyle.id, direction: d }); props.onClose(); }}>
-      <ThemeArrowIcon theme={props.themeId} style={arrowStyle.id} direction={d} version={library ? 2 : props.version} library={library || undefined} box={arrowStyle.box} size={36} />
+      <ThemeArrowIcon theme={props.themeId} style={arrowStyle.id} direction={d} library={library || undefined} box={arrowStyle.box} size={36} />
     </div>
   )) : null;
   const cell = (e: { ref: string; lib: string; sym: LibrarySymbol }) => (
@@ -313,8 +309,6 @@ const MarginField = (props: { item: Item; onChange: (patch: Partial<Item>) => vo
 
 function ItemProperties(props: {
   item: Item; onChange: (patch: Partial<Item>) => void; focusToken: number; inRow: boolean; theme?: Theme; libraries: Record<string, SymbolLibrary>;
-  /** The sign's design format (its arrows: 1.0's, or the theme's libraries'). */
-  version?: number;
   /** Opens the symbol picker for this part. */
   onPickSymbol: () => void;
 }) {
@@ -356,11 +350,10 @@ function ItemProperties(props: {
     case "arrow": {
       // The theme's arrow styles and their directions come from its symbol libraries (through the renderer).
       const library = item.library as string | undefined;
-      const styles_ = renderer && theme ? renderer.arrowStyles(theme.id, library ? 2 : props.version, library) : [];
+      const styles_ = renderer && theme ? renderer.arrowStyles(theme.id, undefined, library) : [];
       const sources: Option[] = [{ value: "", label: "This theme's" }, ...Object.values(props.libraries)
         .filter((l) => Object.keys(l.arrows ?? {}).length > 0).sort((a, b) => a.name.localeCompare(b.name))
         .map((l) => ({ value: l.id, label: l.name, title: l.description }))];
-      const version = library ? 2 : props.version;
       const styleId = arrowStyleOf(item);
       const arrowStyle = styles_.find((s) => s.id === styleId) ?? styles_[0];
       const directionsOf = (id: string) => styles_.find((s) => s.id === id)?.directions ?? [];
@@ -372,7 +365,7 @@ function ItemProperties(props: {
           <Field label="Arrows from">
             <Select options={sources} value={library ?? ""} onChange={(lib) => {
               // The new set's styles and directions: keep the arrow's where they exist, otherwise its first.
-              const next = renderer && theme ? renderer.arrowStyles(theme.id, lib ? 2 : props.version, lib || undefined) : [];
+              const next = renderer && theme ? renderer.arrowStyles(theme.id, undefined, lib || undefined) : [];
               const st = next.find((s) => s.id === arrowStyleOf(item)) ?? next[0];
               onChange({ library: lib || undefined, style: st?.id || undefined, direction: st?.directions.includes(item.direction ?? "") ? item.direction : st?.directions[0] });
             }} />
@@ -380,7 +373,7 @@ function ItemProperties(props: {
           <Field label="Style">
             <Choice options={styles_.map((s) => ({
               value: s.id, label: s.label, title: s.title,
-              icon: <ThemeArrowIcon theme={theme!.id} style={s.id} direction={s.directions.includes("up") ? "up" : s.directions[0]} version={version} library={library} size={14} />,
+              icon: <ThemeArrowIcon theme={theme!.id} style={s.id} direction={s.directions.includes("up") ? "up" : s.directions[0]} library={library} size={14} />,
             }))}
               value={styleId} onChange={(style) => onChange({
                 style: style || undefined,
@@ -389,7 +382,7 @@ function ItemProperties(props: {
               })} />
           </Field>
           <Field label="Direction">
-            <Choice options={directions.map((a) => ({ value: a, icon: <ThemeArrowIcon theme={theme!.id} style={styleId} direction={a} version={version} library={library} box={arrowStyle?.box} />, title: a }))}
+            <Choice options={directions.map((a) => ({ value: a, icon: <ThemeArrowIcon theme={theme!.id} style={styleId} direction={a} library={library} box={arrowStyle?.box} />, title: a }))}
               perRow={arrowStyle?.perRow ?? 4} value={item.direction ?? "up"} onChange={(direction) => onChange({ direction })} />
           </Field>
           <Field label="Size"><NumberBox value={item.height ?? def?.defaults?.arrowHeight ?? 24} step={2} onChange={(height) => onChange({ height })} /></Field>
@@ -614,13 +607,6 @@ export const Designer = (props: {
         </div>
 
         <div className={styles.center}>
-          {(design.formatVersion ?? 1) < DESIGN_FORMAT && usesArrows(design) && (
-            <div className={styles.legacyNote}>
-              <div className={styles.legacyNoteText}>This sign keeps the arrows it was made with (Sign Builder 1.0).</div>
-              <div className={styles.chip} title="Draw its arrows and road diagrams with the theme's current arrows"
-                onClick={() => setDesign({ ...design, formatVersion: DESIGN_FORMAT })}>Use the new arrows</div>
-            </div>
-          )}
           <div className={styles.preview}>
             <SignPreview design={design} selected={selected}
               onSelect={(p) => { setSelected(p); if (p) setFocusToken(focusToken + 1); }} maxWidth={560} maxHeight={270} />
@@ -705,7 +691,7 @@ export const Designer = (props: {
           {item && (
             <>
               <div className={styles.heading}>{kindOf(item, labels)}</div>
-              <ItemProperties item={item} onChange={update} focusToken={focusToken} theme={theme} libraries={props.libraries} version={design.formatVersion ?? 1}
+              <ItemProperties item={item} onChange={update} focusToken={focusToken} theme={theme} libraries={props.libraries}
                 onPickSymbol={() => setPicking(true)}
                 inRow={selected!.includes(".") && getItem(design, selected!.split(".").slice(0, -1).join("."))?.type === "row"} />
             </>
@@ -714,7 +700,7 @@ export const Designer = (props: {
         </div>
         {picking && item?.type === "symbol" && (
           <SymbolPicker libraries={props.libraries} own={renderer && theme ? renderer.symbolLibraries(theme.id) : []} value={item.symbol}
-            themeId={theme?.id ?? "us"} version={design.formatVersion ?? 1}
+            themeId={theme?.id ?? "us"}
             onPick={(symbol) => update({ symbol })} onClose={() => setPicking(false)}
             onPickArrow={(a) => update({
               // The part becomes an arrow, at the symbol's size.

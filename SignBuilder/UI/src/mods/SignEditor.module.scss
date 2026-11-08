@@ -155,10 +155,6 @@
 .symbolCell:hover { background-color: rgba(0, 140, 90, 0.95); }
 .symbolCellOn { background-color: rgba(80, 160, 255, 0.6); }
 .symbolEmpty { padding: 10rem 0; font-size: 13rem; color: rgba(255, 255, 255, 0.7); }
-/* A sign made with 1.0, which keeps its arrows until the player switches it to the new ones. */
-.legacyNote { display: flex; flex-direction: row; align-items: center; margin-bottom: 6rem; padding: 4rem 8rem; border-radius: 4rem; background-color: rgba(255, 200, 0, 0.15); }
-.legacyNoteText { flex: 1; font-size: 13rem; color: rgba(255, 255, 255, 0.9); margin-right: 8rem; }
-.legacyNote .chip { margin: 0; }
 /* --- wrapped rows (Controls.Flow): rows are measured and laid out explicitly, since a wrapped flex row does not grow in Gameface --- */
 .flow { display: flex; flex-direction: column; align-items: flex-start; align-self: stretch; }
 .flowGrow { display: flex; flex-direction: column; align-items: flex-start; flex: 1 1 0; min-width: 0; }

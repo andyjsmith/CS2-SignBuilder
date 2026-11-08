@@ -148,7 +148,7 @@ namespace SignBuilder.Tests
             yield return new WaitForSecondsRealtime(1.5f);
             SpikeReport.Screenshot("sym_designer_borrowed.png");
             yield return Ask(ui, "var t = document.body.textContent; return { arrowsFrom: t.indexOf('Arrows from') >= 0, uk: t.indexOf('TSRGD') >= 0 };", "sym.designer.borrowed");
-            // A 1.0 design: the note offering the new arrows.
+            // A 1.0 design: drawn with the theme's arrows, with no note about them (note and button false).
             ui.OpenForEdit(new AssemblyRecord { Designs = new List<JObject> { OldDesign } }, "new");
             yield return new WaitForSecondsRealtime(3f);
             SpikeReport.Screenshot("sym_designer_old.png");
@@ -164,7 +164,7 @@ namespace SignBuilder.Tests
             var spots = HighwaySpots(em, near, 2);
             if (spots.Count == 0) { SpikeReport.Set("sym.place", "no highway"); yield break; }
             var spot = spots[0];
-            // The same signs made with 1.0 and now, side by side on one gantry.
+            // The same signs made with 1.0 and now, side by side on one gantry (they should look the same).
             var now = (JObject)OldDesign.DeepClone();
             now["formatVersion"] = 2;
             now["items"][0]["text"] = "MADE NOW";
