@@ -42,6 +42,23 @@ namespace SignBuilder.Core
 
         public static Coroutine Run(IEnumerator routine) => s_Host.StartCoroutine(routine);
 
+        /// <summary>
+        /// Registers the coui hosts for the mod's files (toolbar icon, renderer, themes) and the player's data. Done when
+        /// the mod loads: the toolbar asks for its icon as soon as the game UI shows, which can be before a city has
+        /// finished loading, and an unregistered host fails with "Invalid host locations map".
+        /// </summary>
+        public static void RegisterUIHosts()
+        {
+            var ui = Game.SceneFlow.GameManager.instance?.userInterface?.view?.uiSystem;
+            if (ui == null)
+            {
+                Mod.log.Warn("The game UI is not ready; Sign Builder's UI files are registered when a city loads");
+                return;
+            }
+            ui.AddHostLocation("signbuilder", ResourcesDir, shouldWatch: false);
+            ui.AddHostLocation(Themes.DataHost, DataDir, shouldWatch: false);
+        }
+
         private static string s_Step = "none";
         private static float s_StepAt;
 

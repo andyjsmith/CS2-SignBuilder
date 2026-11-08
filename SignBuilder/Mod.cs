@@ -45,6 +45,7 @@ namespace SignBuilder
             {
                 log.Info($"Current mod asset at {asset.path}");
                 Core.SignBuilderRuntime.Initialize(System.IO.Path.GetDirectoryName(asset.path));
+                Core.SignBuilderRuntime.RegisterUIHosts();
 #if TESTS
                 Tests.SpikeRunner.StartIfFlagged(System.IO.Path.GetDirectoryName(asset.path));
 #endif

@@ -129,11 +129,11 @@ namespace SignBuilder.Systems
         protected override void OnGameLoadingComplete(Colossal.Serialization.Entities.Purpose purpose, Game.GameMode mode)
         {
             base.OnGameLoadingComplete(purpose, mode);
-            // The editor preview loads renderer.js/css and fonts from the mod folder through this host.
+            // The editor preview loads renderer.js/css and fonts from the mod folder through these hosts (registered
+            // when the mod loads; again here in case the game UI was not ready then).
             var ui = GameManager.instance.userInterface.view.uiSystem;
-            ui.AddHostLocation("signbuilder", SignBuilderRuntime.ResourcesDir, shouldWatch: false);
             Directory.CreateDirectory(SignBuilderRuntime.DataDir);
-            ui.AddHostLocation(Themes.DataHost, SignBuilderRuntime.DataDir, shouldWatch: false);
+            SignBuilderRuntime.RegisterUIHosts();
             foreach (var (host, dir) in Themes.ModHosts) ui.AddHostLocation(host, dir, shouldWatch: false);
             RefreshLibrary();
             if (mode == Game.GameMode.Game) SignBuilderRuntime.Run(SignBuilderRuntime.Baker.Warmup());
