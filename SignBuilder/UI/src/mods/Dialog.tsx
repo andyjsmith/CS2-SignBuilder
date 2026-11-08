@@ -57,8 +57,9 @@ export const Dialog = (props: {
         <div className={styles.dialogHeader} onMouseDown={startDrag}>
           <div className={styles.dialogTitle}>{props.title}</div>
           {/* Controls in the title bar must not start a drag. */}
-          <div className={styles.dialogHeaderControls} onMouseDown={(e) => e.stopPropagation()}>{props.header}</div>
-          <div className={styles.dialogHeaderSpace} />
+          {/* Header controls take the rest of the bar (and wrap onto more rows when they need to). */}
+          {props.header ? <div className={styles.dialogHeaderFill} onMouseDown={(e) => e.stopPropagation()}>{props.header}</div>
+            : <div className={styles.dialogHeaderSpace} />}
           <div className={styles.dialogClose} title="Close" onMouseDown={(e) => e.stopPropagation()} onClick={props.onClose} />
         </div>
         {props.children}

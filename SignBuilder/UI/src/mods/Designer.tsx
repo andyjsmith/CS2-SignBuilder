@@ -3,7 +3,7 @@ import { Dialog } from "./Dialog";
 import { openThemesFolder } from "./bindings";
 import { ReactNode, useEffect, useState } from "react";
 import { ArrowIcon, AlignIcon, SymbolIcon, ThemeArrowIcon, ThemeShieldIcon } from "./Icons";
-import { Choice, ColorBox, ColorRows, Field, NumberBox, Option, Select, Swatches, TextBox } from "./Controls";
+import { Choice, ColorBox, ColorRows, Field, Flow, NumberBox, Option, Select, Swatches, TextBox } from "./Controls";
 import { Design, Item, clone, duplicateItem, getItem, insertItem, kindOf, removeItem, updateItem } from "./designModel";
 import { PartsList } from "./PartsList";
 import { SignPreview, useRenderer } from "./SignPreview";
@@ -121,27 +121,10 @@ const PANEL_SIDE: Option[] = [
   { value: "right", label: "Right side", title: "Down the sign's right edge, its full height" },
 ];
 
-/**
- * Buttons laid out in rows by their label lengths (Gameface does not grow a wrapped flex row, so a second line would
- * overlap whatever follows).
- */
-const Palette = (props: { entries: { label: string; onClick: () => void }[] }) => {
-  const rows: { label: string; onClick: () => void }[][] = [[]];
-  let used = 0;
-  for (const e of props.entries) {
-    const width = e.label.length * 8 + 24;
-    if (used + width > 560 && rows[rows.length - 1].length > 0) { rows.push([]); used = 0; }
-    rows[rows.length - 1].push(e);
-    used += width;
-  }
-  return (
-    <div className={styles.choiceRows}>
-      {rows.map((row, i) => (
-        <div key={i} className={styles.palette}>{row.map((e) => <div key={e.label} className={styles.chip} onClick={e.onClick}>{e.label}</div>)}</div>
-      ))}
-    </div>
-  );
-};
+/** Buttons (parts and presets to add), wrapped onto more rows where they do not fit. */
+const Palette = (props: { entries: { label: string; onClick: () => void }[] }) => (
+  <Flow>{props.entries.map((e) => <div key={e.label} className={styles.chip} onClick={e.onClick}>{e.label}</div>)}</Flow>
+);
 
 /** Alignment of one part within its column, overriding the sign's "Align lines". */
 const PlaceField = (props: { item: Item; onChange: (patch: Partial<Item>) => void }) => (
@@ -159,7 +142,7 @@ const ColorField = (props: {
   const custom = !!color && !palette.includes(color.toLowerCase());
   return (
     <Field label={props.label}>
-      <ColorRows perRow={7}
+      <ColorRows
         lead={[<div key="default" className={!color ? styles.choiceOn : styles.choice} title={props.defaultTitle} onClick={() => props.onChange(undefined)}>{props.defaultLabel}</div>]}
         colors={palette.map((c) => ({ color: c, on: color?.toLowerCase() === c, onClick: () => props.onChange(c) }))}
         custom={{ on: custom, onClick: () => props.onChange(color ?? "#ff8800") }} />
@@ -364,7 +347,7 @@ function ItemProperties(props: {
     case "shield":
       return (
         <>
-          <Field label="Route"><Choice options={networks} perRow={5} value={item.network} onChange={(network) => onChange({ network })} /></Field>
+          <Field label="Route"><Choice options={networks} value={item.network} onChange={(network) => onChange({ network })} /></Field>
           <Field label="Number"><TextBox value={String(item.number ?? "")} focusToken={props.focusToken} onChange={(number) => onChange({ number })} /></Field>
           <Field label="Size"><NumberBox value={item.height ?? def?.defaults?.shieldHeight ?? 36} step={2} onChange={(height) => onChange({ height })} /></Field>
           {place}
@@ -474,10 +457,10 @@ function ItemProperties(props: {
     case "diagram":
       return (
         <>
-          <Field label="Shape"><Choice options={DIAGRAM_SHAPES} perRow={3} value={item.shape ?? "exit-left"} onChange={(shape) => onChange({ shape })} /></Field>
+          <Field label="Shape"><Choice options={DIAGRAM_SHAPES} value={item.shape ?? "exit-left"} onChange={(shape) => onChange({ shape })} /></Field>
           {item.shape === "roundabout" ? (
             <Field label="Exits">
-              <div className={styles.choices}>
+              <Flow>
                 {ROUNDABOUT_EXITS.map((o) => {
                   const exits: string[] = item.exits ?? ["left", "up", "right"];
                   const on = exits.includes(o.value);
@@ -486,7 +469,7 @@ function ItemProperties(props: {
                       onClick={() => onChange({ exits: on ? exits.filter((x) => x !== o.value) : [...exits, o.value] })}>{o.icon}</div>
                   );
                 })}
-              </div>
+              </Flow>
             </Field>
           ) : item.shape === "fork" ? (
             <ForkLanesField item={item} onChange={onChange} />
@@ -539,7 +522,7 @@ function ItemProperties(props: {
       return (
         <>
           <Field label="Position"><Choice options={TAB_SIDE} value={item.align ?? "right"} onChange={(align) => onChange({ align })} /></Field>
-          <Field label="Color"><Choice options={[{ value: "", label: "Sign" }, ...schemes]} perRow={7} value={item.scheme ?? ""} onChange={(scheme) => onChange({ scheme: scheme || undefined })} /></Field>
+          <Field label="Color"><Choice options={[{ value: "", label: "Sign" }, ...schemes]} value={item.scheme ?? ""} onChange={(scheme) => onChange({ scheme: scheme || undefined })} /></Field>
         </>
       );
     default:

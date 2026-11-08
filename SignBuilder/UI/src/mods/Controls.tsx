@@ -1,27 +1,108 @@
 import { getModule } from "cs2/modding";
 import { Dropdown, DropdownToggle } from "cs2/ui";
-import { useEffect, useRef, useState } from "react";
+import { Children, ReactNode, useEffect, useLayoutEffect, useRef, useState } from "react";
 import styles from "./SignEditor.module.scss";
 
 export type Option = { value: string; label?: string; icon?: any; title?: string; style?: any };
 
+/** An element's drawn width (Gameface's rectangles have no width of their own). */
+const widthOf = (e: Element) => { const r = e.getBoundingClientRect(); return r.right - r.left; };
+
+/** Rows of item counts for items <widths> wide in <width>: as many per row as fit (at least one), at most <max>. */
+export const flowRows = (widths: number[], width: number, max?: number): number[] => {
+  const rows: number[] = [];
+  let used = 0, count = 0;
+  for (const w of widths) {
+    // Half a pixel of slack: measured widths are fractional.
+    if (count > 0 && (used + w > width + 0.5 || (max != null && count >= max))) { rows.push(count); used = 0; count = 0; }
+    used += w;
+    count++;
+  }
+  if (count > 0) rows.push(count);
+  return rows;
+};
+
 /**
- * A row of option buttons showing an icon, a label, or both. <perRow> splits long lists into several rows
- * (Gameface does not grow a wrapped flex row's height, so wrapped buttons would overlap what follows).
+ * Items in rows, as many to a row as fit the width it has (and at most <max>): measured, because Gameface does not
+ * grow a wrapped flex row's height (a wrapped item would be drawn over whatever follows). It takes the full width of
+ * a column, or ("grow") the space left in a row; each item keeps its own width (margins included) and is never
+ * squeezed. Measured again whenever it is drawn and when the window changes size.
  */
-export const Choice = (props: { options: (string | Option)[]; value: string; onChange: (v: string) => void; perRow?: number }) => {
-  const options: Option[] = props.options.map((raw) => (typeof raw === "string" ? { value: raw, label: raw } : raw));
-  const button = (o: Option) => (
-    <div key={o.value} title={o.title} className={o.value === props.value ? styles.choiceOn : styles.choice} style={o.style}
-      onClick={() => props.onChange(o.value)}>
-      {o.icon}
-      {o.icon && o.label ? <span style={{ marginLeft: "6rem" }}>{o.label}</span> : o.label}
+export const Flow = (props: { children: ReactNode; max?: number; grow?: boolean; align?: "center" | "start"; className?: string }) => {
+  const items = Children.toArray(props.children);
+  const box = useRef<HTMLDivElement>(null);
+  const [rows, setRows] = useState<number[] | null>(null);
+  const [, redraw] = useState(0);
+  // Each item's last measured width, by its key: Gameface lays out a newly placed element after this effect runs, so
+  // an item just moved to another row measures 0 until the next frame.
+  const known = useRef(new Map<string, number>());
+  const retries = useRef(0);
+  useEffect(() => {
+    const onResize = () => redraw((n) => n + 1);
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, []);
+  useLayoutEffect(() => {
+    const el = box.current;
+    if (!el) return;
+    const width = widthOf(el);
+    const cells: Element[] = [];
+    for (const row of Array.from(el.children)) cells.push(...Array.from(row.children));
+    if (cells.length !== items.length) return;
+    let missing = !(width > 0);
+    const widths = cells.map((c, i) => {
+      const key = String((items[i] as any)?.key ?? i);
+      const w = widthOf(c);
+      if (w > 0) known.current.set(key, w);
+      const k = known.current.get(key);
+      if (k == null) missing = true;
+      return k ?? 0;
+    });
+    // Not laid out yet: measure again next frame (for a few frames: an item that never takes any space counts as none).
+    if (missing && retries.current < 10) {
+      retries.current++;
+      const frame = requestAnimationFrame(() => redraw((n) => n + 1));
+      return () => cancelAnimationFrame(frame);
+    }
+    retries.current = 0;
+    const next = flowRows(widths, width, props.max);
+    if (!rows || next.length !== rows.length || next.some((n, i) => n !== rows[i])) setRows(next);
+  });
+  // Until measured (and when the items change), everything on one row: measuring it gives each item's own width.
+  const counts = rows && rows.reduce((a, b) => a + b, 0) === items.length ? rows : [items.length];
+  let start = 0;
+  return (
+    <div ref={box} className={`${props.grow ? styles.flowGrow : styles.flow} ${props.className ?? ""}`}>
+      {counts.map((n, r) => {
+        const row = items.slice(start, start + n);
+        start += n;
+        return (
+          <div key={r} className={props.align === "center" ? styles.flowRowCenter : styles.flowRow}>
+            {row.map((item, i) => <div key={(item as any)?.key ?? i} className={styles.flowCell}>{item}</div>)}
+          </div>
+        );
+      })}
     </div>
   );
-  if (!props.perRow || options.length <= props.perRow) return <div className={styles.choices}>{options.map(button)}</div>;
-  const rows: Option[][] = [];
-  for (let i = 0; i < options.length; i += props.perRow) rows.push(options.slice(i, i + props.perRow));
-  return <div className={styles.choiceRows}>{rows.map((r, i) => <div key={i} className={styles.choices}>{r.map(button)}</div>)}</div>;
+};
+
+/**
+ * A row of option buttons showing an icon, a label, or both, wrapped onto more rows where they do not fit (and after
+ * <perRow> buttons, for lists that read as a grid, such as arrow directions).
+ */
+export const Choice = (props: { options: (string | Option)[]; value: string; onChange: (v: string) => void; perRow?: number; grow?: boolean }) => {
+  const options: Option[] = props.options.map((raw) => (typeof raw === "string" ? { value: raw, label: raw } : raw));
+  return (
+    <Flow max={props.perRow} grow={props.grow}>
+      {options.map((o) => (
+        <div key={o.value} title={o.title} className={o.value === props.value ? styles.choiceOn : styles.choice} style={o.style}
+          onClick={() => props.onChange(o.value)}>
+          {o.icon}
+          {o.icon && o.label ? <span style={{ marginLeft: "6rem" }}>{o.label}</span> : o.label}
+        </div>
+      ))}
+    </Flow>
+  );
 };
 
 /**
@@ -184,32 +265,27 @@ export const ColorBox = (props: { value: string; onChange: (hex: string) => void
     <TextBox value={props.value} onChange={props.onChange} />
   );
 
-/**
- * Color swatches in rows of <perRow> (a wrapped flex row does not grow in Gameface, so a second line would
- * overlap what follows): any leading buttons, the colors, then "any color" (rainbow).
- */
+/** Color swatches, wrapped onto more rows where they do not fit: any leading buttons, the colors, then "any color" (rainbow). */
 export const ColorRows = (props: {
   lead?: any[]; colors: { color: string; title?: string; border?: string; on: boolean; onClick: () => void }[];
-  custom: { on: boolean; onClick: () => void; title?: string }; perRow?: number;
-}) => {
-  const cells: any[] = [...(props.lead ?? [])];
-  props.colors.forEach((c, i) => cells.push(
-    <div key={i} title={c.title ?? c.color} className={c.on ? styles.swatchOn : styles.swatch}
-      style={{ backgroundColor: c.color, borderColor: c.on ? undefined : c.border }} onClick={c.onClick} />,
-  ));
-  cells.push(<div key="custom" title={props.custom.title ?? "Any color"} className={props.custom.on ? styles.swatchOn : styles.swatch}
-    style={{ backgroundImage: "linear-gradient(90deg, #e53935, #fdd835, #43a047, #1e88e5, #8e24aa)" }} onClick={props.custom.onClick} />);
-  const per = props.perRow ?? 7;
-  const rows: any[][] = [];
-  for (let i = 0; i < cells.length; i += per) rows.push(cells.slice(i, i + per));
-  return <div className={styles.choiceRows}>{rows.map((r, i) => <div key={i} className={styles.choices}>{r}</div>)}</div>;
-};
+  custom: { on: boolean; onClick: () => void; title?: string };
+}) => (
+  <Flow>
+    {props.lead}
+    {props.colors.map((c, i) => (
+      <div key={`c${i}`} title={c.title ?? c.color} className={c.on ? styles.swatchOn : styles.swatch}
+        style={{ backgroundColor: c.color, borderColor: c.on ? undefined : c.border }} onClick={c.onClick} />
+    ))}
+    <div key="custom" title={props.custom.title ?? "Any color"} className={props.custom.on ? styles.swatchOn : styles.swatch}
+      style={{ backgroundImage: "linear-gradient(90deg, #e53935, #fdd835, #43a047, #1e88e5, #8e24aa)" }} onClick={props.custom.onClick} />
+  </Flow>
+);
 
 /** The theme's sign colors as swatches (named on hover), plus Custom (any background and legend color). */
 export const Swatches = (props: {
   schemes: Record<string, { bg: string; fg: string; label?: string }>; scheme: string; custom: boolean; onScheme: (s: string) => void; onCustom: () => void;
 }) => (
-  <ColorRows perRow={13}
+  <ColorRows
     colors={Object.entries(props.schemes).map(([id, s]) => ({ color: s.bg, title: s.label ?? id, border: s.fg, on: !props.custom && id === props.scheme, onClick: () => props.onScheme(id) }))}
     custom={{ on: props.custom, onClick: props.onCustom, title: "Custom colors" }} />
 );

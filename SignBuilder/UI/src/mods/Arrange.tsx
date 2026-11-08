@@ -2,7 +2,7 @@ import { useValue } from "cs2/api";
 import { Dialog } from "./Dialog";
 import { ReactNode, useEffect, useMemo, useRef, useState } from "react";
 import { adjust, arrange, arrangeInfo$, toolStatus$ } from "./bindings";
-import { Choice, NumberBox } from "./Controls";
+import { Choice, Flow, NumberBox } from "./Controls";
 import { Design, SPANS, STRUCTURES } from "./designModel";
 import { ArrowIcon } from "./Icons";
 import { SignPreview } from "./SignPreview";
@@ -116,23 +116,31 @@ export const Arrange = (props: {
   return (
     <Dialog dock="bottom" title={info.replacing ? "Edit gantry" : "Gantry"} className={styles.arrange} onClose={() => props.onClose(unsaved)}
       header={
-        <>
-          <div className={ready ? styles.primaryButton : styles.primaryButtonOff} onClick={() => ready && arrange({ op: "build" })}>{info.replacing ? "Save" : "Build"}</div>
-          <div className={styles.chip} style={{ alignSelf: "center" }} onClick={() => arrange({ op: "auto" })}>Auto arrange</div>
-          <div className={styles.chip} style={{ alignSelf: "center" }} title="Click another spot on a road to move the gantry there" onClick={() => arrange({ op: "repick" })}>Move gantry</div>
-          <div className={styles.chip} style={{ alignSelf: "center" }} onClick={() => props.onCancel(unsaved)}>Cancel</div>
-          <Label>Showing</Label>
-          <Choice options={[
-            { value: "front", label: "Front" },
-            { value: "back", label: "Back", title: "Signs on the other face of the structure, for traffic the other way" },
-          ]} value={info.view} onChange={(value) => { arrange({ op: "view", value }); setSelected(-1); }} />
-          <Label>Lights</Label>
-          <Choice options={[{ value: "off", label: "Off" }, { value: "on", label: "On", title: "Light fixtures below each sign, lit at night" }]}
-            value={info.lights ? "on" : "off"} onChange={(v) => arrange({ op: "lights", value: v === "on" })} />
-          <Label>Sign size</Label>
-          <NumberBox compact value={Math.round(info.scale * 100)} step={5} min={50} max={170} unit="%" onChange={(v) => set("scale", v)} />
+        <Flow grow>
+          <div className={styles.headerGroup}>
+            <div className={ready ? styles.primaryButton : styles.primaryButtonOff} onClick={() => ready && arrange({ op: "build" })}>{info.replacing ? "Save" : "Build"}</div>
+            <div className={styles.chip} style={{ alignSelf: "center" }} onClick={() => arrange({ op: "auto" })}>Auto arrange</div>
+            <div className={styles.chip} style={{ alignSelf: "center" }} title="Click another spot on a road to move the gantry there" onClick={() => arrange({ op: "repick" })}>Move gantry</div>
+            <div className={styles.chip} style={{ alignSelf: "center" }} onClick={() => props.onCancel(unsaved)}>Cancel</div>
+          </div>
+          <div className={styles.headerGroup}>
+            <Label>Showing</Label>
+            <Choice options={[
+              { value: "front", label: "Front" },
+              { value: "back", label: "Back", title: "Signs on the other face of the structure, for traffic the other way" },
+            ]} value={info.view} onChange={(value) => { arrange({ op: "view", value }); setSelected(-1); }} />
+          </div>
+          <div className={styles.headerGroup}>
+            <Label>Lights</Label>
+            <Choice options={[{ value: "off", label: "Off" }, { value: "on", label: "On", title: "Light fixtures below each sign, lit at night" }]}
+              value={info.lights ? "on" : "off"} onChange={(v) => arrange({ op: "lights", value: v === "on" })} />
+          </div>
+          <div className={styles.headerGroup}>
+            <Label>Sign size</Label>
+            <NumberBox compact value={Math.round(info.scale * 100)} step={5} min={50} max={170} unit="%" onChange={(v) => set("scale", v)} />
+          </div>
           {status && <div className={styles.status} style={{ marginLeft: "12rem" }}>{status}</div>}
-        </>
+        </Flow>
       }>
       <div className={styles.arrangeBody}>
         <div className={styles.barRow}>
