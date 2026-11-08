@@ -139,6 +139,11 @@ namespace SignBuilder.Tests
                 yield return RunSymbolsE2E();
                 yield break;
             }
+            if (m_Mode == "fade")
+            {
+                yield return RunFade();
+                yield break;
+            }
             if (m_Mode == "despawnsave")
             {
                 yield return RunDespawnSave();

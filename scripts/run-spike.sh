@@ -4,7 +4,7 @@
 #
 #   scripts/run-spike.sh [mode] [save-guid]
 #     mode       "full" (default) runs every spike test; "smoke" only loads, screenshots and quits;
-#                "phase1" runs the Phase 1 batch; "e2e" the full end-to-end tests; "led-e2e" LED glow by day and night; "movesave" then "moveload" (with the save's guid) check signs moved the way Move It does survive a fresh-boot load; "despawnsave" then "despawnload" / "despawnload2" (with SignBuilder_Despawn.guid / SignBuilder_Despawn2.guid) check signs on raised roads and removed structures survive a reload; "symbols-e2e" symbol libraries, the symbol picker and symbol signs; "ui-e2e" only the designer
+#                "phase1" runs the Phase 1 batch; "e2e" the full end-to-end tests; "led-e2e" LED glow by day and night; "movesave" then "moveload" (with the save's guid) check signs moved the way Move It does survive a fresh-boot load; "despawnsave" then "despawnload" / "despawnload2" (with SignBuilder_Despawn.guid / SignBuilder_Despawn2.guid) check signs on raised roads and removed structures survive a reload; "fade" auto exposure and screen brightness around placement previews; "symbols-e2e" symbol libraries, the symbol picker and symbol signs; "ui-e2e" only the designer
 #                UI tests (a couple of minutes); "debug" bakes one sign and idles with the UI
 #                DevTools on localhost:9444 (create spike/done.flag to quit early).
 #     save-guid  SaveGameMetadata guid to load (-startGame=...); omit for the ModTest save (or the last save on a
