@@ -21,7 +21,8 @@ export const STRUCTURES = [
   { id: "straight", label: "Straight tube" },
 ];
 export const SPANS = [
-  { id: "span", label: "Span", hint: "Posts on both sides; click roads alongside in the world to span them too" },
+  { id: "span", label: "Full span", hint: "Posts on both sides; click roads alongside in the world to span them too" },
+  { id: "half", label: "Half span", hint: "From beside the road to its center line, with the second post in the median" },
   { id: "cantilever", label: "Cantilever", hint: "One post beside the road, an arm over the lanes" },
 ];
 /** Summary for a support id such as "curved/cantilever/left" or "ground". */

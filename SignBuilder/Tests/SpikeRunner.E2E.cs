@@ -46,7 +46,7 @@ namespace SignBuilder.Tests
 
         private static string Key(string type, string span, bool left) => type == "ground" ? "ground" : $"{type}-{span}{(left ? "-left" : "")}";
 
-        /// <summary>UI only (mode "ui-e2e"): the designer's responsiveness, without placing anything. A couple of minutes.</summary>
+        /// <summary>UI only (mode "ui-e2e"): the designer's responsiveness and layout, and half-span gantries (removed again). A few minutes.</summary>
         private IEnumerator RunUIE2E()
         {
             yield return WaitForGame();
@@ -57,7 +57,9 @@ namespace SignBuilder.Tests
             yield return Test("e2e.uipause", TestDesignerPause(ui));
             ui.SetEditorOpen(false);
             m_Runtime = new RuntimePrefabs();
-            yield return Test("e2e.layout", TestLayout(ui, World.DefaultGameObjectInjectionWorld.GetOrCreateSystemManaged<SignPlacementToolSystem>()));
+            var tool = World.DefaultGameObjectInjectionWorld.GetOrCreateSystemManaged<SignPlacementToolSystem>();
+            yield return Test("e2e.layout", TestLayout(ui, tool));
+            yield return Test("e2e.halfSpan", TestHalfSpan(ui, tool));
             yield return Test("e2e.usTemplates", TestUsTemplates());
             Finish();
         }
@@ -167,10 +169,10 @@ namespace SignBuilder.Tests
             yield return new WaitForSecondsRealtime(0.5f);
         }
 
-        /// <summary>Test shorthand: "full" = a span over every road alongside, "single" = a span over its own road.</summary>
+        /// <summary>Test shorthand: "full" = a span over every road alongside, "single" = a span over its own road, "half" = a half span.</summary>
         private static LayoutOptions Options(string type, string span, bool left = false) => new LayoutOptions
         {
-            Type = type, Span = span == "cantilever" ? "cantilever" : "span", LeftSide = left,
+            Type = type, Span = span == "cantilever" || span == "half" ? span : "span", LeftSide = left,
             ExtraRoads = span == "full" ? Enumerable.Range(0, 12).ToList() : new List<int>(),
         };
 

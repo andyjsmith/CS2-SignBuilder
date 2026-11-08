@@ -110,6 +110,8 @@ export const Arrange = (props: {
   const snapping = drag && dragLane >= 0 && Math.abs(laneXs[dragLane] - drag.x) < 0.75;
   // Lanes in order across the view; markings between neighbors on the same road.
   const ordered = allLanes.map((l, k) => ({ x: l[0], faces: l[1], k })).sort((a, b) => a.x - b.x);
+  // A half span on a two-way road always covers the faced lanes; only a one-way road needs a side.
+  const oneWay = !allLanes.some((l) => !l[1]);
   const unsaved = info.dirty !== false;
   const ready = info.total > 0 && !info.busy && !signs.some((s) => !s.ready);
 
@@ -148,9 +150,10 @@ export const Arrange = (props: {
           <Choice options={STRUCTURES.map((s) => ({ value: s.id, label: s.label }))} value={info.type} onChange={(value) => arrange({ op: "type", value })} />
           <Label>Type</Label>
           <Choice options={SPANS.map((s) => ({ value: s.id, label: s.label, title: s.hint }))} value={info.span} onChange={(value) => arrange({ op: "span", value })} />
-          {info.span === "cantilever" && (
-            <Choice options={[{ value: "left", label: "Post left" }, { value: "right", label: "Post right" }]} value={info.side}
-              onChange={(value) => arrange({ op: "side", value })} />
+          {(info.span === "cantilever" || (info.span === "half" && oneWay)) && (
+            <Choice options={["left", "right"].map((v) => ({ value: v, label: `Post ${v}`,
+              title: info.span === "half" ? `Outer post on the ${v} of this one-way road; the other post stands at its far edge` : undefined }))}
+              value={info.side} onChange={(value) => arrange({ op: "side", value })} />
           )}
           {!info.free && (
             <div className={styles.chip} style={{ alignSelf: "center", marginLeft: "12rem" }} title="Face the signs the other way"

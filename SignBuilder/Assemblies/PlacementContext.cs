@@ -37,11 +37,13 @@ namespace SignBuilder.Assemblies
 
         /// <summary>A single sign without an overhead structure: on roadside posts or surface mounted.</summary>
         public bool Standalone => Type == "ground" || Type == "surface";
-        /// <summary>"span" (posts either side of its roads) or "cantilever" (one post, an arm over the lanes).</summary>
+        /// <summary>"span" (posts either side of its roads), "half" (from beside its roads to their center line, the
+        /// second post in the median) or "cantilever" (one post, an arm over the lanes).</summary>
         public string Span = "span";
         /// <summary>Roads alongside (Snap.Carriageways indices) that a span also crosses, besides its own.</summary>
         public List<int> ExtraRoads = new();
-        /// <summary>Cantilever post on the drivers' left instead of the right (left-hand exits).</summary>
+        /// <summary>Cantilever post on the drivers' left instead of the right (left-hand exits); a half span's outer
+        /// post on a one-way road.</summary>
         public bool LeftSide;
         /// <summary>Signs face the opposite direction of the clicked road's traffic.</summary>
         public bool Reverse;

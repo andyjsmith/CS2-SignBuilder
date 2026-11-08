@@ -81,6 +81,7 @@ namespace SignBuilder.Assemblies
         {
             var type = o.Type;
             var cantilever = !o.Standalone && o.Span == "cantilever";
+            var half = !o.Standalone && o.Span == "half";
             var n = sizes.Count;
             // Signs face the traffic of the clicked carriageway; reverse aims them at the other direction.
             var dir = s.MainDirection * (o.Reverse ? -1 : 1);
@@ -319,20 +320,65 @@ namespace SignBuilder.Assemblies
                         : roads.OrderBy(r => s.Carriageways[r].Offset - s.Carriageways[r].Width * 0.5f).First();
                     return rightSide ? s.Carriageways[outer].WallRight : s.Carriageways[outer].WallLeft;
                 }
-                var left = -(elevated || Walled(false) ? onRoad : outside);
-                var right = elevated || Walled(true) ? onRoad : outside;
-                // Signs' extents across the road (x is along Right times dir).
-                for (var i = 0; i < n; i++)
+                float span, reference;
+                if (half)
                 {
-                    var across = xs[i] * dir;
-                    left = math.min(left, across - sizes[i].x * 0.5f - postClear);
-                    right = math.max(right, across + sizes[i].x * 0.5f + postClear);
+                    // Half span: from beyond the outer edge to the roads' center line, where the inner post stands
+                    // (in the median of a divided road). The road gap and the deck and wall rules move only the outer
+                    // post. A one-way road has no center between directions: the inner post stands at its far edge.
+                    var front = s.Lanes.Where(l => roads.Contains(l.Carriageway) && l.Direction == dir).ToList();
+                    var twoWay = front.Count > 0 && s.Lanes.Any(l => roads.Contains(l.Carriageway) && l.Direction == -dir);
+                    // The outer side along Right: the half with the road it was placed on (its faced lanes on a
+                    // two-way road crossed alone), else the drivers' right (or left, with the post-left option).
+                    var baseFront = front.Where(l => l.Carriageway == baseIndex).ToList();
+                    var side = !twoWay ? dir * (o.LeftSide ? -1f : 1f)
+                        : math.abs(baseOffset - center) > 0.5f ? math.sign(baseOffset - center)
+                        : (baseFront.Count > 0 ? baseFront : front).Average(l => l.Offset) >= center ? 1f : -1f;
+                    var inner = twoWay ? center : (side > 0f ? lo : hi);
+                    if (!twoWay && OffDeck(s.Point + s.Right * inner)) inner += side * kDeckInset;
+                    var outer = (side > 0f ? hi : lo) + side * math.max(o.RoadGap, -2f);
+                    var walled = Walled(side > 0f);
+                    if (OffDeck(s.Point + s.Right * outer) || walled)
+                    {
+                        outer = (side > 0f ? hi : lo) - side * inset;
+                        elevated = !walled;
+                    }
+                    // Signs in outward meters from the inner post, kept clear of it; the outer post moves out for them.
+                    var reach = math.max(math.abs(outer - inner), postClear * 2f + 1f);
+                    var u = new float[n];
+                    for (var i = 0; i < n; i++) u[i] = (xs[i] * dir + center - inner) * side;
+                    foreach (var back in new[] { false, true })
+                    {
+                        // Each sign's inner edge clear of the post and of the sign before it.
+                        var previous = postClear - kSignGap;
+                        foreach (var i in Enumerable.Range(0, n).Where(i => IsBack(i) == back).OrderBy(i => u[i]))
+                        {
+                            u[i] = math.max(u[i], math.max(postClear, previous + kSignGap) + sizes[i].x * 0.5f);
+                            previous = u[i] + sizes[i].x * 0.5f;
+                            reach = math.max(reach, u[i] + sizes[i].x * 0.5f + postClear);
+                        }
+                    }
+                    span = reach;
+                    reference = inner + side * reach * 0.5f;
+                    for (var i = 0; i < n; i++) xs[i] = (u[i] - reach * 0.5f) * side * dir;
                 }
-                var span = right - left;
-                // The structure is centered between its posts; signs keep their places over the lanes.
-                var reference = center + (left + right) * 0.5f;
-                var shift = (reference - center) * dir;
-                for (var i = 0; i < n; i++) xs[i] -= shift;
+                else
+                {
+                    var left = -(elevated || Walled(false) ? onRoad : outside);
+                    var right = elevated || Walled(true) ? onRoad : outside;
+                    // Signs' extents across the road (x is along Right times dir).
+                    for (var i = 0; i < n; i++)
+                    {
+                        var across = xs[i] * dir;
+                        left = math.min(left, across - sizes[i].x * 0.5f - postClear);
+                        right = math.max(right, across + sizes[i].x * 0.5f + postClear);
+                    }
+                    span = right - left;
+                    // The structure is centered between its posts; signs keep their places over the lanes.
+                    reference = center + (left + right) * 0.5f;
+                    var shift = (reference - center) * dir;
+                    for (var i = 0; i < n; i++) xs[i] -= shift;
+                }
                 var origin = s.Point + s.Right * reference;
                 var ground = GroundUnder(origin - s.Right * span * 0.5f, origin + s.Right * span * 0.5f);
                 var spec = type switch

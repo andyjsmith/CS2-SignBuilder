@@ -30,8 +30,9 @@ Players can add their own themes and templates as files, or publish them as mods
 4. **Gantry** asks for a road, pins the structure there with a live preview and opens the
    arrangement panel: a to-scale view of the lanes as drivers see them. Add signs (any theme), drag them
    sideways (they snap to lane centers, remembered from the nearer edge: "rightmost lane", "2nd lane from
-   left"), choose the structure (double truss, single truss, curved or straight tube), Span or Cantilever
-   (post on the right or left), Swap directions, height, posts' distance from the road, sign size and
+   left"), choose the structure (double truss, single truss, curved or straight tube), Full span, Half span
+   (from beside the road to its center line, the second post in the median; on a one-way road, to its far
+   edge) or Cantilever (post on the right or left), Swap directions, height, posts' distance from the road, sign size and
    lights, and signs on the back for the other direction. A span crosses only the road it was placed on:
    click other roads in the world to add them to (or remove them from) the span. **Build** makes it.
    Esc or the close button asks before discarding anything.
