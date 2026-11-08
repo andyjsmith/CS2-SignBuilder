@@ -56,6 +56,9 @@ namespace SignBuilder.Tests
             yield return Test("e2e.ui", TestDesignerPicks(ui));
             yield return Test("e2e.uipause", TestDesignerPause(ui));
             ui.SetEditorOpen(false);
+            m_Runtime = new RuntimePrefabs();
+            yield return Test("e2e.layout", TestLayout(ui, World.DefaultGameObjectInjectionWorld.GetOrCreateSystemManaged<SignPlacementToolSystem>()));
+            yield return Test("e2e.usTemplates", TestUsTemplates());
             Finish();
         }
 
