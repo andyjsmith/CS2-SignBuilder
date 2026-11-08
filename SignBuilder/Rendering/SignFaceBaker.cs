@@ -55,6 +55,7 @@ namespace SignBuilder.Rendering
         private UISystem m_UISystem;
         private UIView m_View;
         private Camera m_DummyCamera;
+        private RenderTexture m_CameraTarget;
         private MethodInfo m_SendRenderEvent;
         private object m_BeginFrame;
         private object m_EndFrame;
@@ -307,6 +308,11 @@ namespace SignBuilder.Rendering
             m_DummyCamera = go.AddComponent<Camera>();
             m_DummyCamera.enabled = false;
             m_DummyCamera.cullingMask = 0;
+            // The view takes its size from this camera, and the camera from its target, so the view is created at full
+            // size. Without a camera size the view's first texture is 0x0, which crashes some graphics drivers. The
+            // camera is disabled and never renders; the target only gives it a size (and is the smallest format).
+            m_CameraTarget = new RenderTexture(kViewWidth, kViewHeight, 0, RenderTextureFormat.R8) { name = "SignBuilder.SignFaceBakerCameraTarget" };
+            m_DummyCamera.targetTexture = m_CameraTarget;
 
             var renderEvents = Type.GetType("cohtml.RenderEvents, Cohtml.Runtime");
             var eventType = Type.GetType("cohtml.RenderEventType, Cohtml.Runtime");
@@ -322,15 +328,13 @@ namespace SignBuilder.Rendering
             var settings = UIView.Settings.New;
             settings.acceptsInput = false;
             settings.isTransparent = true;
-            settings.pixelPerfect = false;
+            settings.pixelPerfect = true;
             settings.liveReload = false;
             settings.enableBackdropFilter = false;
             settings.listener.FinishLoad += _ => m_Loaded = true;
             settings.listener.LoadFailed += (url, error) => LastError = $"{url}: {error}";
             m_View = m_UISystem.CreateView(null, settings, m_DummyCamera);
-            // UIView ignores the settings size (it sizes from a camera when pixelPerfect) and starts
-            // disabled; a disabled view never loads or draws.
-            m_View.Resize(kViewWidth, kViewHeight);
+            // The view starts disabled; a disabled view never loads or draws.
             m_View.enabled = true;
             m_View.url = $"coui://{kHost}/Renderer/renderer.html";
             RenderPipelineManager.endFrameRendering += OnEndFrame;
@@ -494,6 +498,7 @@ namespace SignBuilder.Rendering
             RenderPipelineManager.endFrameRendering -= OnEndFrame;
             if (m_View != null) m_UISystem.DestroyView(m_View);
             if (m_DummyCamera != null) Object.Destroy(m_DummyCamera.gameObject);
+            if (m_CameraTarget != null) { m_CameraTarget.Release(); Object.Destroy(m_CameraTarget); }
         }
     }
 }
