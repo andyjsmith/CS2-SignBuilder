@@ -41,6 +41,36 @@ const SHARED_LANES: Option[] = [
   { value: "0", label: "Exit only", title: "The exit lanes are extra lanes beside the through lanes, ending at the exit" },
   { value: "1", label: "One shared", title: "The nearest exit lane is also a through lane (an option lane); any others are exit only" },
 ];
+// Whether a fork's branches share a lane (the middle lane goes either way).
+const FORK_SHARED: Option[] = [
+  { value: "0", label: "Exit only", title: "Each lane goes one way only" },
+  { value: "1", label: "One shared", title: "The middle lane goes either way (an option lane)" },
+];
+
+/**
+ * A fork's lanes: how many go left and right, and whether they share one. Forks made before these settings have
+ * "exitLanes" each way from the edges of their "lanes" (and are drawn so until changed here).
+ */
+const ForkLanesField = (props: { item: Item; onChange: (patch: Partial<Item>) => void }) => {
+  const { item } = props;
+  const old = item.lanesLeft == null;
+  const exits = item.exitLanes ?? 1, total = item.lanes ?? 2;
+  const left: number = old ? exits : item.lanesLeft;
+  const right: number = old ? exits : item.lanesRight ?? left;
+  const shared = old ? (total === exits * 2 - 1 ? "1" : total === exits * 2 ? "0" : "") : String(item.sharedLanes ?? 0);
+  const set = (l: number, r: number, s: string) =>
+    props.onChange({ lanesLeft: l, lanesRight: r, sharedLanes: Number(s || 0), lanes: undefined, exitLanes: undefined });
+  return (
+    <>
+      <div className={styles.inlineRow}>
+        <Field label="Lanes left"><NumberBox compact value={left} min={1} max={4} onChange={(l) => set(l, right, shared)} /></Field>
+        <div style={{ width: "12rem" }} />
+        <Field label="Lanes right"><NumberBox compact value={right} min={1} max={4} onChange={(r) => set(left, r, shared)} /></Field>
+      </div>
+      <Field label="Middle lane"><Choice options={FORK_SHARED} value={shared} onChange={(s) => set(left, right, s)} /></Field>
+    </>
+  );
+};
 const ROUNDABOUT_EXITS: Option[] = ["left", "up-left", "up", "up-right", "right"].map((d) => ({ value: d, icon: <ArrowIcon direction={d} />, title: d }));
 // LED colors: amber (the default, no value), white, green, red.
 /**
@@ -458,6 +488,8 @@ function ItemProperties(props: {
                 })}
               </div>
             </Field>
+          ) : item.shape === "fork" ? (
+            <ForkLanesField item={item} onChange={onChange} />
           ) : (
             <div className={styles.inlineRow}>
               <Field label="Through lanes"><NumberBox compact value={item.lanes ?? 2} min={1} max={6} onChange={(lanes) => onChange({ lanes })} /></Field>

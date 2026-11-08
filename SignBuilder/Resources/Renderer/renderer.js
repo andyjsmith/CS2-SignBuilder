@@ -639,10 +639,17 @@
           : head([d[0] * s1, d[1] * s1], d, band / 2 + headOver - 2));
       });
     } else {
-      var lanes = Math.max(1, Math.round(item.lanes || 2));
-      var exitLanes = Math.max(1, Math.round(item.exitLanes || 1));
-      var sw = lanes * L, sx = -sw / 2, bottom = 150, top = 0;
       var fork = shape === "fork";
+      var exitLanes = Math.max(1, Math.round(item.exitLanes || 1));
+      // A fork's branches: "lanesLeft" and "lanesRight", sharing one lane (an option lane) when "sharedLanes" is 1, so
+      // the lanes before it are their sum less the shared one. Forks made before these settings have "exitLanes" on
+      // each side, from the edges of their "lanes".
+      var split = fork && item.lanesLeft != null;
+      var forkLeft = split ? Math.max(1, Math.round(item.lanesLeft)) : exitLanes;
+      var forkRight = split ? Math.max(1, Math.round(item.lanesRight != null ? item.lanesRight : item.lanesLeft)) : exitLanes;
+      var lanes = split ? forkLeft + forkRight - Math.min(1, Math.max(0, Math.round(item.sharedLanes || 0)))
+        : Math.max(1, Math.round(item.lanes || 2));
+      var sw = lanes * L, sx = -sw / 2, bottom = 150, top = 0;
       // The through arrow's tip is at the top; with a MUTCD head the shaft starts where the head's back edge meets it.
       var throughBack = mutcd ? Math.max(headLen, headBack(sw / 2 + headOver, sw / 2)) : headLen;
       var shaftTop = fork ? 75 : top + throughBack;
@@ -655,7 +662,9 @@
       }
       var sides = shape === "exit-right" ? [1] : shape === "exit-left" ? [-1] : [-1, 1];
       sides.forEach(function (side) {
-        var bw = exitLanes * L, Rc = 46 + bw, sweep = 1.15;
+        var branchLanes = fork ? (side < 0 ? forkLeft : forkRight) : exitLanes;
+        // A fork's branches bend on one radius (the wider one's), so their arrowheads end level.
+        var bw = branchLanes * L, Rc = 46 + (fork ? Math.max(forkLeft, forkRight) * L : bw), sweep = 1.15;
         var cy = fork ? shaftTop + 4 : 122;
         if (exitOnly > 0) {
           var ow = exitOnly * L, ox = side < 0 ? sx - ow : sx + sw;
@@ -683,7 +692,7 @@
         var end = at(-sweep, Rc);
         var d = [side * Math.sin(sweep), -Math.cos(sweep)];
         shapes.push(mutcd ? mutcdHead(end, d, bw / 2 + headOver, bw / 2) : head(end, d, bw / 2 + headOver));
-        for (var bl = 1; bl < exitLanes; bl++) {
+        for (var bl = 1; bl < branchLanes; bl++) {
           var r = Rc - bw / 2 + bl * L;
           // Along the curve: five even steps, or, below exit-only lanes, on from their dashes every 15 units.
           var steps = [];
