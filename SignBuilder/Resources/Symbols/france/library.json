@@ -1,0 +1,190 @@
+{
+  "formatVersion": 1,
+  "id": "france",
+  "name": "France",
+  "description": "Pictograms from French service and tourist signs (ID series)",
+  "legend": [
+    "#000000"
+  ],
+  "symbols": {
+    "holiday-village": {
+      "name": "Holiday village",
+      "category": "Tourism and leisure",
+      "file": "symbols/holiday-village.svg"
+    },
+    "picnic": {
+      "name": "Picnic area",
+      "category": "Services",
+      "file": "symbols/picnic.svg"
+    },
+    "car-train": {
+      "name": "Car train",
+      "category": "Transportation",
+      "file": "symbols/car-train.svg"
+    },
+    "car-shuttle": {
+      "name": "Car shuttle train",
+      "category": "Transportation",
+      "file": "symbols/car-shuttle.svg",
+      "legend": [
+        "#fefefe"
+      ]
+    },
+    "fuel": {
+      "name": "Fuel",
+      "category": "Services",
+      "file": "symbols/fuel.svg"
+    },
+    "fuel-lpg": {
+      "name": "Fuel and LPG",
+      "category": "Services",
+      "file": "symbols/fuel-lpg.svg"
+    },
+    "repair": {
+      "name": "Repair garage",
+      "category": "Services",
+      "file": "symbols/repair.svg"
+    },
+    "ev-charging": {
+      "name": "Electric vehicle charging",
+      "category": "Services",
+      "file": "symbols/ev-charging.svg"
+    },
+    "lpg": {
+      "name": "LPG",
+      "category": "Services",
+      "file": "symbols/lpg.svg"
+    },
+    "guest-house": {
+      "name": "Guest house",
+      "category": "Tourism and leisure",
+      "file": "symbols/guest-house.svg"
+    },
+    "viewpoint": {
+      "name": "Viewpoint",
+      "category": "Tourism and leisure",
+      "file": "symbols/viewpoint.svg"
+    },
+    "water-sports": {
+      "name": "Water sports",
+      "category": "Tourism and leisure",
+      "file": "symbols/water-sports.svg"
+    },
+    "swimming": {
+      "name": "Swimming",
+      "category": "Tourism and leisure",
+      "file": "symbols/swimming.svg"
+    },
+    "beach": {
+      "name": "Beach",
+      "category": "Tourism and leisure",
+      "file": "symbols/beach.svg"
+    },
+    "skiing": {
+      "name": "Downhill skiing",
+      "category": "Tourism and leisure",
+      "file": "symbols/skiing.svg"
+    },
+    "hiking": {
+      "name": "Hiking",
+      "category": "Tourism and leisure",
+      "file": "symbols/hiking.svg"
+    },
+    "hotel": {
+      "name": "Hotel",
+      "category": "Services",
+      "file": "symbols/hotel.svg"
+    },
+    "restaurant": {
+      "name": "Restaurant",
+      "category": "Services",
+      "file": "symbols/restaurant.svg"
+    },
+    "cafe": {
+      "name": "Café",
+      "category": "Services",
+      "file": "symbols/cafe.svg"
+    },
+    "drinking-water": {
+      "name": "Drinking water",
+      "category": "Services",
+      "file": "symbols/drinking-water.svg"
+    },
+    "first-aid": {
+      "name": "First aid",
+      "category": "Services",
+      "file": "symbols/first-aid.svg",
+      "legend": []
+    },
+    "motorhome-service": {
+      "name": "Motorhome service area",
+      "category": "Services",
+      "file": "symbols/motorhome-service.svg"
+    },
+    "toilets": {
+      "name": "Toilets",
+      "category": "Services",
+      "file": "symbols/toilets.svg"
+    },
+    "local-produce": {
+      "name": "Local produce",
+      "category": "Tourism and leisure",
+      "file": "symbols/local-produce.svg"
+    },
+    "vineyard": {
+      "name": "Vineyard",
+      "category": "Tourism and leisure",
+      "file": "symbols/vineyard.svg"
+    },
+    "pedestrian": {
+      "name": "Pedestrian",
+      "category": "Traffic",
+      "file": "symbols/pedestrian.svg"
+    },
+    "industrial-area": {
+      "name": "Industrial area",
+      "category": "Services",
+      "file": "symbols/industrial-area.svg"
+    },
+    "carpool": {
+      "name": "Carpool",
+      "category": "Traffic",
+      "file": "symbols/carpool.svg"
+    },
+    "hospital": {
+      "name": "Hospital",
+      "category": "Services",
+      "file": "symbols/hospital.svg"
+    },
+    "emergency-telephone": {
+      "name": "Emergency telephone",
+      "category": "Services",
+      "file": "symbols/emergency-telephone.svg"
+    },
+    "telephone": {
+      "name": "Telephone",
+      "category": "Services",
+      "file": "symbols/telephone.svg"
+    },
+    "information": {
+      "name": "Information",
+      "category": "Services",
+      "file": "symbols/information.svg"
+    },
+    "disabled": {
+      "name": "Disabled access",
+      "category": "Services",
+      "file": "symbols/disabled.svg"
+    },
+    "camping": {
+      "name": "Camping",
+      "category": "Tourism and leisure",
+      "file": "symbols/camping.svg"
+    },
+    "caravan": {
+      "name": "Caravan site",
+      "category": "Tourism and leisure",
+      "file": "symbols/caravan.svg"
+    }
+  }
+}
