@@ -2,7 +2,7 @@
   "formatVersion": 1,
   "id": "uk",
   "name": "TSRGD (United Kingdom)",
-  "description": "Arrows exported from the UK Traffic Signs Manual",
+  "description": "Arrows and symbols exported from the UK Traffic Signs Regulations and General Directions (TSRGD)",
   "arrows": {
     "standard": {
       "label": "Standard",
@@ -119,6 +119,124 @@
           ]
         }
       }
+    }
+  },
+  "legend": [
+    "#ffffff"
+  ],
+  "symbols": {
+    "bicycle": {
+      "name": "Bicycle",
+      "category": "Traffic",
+      "file": "symbols/bicycle.svg"
+    },
+    "bus": {
+      "name": "Bus",
+      "category": "Transportation",
+      "file": "symbols/bus.svg"
+    },
+    "camping": {
+      "name": "Camping",
+      "category": "Tourism and leisure",
+      "file": "symbols/camping.svg"
+    },
+    "car": {
+      "name": "Car",
+      "category": "Traffic",
+      "file": "symbols/car.svg"
+    },
+    "caravan": {
+      "name": "Caravan",
+      "category": "Tourism and leisure",
+      "file": "symbols/caravan.svg"
+    },
+    "disabled": {
+      "name": "Disabled",
+      "category": "Services",
+      "file": "symbols/disabled.svg"
+    },
+    "goods-vehicle": {
+      "name": "Goods vehicle",
+      "category": "Traffic",
+      "file": "symbols/goods-vehicle.svg"
+    },
+    "hospital": {
+      "name": "Hospital",
+      "category": "Services",
+      "file": "symbols/hospital.svg"
+    },
+    "hostel": {
+      "name": "Youth hostel",
+      "category": "Tourism and leisure",
+      "file": "symbols/hostel.svg"
+    },
+    "information": {
+      "name": "Information",
+      "category": "Services",
+      "file": "symbols/information.svg"
+    },
+    "load-unload": {
+      "name": "Loading and unloading",
+      "category": "Traffic",
+      "file": "symbols/load-unload.svg"
+    },
+    "motorway": {
+      "name": "Motorway",
+      "category": "Traffic",
+      "file": "symbols/motorway.svg"
+    },
+    "national-speed-limit": {
+      "name": "National speed limit",
+      "category": "Traffic",
+      "file": "symbols/national-speed-limit.svg",
+      "legend": []
+    },
+    "parking": {
+      "name": "Parking",
+      "category": "Services",
+      "file": "symbols/parking.svg"
+    },
+    "pedestrian": {
+      "name": "Pedestrian",
+      "category": "Traffic",
+      "file": "symbols/pedestrian.svg"
+    },
+    "telephone": {
+      "name": "Telephone",
+      "category": "Services",
+      "file": "symbols/telephone.svg"
+    },
+    "picnic": {
+      "name": "Picnic site",
+      "category": "Tourism and leisure",
+      "file": "symbols/picnic.svg"
+    },
+    "red-route": {
+      "name": "Red route",
+      "category": "Traffic",
+      "file": "symbols/red-route.svg",
+      "legend": []
+    },
+    "restricted-parking": {
+      "name": "Restricted parking zone",
+      "category": "Traffic",
+      "file": "symbols/restricted-parking.svg",
+      "legend": []
+    },
+    "speed-camera": {
+      "name": "Speed camera",
+      "category": "Traffic",
+      "file": "symbols/speed-camera.svg"
+    },
+    "toilets": {
+      "name": "Toilets",
+      "category": "Services",
+      "file": "symbols/toilets.svg"
+    },
+    "tram-stop": {
+      "name": "Tram stop",
+      "category": "Transportation",
+      "file": "symbols/tram-stop.svg"
     }
   }
 }
