@@ -134,6 +134,9 @@ folder, so players only subscribe to the theme pack. A folder with the same id i
 - Canada, Netherlands and Australia reuse the Roadgeek fonts; Italy reuses the Transport fonts
 - Japan, China, Russia, France and Switzerland use Noto Sans fonts that ship with the game
 - Ontario, Quebec, Trans-Canada and Japanese route plate artwork drawn for Sign Builder (CC0)
+- Symbols: the US MUTCD and UK TSRGD drawings (public domain; Crown copyright, Open Government Licence v3.0),
+  and German, Swiss, French, Dutch, Japanese and UK sign symbols from Wikimedia Commons (public domain, Licence
+  Ouverte, Open Government Licence), each credited in its library's `SOURCES.md`
 
 ## Roadmap
 
