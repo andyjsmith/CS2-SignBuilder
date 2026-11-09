@@ -68,7 +68,11 @@
     "water-sports": {
       "name": "Water sports",
       "category": "Tourism and leisure",
-      "file": "symbols/water-sports.svg"
+      "file": "symbols/water-sports.svg",
+      "legend": [
+        "#000000",
+        "#1b1918"
+      ]
     },
     "swimming": {
       "name": "Swimming",
