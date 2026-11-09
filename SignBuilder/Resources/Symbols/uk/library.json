@@ -2,7 +2,7 @@
   "formatVersion": 1,
   "id": "uk",
   "name": "TSRGD (United Kingdom)",
-  "description": "Arrows and symbols exported from the UK Traffic Signs Regulations and General Directions (TSRGD)",
+  "description": "Arrows and symbols from the UK Traffic Signs Regulations and General Directions (TSRGD), and UK traffic and tourist sign symbols from Wikimedia Commons",
   "arrows": {
     "standard": {
       "label": "Standard",
@@ -237,6 +237,368 @@
       "name": "Tram stop",
       "category": "Transportation",
       "file": "symbols/tram-stop.svg"
+    },
+    "diversion-hollow-circle": {
+      "name": "Diversion: hollow circle",
+      "category": "Diversion routes",
+      "file": "symbols/diversion-hollow-circle.svg",
+      "legend": []
+    },
+    "diversion-hollow-diamond": {
+      "name": "Diversion: hollow diamond",
+      "category": "Diversion routes",
+      "file": "symbols/diversion-hollow-diamond.svg",
+      "legend": []
+    },
+    "diversion-hollow-square": {
+      "name": "Diversion: hollow square",
+      "category": "Diversion routes",
+      "file": "symbols/diversion-hollow-square.svg",
+      "legend": []
+    },
+    "diversion-hollow-triangle": {
+      "name": "Diversion: hollow triangle",
+      "category": "Diversion routes",
+      "file": "symbols/diversion-hollow-triangle.svg",
+      "legend": []
+    },
+    "diversion-solid-circle": {
+      "name": "Diversion: solid circle",
+      "category": "Diversion routes",
+      "file": "symbols/diversion-solid-circle.svg",
+      "legend": []
+    },
+    "diversion-solid-cross": {
+      "name": "Diversion: solid cross",
+      "category": "Diversion routes",
+      "file": "symbols/diversion-solid-cross.svg",
+      "legend": []
+    },
+    "diversion-solid-diamond": {
+      "name": "Diversion: solid diamond",
+      "category": "Diversion routes",
+      "file": "symbols/diversion-solid-diamond.svg",
+      "legend": []
+    },
+    "diversion-solid-square": {
+      "name": "Diversion: solid square",
+      "category": "Diversion routes",
+      "file": "symbols/diversion-solid-square.svg",
+      "legend": []
+    },
+    "diversion-solid-triangle": {
+      "name": "Diversion: solid triangle",
+      "category": "Diversion routes",
+      "file": "symbols/diversion-solid-triangle.svg",
+      "legend": []
+    },
+    "national-trust": {
+      "name": "National Trust property",
+      "category": "Tourism and leisure",
+      "file": "symbols/national-trust.svg"
+    },
+    "country-park": {
+      "name": "Country park",
+      "category": "Tourism and leisure",
+      "file": "symbols/country-park.svg"
+    },
+    "bird-garden": {
+      "name": "Bird garden",
+      "category": "Tourism and leisure",
+      "file": "symbols/bird-garden.svg"
+    },
+    "theme-park": {
+      "name": "Theme park",
+      "category": "Tourism and leisure",
+      "file": "symbols/theme-park.svg"
+    },
+    "nature-reserve": {
+      "name": "Nature reserve",
+      "category": "Tourism and leisure",
+      "file": "symbols/nature-reserve.svg"
+    },
+    "beach": {
+      "name": "Beach",
+      "category": "Tourism and leisure",
+      "file": "symbols/beach.svg"
+    },
+    "farm-park": {
+      "name": "Farm park",
+      "category": "Tourism and leisure",
+      "file": "symbols/farm-park.svg"
+    },
+    "roman-ruins": {
+      "name": "Roman ruins",
+      "category": "Tourism and leisure",
+      "file": "symbols/roman-ruins.svg"
+    },
+    "golf": {
+      "name": "Golf course",
+      "category": "Tourism and leisure",
+      "file": "symbols/golf.svg"
+    },
+    "racecourse": {
+      "name": "Racecourse",
+      "category": "Tourism and leisure",
+      "file": "symbols/racecourse.svg"
+    },
+    "motorsports": {
+      "name": "Motorsports",
+      "category": "Tourism and leisure",
+      "file": "symbols/motorsports.svg"
+    },
+    "cricket": {
+      "name": "Cricket ground",
+      "category": "Tourism and leisure",
+      "file": "symbols/cricket.svg"
+    },
+    "football": {
+      "name": "Football ground",
+      "category": "Tourism and leisure",
+      "file": "symbols/football.svg"
+    },
+    "fishing": {
+      "name": "Fishing",
+      "category": "Tourism and leisure",
+      "file": "symbols/fishing.svg"
+    },
+    "bicycle-hire": {
+      "name": "Bicycle hire",
+      "category": "Tourism and leisure",
+      "file": "symbols/bicycle-hire.svg"
+    },
+    "ski-resort": {
+      "name": "Ski resort",
+      "category": "Tourism and leisure",
+      "file": "symbols/ski-resort.svg"
+    },
+    "bowling": {
+      "name": "Ten-pin bowling",
+      "category": "Tourism and leisure",
+      "file": "symbols/bowling.svg"
+    },
+    "safari-park": {
+      "name": "Safari park",
+      "category": "Tourism and leisure",
+      "file": "symbols/safari-park.svg"
+    },
+    "tourist-attraction": {
+      "name": "Tourist attraction",
+      "category": "Tourism and leisure",
+      "file": "symbols/tourist-attraction.svg"
+    },
+    "english-attraction": {
+      "name": "English tourist attraction (rose)",
+      "category": "Tourism and leisure",
+      "file": "symbols/english-attraction.svg",
+      "legend": []
+    },
+    "english-heritage": {
+      "name": "English Heritage property",
+      "category": "Tourism and leisure",
+      "file": "symbols/english-heritage.svg"
+    },
+    "museum": {
+      "name": "Museum or art gallery",
+      "category": "Tourism and leisure",
+      "file": "symbols/museum.svg"
+    },
+    "leisure-center": {
+      "name": "Leisure center",
+      "category": "Tourism and leisure",
+      "file": "symbols/leisure-center.svg"
+    },
+    "historic-house": {
+      "name": "Historic house",
+      "category": "Tourism and leisure",
+      "file": "symbols/historic-house.svg"
+    },
+    "scottish-attraction": {
+      "name": "Scottish tourist attraction (thistle)",
+      "category": "Tourism and leisure",
+      "file": "symbols/scottish-attraction.svg",
+      "legend": []
+    },
+    "welsh-attraction": {
+      "name": "Welsh tourist attraction (dragon)",
+      "category": "Tourism and leisure",
+      "file": "symbols/welsh-attraction.svg",
+      "legend": []
+    },
+    "byway": {
+      "name": "Byway",
+      "category": "Traffic",
+      "file": "symbols/byway.svg",
+      "legend": []
+    },
+    "cycle-route": {
+      "name": "Cycle route",
+      "category": "Traffic",
+      "file": "symbols/cycle-route.svg",
+      "legend": []
+    },
+    "footpath": {
+      "name": "Footpath",
+      "category": "Traffic",
+      "file": "symbols/footpath.svg",
+      "legend": []
+    },
+    "cattle": {
+      "name": "Cattle",
+      "category": "Hazards",
+      "file": "symbols/cattle.svg",
+      "legend": [
+        "#000000"
+      ]
+    },
+    "sheep": {
+      "name": "Sheep",
+      "category": "Hazards",
+      "file": "symbols/sheep.svg",
+      "legend": [
+        "#000000"
+      ]
+    },
+    "deer": {
+      "name": "Deer",
+      "category": "Hazards",
+      "file": "symbols/deer.svg",
+      "legend": [
+        "#000000"
+      ]
+    },
+    "toads": {
+      "name": "Toads",
+      "category": "Hazards",
+      "file": "symbols/toads.svg",
+      "legend": [
+        "#000000"
+      ]
+    },
+    "ducks": {
+      "name": "Ducks",
+      "category": "Hazards",
+      "file": "symbols/ducks.svg",
+      "legend": [
+        "#000000"
+      ]
+    },
+    "horse-drawn-vehicle": {
+      "name": "Horse-drawn vehicle",
+      "category": "Traffic",
+      "file": "symbols/horse-drawn-vehicle.svg",
+      "legend": [
+        "#000000"
+      ]
+    },
+    "quayside": {
+      "name": "Quayside or river bank",
+      "category": "Hazards",
+      "file": "symbols/quayside.svg",
+      "legend": [
+        "#000000"
+      ]
+    },
+    "motorcycle": {
+      "name": "Motorcycle",
+      "category": "Traffic",
+      "file": "symbols/motorcycle.svg",
+      "legend": [
+        "#000000"
+      ]
+    },
+    "tram": {
+      "name": "Tram",
+      "category": "Transportation",
+      "file": "symbols/tram.svg",
+      "legend": [
+        "#010101"
+      ]
+    },
+    "steam-railway": {
+      "name": "Steam railway",
+      "category": "Tourism and leisure",
+      "file": "symbols/steam-railway.svg",
+      "legend": [
+        "#000000"
+      ]
+    },
+    "pedestrian-child": {
+      "name": "Pedestrian and child",
+      "category": "Traffic",
+      "file": "symbols/pedestrian-child.svg",
+      "legend": [
+        "#000000"
+      ]
+    },
+    "airport": {
+      "name": "Airport",
+      "category": "Transportation",
+      "file": "symbols/airport.svg",
+      "legend": [
+        "#010101"
+      ]
+    },
+    "elderly-people": {
+      "name": "Elderly people",
+      "category": "Traffic",
+      "file": "symbols/elderly-people.svg",
+      "legend": [
+        "#000000"
+      ]
+    },
+    "children": {
+      "name": "Children",
+      "category": "Traffic",
+      "file": "symbols/children.svg",
+      "legend": [
+        "#000000"
+      ]
+    },
+    "recycling": {
+      "name": "Recycling",
+      "category": "Services",
+      "file": "symbols/recycling.svg",
+      "legend": [
+        "#00703c"
+      ]
+    },
+    "baggage": {
+      "name": "Baggage trolley",
+      "category": "Transportation",
+      "file": "symbols/baggage.svg"
+    },
+    "hedgehogs": {
+      "name": "Hedgehogs",
+      "category": "Hazards",
+      "file": "symbols/hedgehogs.svg",
+      "legend": [
+        "#000000"
+      ]
+    },
+    "road-works": {
+      "name": "Road works",
+      "category": "Hazards",
+      "file": "symbols/road-works.svg",
+      "legend": [
+        "#000000"
+      ]
+    },
+    "horse-rider": {
+      "name": "Horse rider",
+      "category": "Traffic",
+      "file": "symbols/horse-rider.svg",
+      "legend": [
+        "#000000"
+      ]
+    },
+    "wild-horses": {
+      "name": "Wild horses or ponies",
+      "category": "Hazards",
+      "file": "symbols/wild-horses.svg",
+      "legend": [
+        "#000000"
+      ]
     }
   }
 }
