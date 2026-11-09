@@ -3,6 +3,7 @@
   "id": "nl",
   "name": "Netherlands",
   "description": "Blue ANWB-style signs with route plates (Roadgeek fonts from the US theme)",
+  "libraries": ["netherlands"],
   "units": "in",
   "defaults": {
     "textHeight": 15.5,

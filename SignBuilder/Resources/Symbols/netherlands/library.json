@@ -1,0 +1,52 @@
+{
+  "formatVersion": 1,
+  "id": "netherlands",
+  "name": "Netherlands",
+  "description": "Symbols from Dutch road signs (verkeerssymbolen)",
+  "legend": [
+    "#000000"
+  ],
+  "symbols": {
+    "airport": {
+      "name": "Airport",
+      "category": "Transportation",
+      "file": "symbols/airport.svg"
+    },
+    "ring": {
+      "name": "City ring road",
+      "category": "Traffic",
+      "file": "symbols/ring.svg",
+      "legend": []
+    },
+    "bicycle": {
+      "name": "Bicycle",
+      "category": "Traffic",
+      "file": "symbols/bicycle.svg"
+    },
+    "children": {
+      "name": "Children",
+      "category": "Traffic",
+      "file": "symbols/children.svg"
+    },
+    "car": {
+      "name": "Car",
+      "category": "Traffic",
+      "file": "symbols/car.svg"
+    },
+    "pedestrian-child": {
+      "name": "Pedestrian and child",
+      "category": "Traffic",
+      "file": "symbols/pedestrian-child.svg"
+    },
+    "pedestrian": {
+      "name": "Pedestrian",
+      "category": "Traffic",
+      "file": "symbols/pedestrian.svg"
+    },
+    "road-works": {
+      "name": "Road works",
+      "category": "Traffic",
+      "file": "symbols/road-works.svg"
+    }
+  }
+}
