@@ -4,7 +4,7 @@
   "name": "Switzerland",
   "description": "Autobahn (green), main roads (blue), secondary (white); Frutiger-like stand-in",
   "arrow": "M42 0 H58 V100 H82 L50 150 L18 100 H42 Z",
-  "libraries": ["mutcd"],
+  "libraries": ["mutcd", "switzerland"],
   "units": "in",
   "defaults": {
     "textHeight": 15.5,

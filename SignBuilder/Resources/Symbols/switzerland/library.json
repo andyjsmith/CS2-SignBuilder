@@ -1,0 +1,175 @@
+{
+  "formatVersion": 1,
+  "id": "switzerland",
+  "name": "Switzerland",
+  "description": "Symbols from Swiss supplementary plates (SSV) and motorway signs",
+  "legend": [
+    "#000000"
+  ],
+  "symbols": {
+    "s-bahn": {
+      "name": "S-Bahn",
+      "category": "Transportation",
+      "file": "symbols/s-bahn.svg",
+      "legend": []
+    },
+    "trailer": {
+      "name": "Trailer",
+      "category": "Traffic",
+      "file": "symbols/trailer.svg"
+    },
+    "car-train": {
+      "name": "Car train",
+      "category": "Transportation",
+      "file": "symbols/car-train.svg"
+    },
+    "car-ferry": {
+      "name": "Car ferry",
+      "category": "Transportation",
+      "file": "symbols/car-ferry.svg"
+    },
+    "push-bicycle": {
+      "name": "Push bicycles",
+      "category": "Traffic",
+      "file": "symbols/push-bicycle.svg"
+    },
+    "bicycle": {
+      "name": "Bicycle",
+      "category": "Traffic",
+      "file": "symbols/bicycle.svg",
+      "legend": [
+        "#231f20"
+      ]
+    },
+    "fire-extinguisher": {
+      "name": "Fire extinguisher",
+      "category": "Services",
+      "file": "symbols/fire-extinguisher.svg",
+      "legend": []
+    },
+    "airfield": {
+      "name": "Airfield",
+      "category": "Transportation",
+      "file": "symbols/airfield.svg"
+    },
+    "pedestrian": {
+      "name": "Pedestrian",
+      "category": "Traffic",
+      "file": "symbols/pedestrian.svg"
+    },
+    "coach": {
+      "name": "Coach",
+      "category": "Traffic",
+      "file": "symbols/coach.svg"
+    },
+    "industrial-area": {
+      "name": "Industrial area",
+      "category": "Services",
+      "file": "symbols/industrial-area.svg"
+    },
+    "cross-country-skiing": {
+      "name": "Cross-country skiing",
+      "category": "Tourism and leisure",
+      "file": "symbols/cross-country-skiing.svg"
+    },
+    "truck-trailer": {
+      "name": "Truck with trailer",
+      "category": "Traffic",
+      "file": "symbols/truck-trailer.svg"
+    },
+    "truck": {
+      "name": "Truck",
+      "category": "Traffic",
+      "file": "symbols/truck.svg"
+    },
+    "car": {
+      "name": "Car",
+      "category": "Traffic",
+      "file": "symbols/car.svg"
+    },
+    "moped": {
+      "name": "Moped",
+      "category": "Traffic",
+      "file": "symbols/moped.svg"
+    },
+    "motorcycle": {
+      "name": "Motorcycle",
+      "category": "Traffic",
+      "file": "symbols/motorcycle.svg"
+    },
+    "mountain-bike": {
+      "name": "Mountain bike",
+      "category": "Tourism and leisure",
+      "file": "symbols/mountain-bike.svg"
+    },
+    "emergency-telephone": {
+      "name": "Emergency telephone",
+      "category": "Services",
+      "file": "symbols/emergency-telephone.svg",
+      "legend": [
+        "#231f20"
+      ]
+    },
+    "tank": {
+      "name": "Military vehicles",
+      "category": "Traffic",
+      "file": "symbols/tank.svg"
+    },
+    "articulated-truck": {
+      "name": "Articulated truck",
+      "category": "Traffic",
+      "file": "symbols/articulated-truck.svg"
+    },
+    "heavy-vehicle": {
+      "name": "Heavy vehicle",
+      "category": "Traffic",
+      "file": "symbols/heavy-vehicle.svg"
+    },
+    "hospital-emergency": {
+      "name": "Hospital with emergency room",
+      "category": "Services",
+      "file": "symbols/hospital-emergency.svg",
+      "legend": []
+    },
+    "tram": {
+      "name": "Tram",
+      "category": "Transportation",
+      "file": "symbols/tram.svg"
+    },
+    "motorhome": {
+      "name": "Motorhome",
+      "category": "Traffic",
+      "file": "symbols/motorhome.svg"
+    },
+    "customs": {
+      "name": "Customs (nothing to declare)",
+      "category": "Services",
+      "file": "symbols/customs.svg",
+      "legend": []
+    },
+    "interchange": {
+      "name": "Motorway interchange",
+      "category": "Transportation",
+      "file": "symbols/interchange.svg",
+      "legend": [
+        "#282727"
+      ]
+    },
+    "motorway-restaurant": {
+      "name": "Motorway restaurant",
+      "category": "Services",
+      "file": "symbols/motorway-restaurant.svg",
+      "legend": [
+        "#282727"
+      ]
+    },
+    "exit": {
+      "name": "Motorway exit",
+      "category": "Transportation",
+      "file": "symbols/exit.svg",
+      "legend": [
+        "#282727"
+      ]
+    }
+  }
+}
