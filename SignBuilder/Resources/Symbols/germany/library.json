@@ -1,0 +1,354 @@
+{
+  "formatVersion": 1,
+  "id": "germany",
+  "name": "Germany",
+  "description": "Symbols from the German road sign catalog (StVO pictograms and RWB / RWBA guide sign symbols)",
+  "legend": [
+    "#000000"
+  ],
+  "symbols": {
+    "bicycle": {
+      "name": "Bicycle",
+      "category": "Traffic",
+      "file": "symbols/bicycle.svg"
+    },
+    "e-scooter": {
+      "name": "E-scooter",
+      "category": "Traffic",
+      "file": "symbols/e-scooter.svg"
+    },
+    "carpool": {
+      "name": "Carpool (three or more people)",
+      "category": "Traffic",
+      "file": "symbols/carpool.svg"
+    },
+    "road-works": {
+      "name": "Road works",
+      "category": "Hazards",
+      "file": "symbols/road-works.svg"
+    },
+    "car-train": {
+      "name": "Car train",
+      "category": "Transportation",
+      "file": "symbols/car-train.svg"
+    },
+    "railway-station": {
+      "name": "Railway station",
+      "category": "Transportation",
+      "file": "symbols/railway-station.svg"
+    },
+    "sports-facility": {
+      "name": "Sports facility",
+      "category": "Tourism and leisure",
+      "file": "symbols/sports-facility.svg"
+    },
+    "hospital": {
+      "name": "Hospital",
+      "category": "Services",
+      "file": "symbols/hospital.svg"
+    },
+    "parking-garage": {
+      "name": "Parking garage",
+      "category": "Services",
+      "file": "symbols/parking-garage.svg",
+      "legend": [
+        "#ffffff"
+      ]
+    },
+    "camping": {
+      "name": "Camping and caravan site",
+      "category": "Tourism and leisure",
+      "file": "symbols/camping.svg"
+    },
+    "autobahn": {
+      "name": "Autobahn",
+      "category": "Transportation",
+      "file": "symbols/autobahn.svg",
+      "legend": [
+        "#ffffff"
+      ]
+    },
+    "truck-stop": {
+      "name": "Truck stop (Autohof)",
+      "category": "Services",
+      "file": "symbols/truck-stop.svg"
+    },
+    "first-aid": {
+      "name": "First aid",
+      "category": "Services",
+      "file": "symbols/first-aid.svg",
+      "legend": []
+    },
+    "restaurant": {
+      "name": "Restaurant",
+      "category": "Services",
+      "file": "symbols/restaurant.svg"
+    },
+    "information": {
+      "name": "Information",
+      "category": "Services",
+      "file": "symbols/information.svg"
+    },
+    "parking": {
+      "name": "Parking",
+      "category": "Services",
+      "file": "symbols/parking.svg",
+      "legend": [
+        "#ffffff"
+      ]
+    },
+    "police": {
+      "name": "Police",
+      "category": "Services",
+      "file": "symbols/police.svg"
+    },
+    "stadium": {
+      "name": "Stadium",
+      "category": "Places",
+      "file": "symbols/stadium.svg"
+    },
+    "freight-center": {
+      "name": "Freight center (GVZ)",
+      "category": "Places",
+      "file": "symbols/freight-center.svg"
+    },
+    "industrial-area": {
+      "name": "Industrial area",
+      "category": "Places",
+      "file": "symbols/industrial-area.svg"
+    },
+    "park-and-ride": {
+      "name": "Park and ride",
+      "category": "Services",
+      "file": "symbols/park-and-ride.svg"
+    },
+    "exit": {
+      "name": "Autobahn exit",
+      "category": "Transportation",
+      "file": "symbols/exit.svg",
+      "legend": [
+        "#ffffff"
+      ]
+    },
+    "interchange": {
+      "name": "Autobahn interchange",
+      "category": "Transportation",
+      "file": "symbols/interchange.svg",
+      "legend": [
+        "#ffffff"
+      ]
+    },
+    "accessible-toilet": {
+      "name": "Accessible toilet",
+      "category": "Services",
+      "file": "symbols/accessible-toilet.svg"
+    },
+    "bus": {
+      "name": "Bus",
+      "category": "Transportation",
+      "file": "symbols/bus.svg"
+    },
+    "telephone": {
+      "name": "Telephone",
+      "category": "Services",
+      "file": "symbols/telephone.svg"
+    },
+    "airport": {
+      "name": "Airport",
+      "category": "Transportation",
+      "file": "symbols/airport.svg",
+      "legend": [
+        "#ffffff"
+      ]
+    },
+    "ferry": {
+      "name": "Ferry",
+      "category": "Transportation",
+      "file": "symbols/ferry.svg"
+    },
+    "church": {
+      "name": "Church",
+      "category": "Places",
+      "file": "symbols/church.svg"
+    },
+    "truck-trailer": {
+      "name": "Truck with trailer",
+      "category": "Traffic",
+      "file": "symbols/truck-trailer.svg"
+    },
+    "truck": {
+      "name": "Truck",
+      "category": "Traffic",
+      "file": "symbols/truck.svg"
+    },
+    "emergency-telephone": {
+      "name": "Emergency telephone",
+      "category": "Services",
+      "file": "symbols/emergency-telephone.svg"
+    },
+    "car-trailer": {
+      "name": "Car with trailer",
+      "category": "Traffic",
+      "file": "symbols/car-trailer.svg"
+    },
+    "car": {
+      "name": "Car",
+      "category": "Traffic",
+      "file": "symbols/car.svg"
+    },
+    "wheelchair": {
+      "name": "Wheelchair",
+      "category": "Services",
+      "file": "symbols/wheelchair.svg"
+    },
+    "fuel": {
+      "name": "Fuel",
+      "category": "Services",
+      "file": "symbols/fuel.svg"
+    },
+    "kiosk": {
+      "name": "Kiosk",
+      "category": "Services",
+      "file": "symbols/kiosk.svg"
+    },
+    "toilets": {
+      "name": "Toilets",
+      "category": "Services",
+      "file": "symbols/toilets.svg"
+    },
+    "repair": {
+      "name": "Repair garage",
+      "category": "Services",
+      "file": "symbols/repair.svg"
+    },
+    "crossing-guard": {
+      "name": "Crossing guard",
+      "category": "Traffic",
+      "file": "symbols/crossing-guard.svg"
+    },
+    "toads": {
+      "name": "Toad crossing",
+      "category": "Hazards",
+      "file": "symbols/toads.svg"
+    },
+    "motorway-kiosk": {
+      "name": "Autobahn kiosk",
+      "category": "Services",
+      "file": "symbols/motorway-kiosk.svg"
+    },
+    "movable-bridge": {
+      "name": "Movable bridge",
+      "category": "Hazards",
+      "file": "symbols/movable-bridge.svg"
+    },
+    "e-bike": {
+      "name": "E-bike",
+      "category": "Traffic",
+      "file": "symbols/e-bike.svg"
+    },
+    "train": {
+      "name": "Train",
+      "category": "Transportation",
+      "file": "symbols/train.svg"
+    },
+    "low-flying-aircraft": {
+      "name": "Low-flying aircraft",
+      "category": "Hazards",
+      "file": "symbols/low-flying-aircraft.svg"
+    },
+    "outdoor-pool": {
+      "name": "Outdoor pool",
+      "category": "Tourism and leisure",
+      "file": "symbols/outdoor-pool.svg"
+    },
+    "indoor-pool": {
+      "name": "Indoor pool",
+      "category": "Tourism and leisure",
+      "file": "symbols/indoor-pool.svg",
+      "legend": [
+        "#1f1a17"
+      ]
+    },
+    "pedestrian": {
+      "name": "Pedestrian",
+      "category": "Traffic",
+      "file": "symbols/pedestrian.svg"
+    },
+    "pedestrian-crossing": {
+      "name": "Pedestrian crossing",
+      "category": "Traffic",
+      "file": "symbols/pedestrian-crossing.svg"
+    },
+    "horse-drawn-vehicle": {
+      "name": "Horse-drawn vehicle",
+      "category": "Traffic",
+      "file": "symbols/horse-drawn-vehicle.svg"
+    },
+    "breakdown-service": {
+      "name": "Breakdown service",
+      "category": "Services",
+      "file": "symbols/breakdown-service.svg"
+    },
+    "inline-skating": {
+      "name": "Inline skating",
+      "category": "Traffic",
+      "file": "symbols/inline-skating.svg"
+    },
+    "snow-ice": {
+      "name": "Snow or ice",
+      "category": "Hazards",
+      "file": "symbols/snow-ice.svg"
+    },
+    "loose-chippings": {
+      "name": "Loose chippings",
+      "category": "Hazards",
+      "file": "symbols/loose-chippings.svg"
+    },
+    "town-center": {
+      "name": "Town center",
+      "category": "Places",
+      "file": "symbols/town-center.svg"
+    },
+    "falling-rocks": {
+      "name": "Falling rocks",
+      "category": "Hazards",
+      "file": "symbols/falling-rocks.svg"
+    },
+    "tram": {
+      "name": "Tram",
+      "category": "Transportation",
+      "file": "symbols/tram.svg"
+    },
+    "riverbank": {
+      "name": "Quayside or riverbank",
+      "category": "Hazards",
+      "file": "symbols/riverbank.svg"
+    },
+    "overhanging-obstacles": {
+      "name": "Overhanging obstacles",
+      "category": "Hazards",
+      "file": "symbols/overhanging-obstacles.svg"
+    },
+    "cattle": {
+      "name": "Cattle",
+      "category": "Hazards",
+      "file": "symbols/cattle.svg",
+      "legend": [
+        "#ffffff"
+      ]
+    },
+    "hikers": {
+      "name": "Hikers",
+      "category": "Tourism and leisure",
+      "file": "symbols/hikers.svg"
+    },
+    "electric-vehicle": {
+      "name": "Electric vehicle",
+      "category": "Traffic",
+      "file": "symbols/electric-vehicle.svg",
+      "legend": [
+        "#ffffff"
+      ]
+    }
+  }
+}
