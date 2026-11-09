@@ -1,0 +1,21 @@
+{
+  "formatVersion": 1,
+  "id": "japan",
+  "name": "Japan",
+  "description": "Symbols from Japanese road signs",
+  "legend": [
+    "#000000"
+  ],
+  "symbols": {
+    "car": {
+      "name": "Car",
+      "category": "Traffic",
+      "file": "symbols/car.svg"
+    },
+    "pedestrian-child": {
+      "name": "Pedestrian and child",
+      "category": "Traffic",
+      "file": "symbols/pedestrian-child.svg"
+    }
+  }
+}

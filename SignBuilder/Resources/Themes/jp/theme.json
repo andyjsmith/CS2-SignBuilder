@@ -3,6 +3,7 @@
   "id": "jp",
   "name": "Japan",
   "description": "Expressway (green) and general road (blue) guide signs, Japanese with English",
+  "libraries": ["japan"],
   "units": "in",
   "defaults": {
     "textHeight": 16,
