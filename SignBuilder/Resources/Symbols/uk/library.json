@@ -507,14 +507,6 @@
         "#000000"
       ]
     },
-    "tram": {
-      "name": "Tram",
-      "category": "Transportation",
-      "file": "symbols/tram.svg",
-      "legend": [
-        "#010101"
-      ]
-    },
     "steam-railway": {
       "name": "Steam railway",
       "category": "Tourism and leisure",

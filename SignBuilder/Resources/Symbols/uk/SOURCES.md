@@ -63,7 +63,6 @@ removed) for Sign Builder. Each keeps its license:
 | Theme park (`theme-park`) | [UK Tourist Sign T114 - Pleasure or Theme Park.svg](https://commons.wikimedia.org/wiki/File:UK_Tourist_Sign_T114_-_Pleasure_or_Theme_Park.svg) | Open Government Licence v3.0 |
 | Toads (`toads`) | [UK traffic sign symbol S13.svg](https://commons.wikimedia.org/wiki/File:UK_traffic_sign_symbol_S13.svg) | Public domain |
 | Tourist attraction (`tourist-attraction`) | [UK Tourist Sign T2 - English Tourist Attraction.svg](https://commons.wikimedia.org/wiki/File:UK_Tourist_Sign_T2_-_English_Tourist_Attraction.svg) | Open Government Licence v3.0 |
-| Tram (`tram`) | [UK traffic sign symbol S26.svg](https://commons.wikimedia.org/wiki/File:UK_traffic_sign_symbol_S26.svg) | Open Government Licence v1.0 |
 | Welsh tourist attraction (dragon) (`welsh-attraction`) | [UK Tourist Sign T401 - Welsh tourist attraction.svg](https://commons.wikimedia.org/wiki/File:UK_Tourist_Sign_T401_-_Welsh_tourist_attraction.svg) | Open Government Licence v3.0 |
 | Wild horses or ponies (`wild-horses`) | [UK traffic sign symbol S9.svg](https://commons.wikimedia.org/wiki/File:UK_traffic_sign_symbol_S9.svg) | Public domain |
 
