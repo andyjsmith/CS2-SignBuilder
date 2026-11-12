@@ -55,15 +55,12 @@ included on GitHub)
 	<Screenshot Value="Properties/Screenshot5.png" />
 	<Screenshot Value="Properties/Screenshot6.png" />
 	<ForumLink Value="https://forum.paradoxplaza.com/forum/threads/sign-builder.1947897/" />
-	<ModVersion Value="1.0.3" />
+	<ModVersion Value="1.0.4" />
 	<GameVersion Value="1.6.*" />
 	<ChangeLog>
-New:
-- The Sign Builder version is shown in Options.
-
 Fixes:
-- Signs on bridges, elevated roads and embankments no longer fall to the ground (or into the water) below, as could happen after loading a city or when a road nearby changed, for example with Road Builder. Signs that already fell need to be placed again or raised with Move It.
-- After editing a sign or "Delete unused sign structures", loading another city that has that structure no longer shows an error with the sign missing, and saving it keeps the sign.
+- Signs no longer disappear when a city is loaded. If roads were updated while the city loaded (some mods do this), the game hid signs overlapping a road. Signs already hidden this way come back the next time the city is loaded.
+- Saving a city while its signs are still being rebuilt after loading (a city shared from another PC, or after "Delete unused sign structures") no longer loses the signs that were not rebuilt yet.
 	</ChangeLog>
 	<ExternalLink Type="github" Url="https://github.com/andyjsmith/CS2-SignBuilder" />
 	<AccessLevel Value="Public" />
