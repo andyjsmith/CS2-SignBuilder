@@ -26,8 +26,12 @@ namespace SignBuilder
             });
 #if TESTS
             updateSystem.UpdateAt<Tests.SpikeBootstrapSystem>(SystemUpdatePhase.MainLoop);
+            updateSystem.UpdateBefore<Tests.OverrideProbeSystem, Game.Objects.OverrideSystem>(SystemUpdatePhase.Modification5);
+            updateSystem.UpdateAt<Tests.OverrideForceSystem>(SystemUpdatePhase.Modification1);
 #endif
             updateSystem.UpdateAt<Assemblies.AssemblyBootstrapSystem>(SystemUpdatePhase.MainLoop);
+            // Right after the game initializes prefabs (and makes plain props Overridable and Brushable), in the same update.
+            updateSystem.UpdateAfter<Assemblies.SignPrefabFlagsSystem, Game.Prefabs.ObjectInitializeSystem>(SystemUpdatePhase.PrefabUpdate);
             // Sign recipes travel inside saves so shared cities rebuild their signs on other PCs.
             updateSystem.UpdateBefore<Assemblies.AssemblySaveSystem>(SystemUpdatePhase.Serialize);
             updateSystem.UpdateAt<Assemblies.AssemblySaveCleanupSystem>(SystemUpdatePhase.MainLoop);

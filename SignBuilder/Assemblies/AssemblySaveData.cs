@@ -33,7 +33,7 @@ namespace SignBuilder.Assemblies
         {
             writer.Write(kVersion);
             var name = PrefabName.ToString();
-            var record = AssemblyLibrary.FromPrefabName(name) ?? AssemblyLibrary.Retired(name) ?? AssemblyRestoreSystem.Unresolved(name);
+            var record = AssemblySaveSystem.RecipeOf(name);
             writer.Write(record == null ? "" : record.ToPortable().ToString(Formatting.None));
         }
 
@@ -82,10 +82,7 @@ namespace SignBuilder.Assemblies
                 {
                     if (!seen.Add(r.m_Prefab)) continue;
                     var name = PrefabNameOf(EntityManager, m_PrefabSystem, r.m_Prefab);
-                    // Assemblies removed from the library this session, or that could not be rebuilt here, keep their
-                    // recipe, so re-saving never loses them.
-                    if (name != null && (AssemblyLibrary.FromPrefabName(name) != null || AssemblyLibrary.Retired(name) != null
-                        || AssemblyRestoreSystem.Unresolved(name) != null)) names.Add(name);
+                    if (name != null && RecipeOf(name) != null) names.Add(name);
                 }
             }
             foreach (var name in names)
@@ -94,6 +91,14 @@ namespace SignBuilder.Assemblies
                 EntityManager.AddComponentData(entity, new AssemblySaveData { PrefabName = name });
             }
         }
+
+        /// <summary>
+        /// The recipe saved for <paramref name="prefabName"/>: the library's, else one removed from the library this
+        /// session, else the one read from the loaded save. The last covers structures not rebuilt yet (a save made while
+        /// they are being rebuilt after loading) and ones that could not be rebuilt here, so re-saving never loses them.
+        /// </summary>
+        public static AssemblyRecord RecipeOf(string prefabName) =>
+            AssemblyLibrary.FromPrefabName(prefabName) ?? AssemblyLibrary.Retired(prefabName) ?? AssemblyRestoreSystem.FromSave(prefabName);
 
         /// <summary>A prefab entity's name, also for prefabs missing on this PC (kept as "obsolete" by the game).</summary>
         public static string PrefabNameOf(EntityManager em, PrefabSystem prefabSystem, Entity prefab)
@@ -127,9 +132,14 @@ namespace SignBuilder.Assemblies
     public partial class AssemblyRestoreSystem : GameSystemBase
     {
         private static readonly List<AssemblyRecord> s_Loaded = new();
-        private static readonly Dictionary<string, AssemblyRecord> s_Unresolved = new();
+        /// <summary>Every recipe read from the loaded save, kept until the next load.</summary>
+        private static readonly Dictionary<string, AssemblyRecord> s_FromSave = new();
 
-        public static AssemblyRecord Unresolved(string prefabName) => s_Unresolved.TryGetValue(prefabName, out var r) ? r : null;
+        public static AssemblyRecord FromSave(string prefabName)
+        {
+            if (prefabName == null) return null;
+            lock (s_Loaded) return s_FromSave.TryGetValue(prefabName, out var r) ? r : null;
+        }
         private PrefabSystem m_PrefabSystem;
 
         public static int LastRestored { get; private set; } = -1;
@@ -138,7 +148,11 @@ namespace SignBuilder.Assemblies
 
         public static void Loaded(AssemblyRecord record)
         {
-            lock (s_Loaded) s_Loaded.Add(record);
+            lock (s_Loaded)
+            {
+                s_Loaded.Add(record);
+                s_FromSave[record.PrefabName] = record;
+            }
         }
 
         protected override void OnCreate()
@@ -152,8 +166,11 @@ namespace SignBuilder.Assemblies
         protected override void OnGamePreload(Purpose purpose, GameMode mode)
         {
             base.OnGamePreload(purpose, mode);
-            lock (s_Loaded) s_Loaded.Clear();
-            s_Unresolved.Clear();
+            lock (s_Loaded)
+            {
+                s_Loaded.Clear();
+                s_FromSave.Clear();
+            }
         }
 
         protected override void OnGameLoadingComplete(Purpose purpose, GameMode mode)
@@ -182,11 +199,7 @@ namespace SignBuilder.Assemblies
                 var ok = false;
                 yield return AssemblyBuilder.Rebuild(record, r => ok = r);
                 if (ok) built.Add(record);
-                else
-                {
-                    failed++;
-                    s_Unresolved[record.PrefabName] = record;
-                }
+                else failed++;
             }
             // Let the new prefabs initialize before spawning their objects.
             for (var i = 0; i < 10; i++) yield return null;
@@ -194,7 +207,6 @@ namespace SignBuilder.Assemblies
             foreach (var record in built)
             {
                 if (!m_PrefabSystem.TryGetPrefab(new PrefabID(nameof(StaticObjectPrefab), record.PrefabName), out var prefab)) continue;
-                AssemblyBootstrapSystem.ClearOverridableNow((StaticObjectPrefab)prefab);
                 foreach (var orphan in OrphansOf(record.PrefabName))
                 {
                     var t = EntityManager.GetComponentData<Game.Objects.Transform>(orphan);

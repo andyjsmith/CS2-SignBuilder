@@ -97,6 +97,17 @@ namespace SignBuilder.Tests
             }
             SpikeReport.Set("game.startedFrom", GameManager.instance.gameMode);
             SpikeReport.Set("game.commandLine", string.Join(" ", Environment.GetCommandLineArgs().Skip(1)));
+            // The rebuild after loading starts at once: this test must not wait.
+            if (m_Mode == "restoresave")
+            {
+                yield return RunRestoreSave();
+                yield break;
+            }
+            if (m_Mode == "restoreload")
+            {
+                yield return RunRestoreLoad();
+                yield break;
+            }
             yield return new WaitForSecondsRealtime(3f);
 
             if (m_Mode == "e2e" || m_Mode == "reload-e2e")
@@ -142,6 +153,36 @@ namespace SignBuilder.Tests
             if (m_Mode == "uitest")
             {
                 yield return RunUITest();
+                yield break;
+            }
+            if (m_Mode == "despawnsave")
+            {
+                yield return RunDespawnSave();
+                yield break;
+            }
+            if (m_Mode == "despawnload" || m_Mode == "despawnload2" || m_Mode == "despawnnoroads")
+            {
+                yield return RunDespawnLoad(m_Mode);
+                yield break;
+            }
+            if (m_Mode == "overridesave")
+            {
+                yield return RunOverrideSave();
+                yield break;
+            }
+            if (m_Mode == "overrideload" || m_Mode == "overrideforce")
+            {
+                yield return RunOverrideLoad();
+                yield break;
+            }
+            if (m_Mode == "roadsave")
+            {
+                yield return RunRoadTypesSave();
+                yield break;
+            }
+            if (m_Mode == "roadload")
+            {
+                yield return RunRoadTypesLoad();
                 yield break;
             }
             if (m_Mode == "reload")

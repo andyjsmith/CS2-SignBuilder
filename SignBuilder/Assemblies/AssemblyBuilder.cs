@@ -484,7 +484,6 @@ namespace SignBuilder.Assemblies
             var runtime = new RuntimePrefabs();
             if (runtime.PrefabSystem.TryGetPrefab(new PrefabID(nameof(StaticObjectPrefab), record.PrefabName), out var created))
             {
-                AssemblyBootstrapSystem.ClearOverridableNow(created as StaticObjectPrefab);
                 SignBuilderRuntime.Mark("build: placing the object");
                 runtime.Spawn((StaticObjectPrefab)created, placement.Origin, placement.Rotation);
             }
@@ -550,7 +549,6 @@ namespace SignBuilder.Assemblies
             UnityEngine.Object.Destroy(lowMesh);
             AssemblyLibrary.Add(record);
             Core.AssetNames.Add(record.PrefabName); // again, now that the record (and its legend) is stored
-            AssemblyBootstrapSystem.TrackNewPrefab(prefab);
         }
 
         /// <summary>Every light fixture's position and aim in assembly space (signs on the back are turned around).</summary>
