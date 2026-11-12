@@ -130,6 +130,11 @@ namespace SignBuilder.Tests
                 yield return RunLightsPerf();
                 yield break;
             }
+            if (m_Mode == "night-perf")
+            {
+                yield return RunNightPerf();
+                yield break;
+            }
             if (m_Mode == "render-perf")
             {
                 yield return RunRenderPerf();
