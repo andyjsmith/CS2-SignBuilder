@@ -230,6 +230,9 @@ waits up to 5 minutes for it to start, and kills it after 10 minutes at most.
 | `render-perf` | LOD setup against a vanilla prop, frame times with signs shown and hidden, and with the designer and gantry editor open and closed. About 4 minutes |
 | `leak-e2e` | Whether anything of Sign Builder keeps running once its panel is closed: renderer and baker counters, frame times and memory per phase. About 3 minutes |
 | `reload-e2e` | Loads the save written by `e2e` and checks that every structure came back                                                                                                                                                                                                          |
+| `overridesave` / `overrideload` / `overrideforce` | Signs the game hides as Overridden (shown only in marker views such as Better Bulldozer's Net-Lanes): places posts, gantries and props on every road kind, watches every frame (just before the game's override check) for a sign prefab carrying Overridable, updates all roads, saves `SignBuilder_Override`; `overrideload <guid>` reloads it; `overrideforce <guid>` also updates every road on the first frames of the load, as mods that update roads while a city loads do |
+| `roadsave` / `roadload` | Posts, gantries and props (hung and free-placed) on the 10 nearest road kinds, saved as `SignBuilder_RoadTypes`; `roadload <guid>` boots into it with the city running, watches every frame and updates all roads |
+| `restoresave` / `restoreload` | Run with the RoadTypes structures removed from `assemblies.json`: saves while their rebuild from the save is under way, then boots into that save (with them removed again) and checks every one comes back |
 
 Results go to `ModsData/SignBuilder/spike/results.json`, with screenshots next to it. The game's `Logs/UI.log`
 shows UI errors (focus errors included). `Logs/SignBuilder.Mod.log` has Sign Builder's own log: bake timings and

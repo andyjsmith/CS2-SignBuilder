@@ -151,11 +151,12 @@ namespace SignBuilder.Tests
         }
 
         /// <summary>Each saved sign over a minute after loading: found where it stood, what prefab, shown or not.</summary>
-        private IEnumerator DespawnWatch(string key, bool roadsUpdated)
+        private IEnumerator DespawnWatch(string key, bool roadsUpdated, string signsFile = null)
         {
             var em = World.DefaultGameObjectInjectionWorld.EntityManager;
-            if (!File.Exists(DespawnSignsFile)) yield break;
-            var signs = File.ReadAllLines(DespawnSignsFile).Select(l => l.Split(' '))
+            signsFile ??= DespawnSignsFile;
+            if (!File.Exists(signsFile)) yield break;
+            var signs = File.ReadAllLines(signsFile).Select(l => l.Split(' '))
                 .Select(p => (label: p[0], prefab: p[1], position: new float3(float.Parse(p[2]), float.Parse(p[3]), float.Parse(p[4])))).ToList();
             SpikeReport.Set($"{key}.expected", signs.Count);
             var errorsBefore = CountLogLines("Error when initializing batch");
@@ -241,7 +242,7 @@ namespace SignBuilder.Tests
                 var inLibrary = AssemblyLibrary.FromPrefabName(name) != null;
                 var batches = em.HasBuffer<Game.Rendering.MeshBatch>(e) ? em.GetBuffer<Game.Rendering.MeshBatch>(e, true).Length : 0;
                 var flags = em.TryGetComponent(prefab, out ObjectGeometryData geometry) ? geometry.m_Flags.ToString().Replace(", ", "+") : "none";
-                return $"{name} flags={flags} obsolete={obsolete} inLibrary={inLibrary} recipe={(inLibrary || AssemblyLibrary.Retired(name) != null || AssemblyRestoreSystem.Unresolved(name) != null)} " +
+                return $"{name} flags={flags} obsolete={obsolete} inLibrary={inLibrary} recipe={AssemblySaveSystem.RecipeOf(name) != null} " +
                     $"batches={batches} overridden={em.HasComponent<Overridden>(e)} deleted={em.HasComponent<Deleted>(e)} hidden={em.HasComponent<Game.Tools.Hidden>(e)}";
             }));
         }

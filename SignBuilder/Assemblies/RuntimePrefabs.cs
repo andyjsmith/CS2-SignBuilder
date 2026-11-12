@@ -230,7 +230,7 @@ namespace SignBuilder.Assemblies
         /// <summary>
         /// Plain static props are Overridable: anything overlapping a road is hidden in favor of the road
         /// (run 4). Gantries always span roads, so opt out; and of Brushable, which drops them onto the terrain
-        /// (see <see cref="AssemblyBootstrapSystem.ClearOverridableNow"/>). Must run after prefab initialization.
+        /// (see <see cref="SignPrefabFlagsSystem"/>). Must run after prefab initialization.
         /// Returns the flags before the change so callers can see whether it was still needed.
         /// </summary>
         public string ClearOverridable(StaticObjectPrefab prefab)
